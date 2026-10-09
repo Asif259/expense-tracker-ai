@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+:root {
+  --color-bg: #0a0a0f;
+  --color-surface: #12121a;
+  --color-surface-hover: #1a1a26;
+  --color-border: #1e1e2e;
+  --color-border-hover: #2a2a3e;
+  --color-text: #e4e4ef;
+  --color-text-muted: #8888a4;
+  --color-text-dim: #5a5a72;
+  --color-primary: #6366f1;
+  --color-primary-hover: #818cf8;
+  --color-income: #34d399;
+  --color-income-bg: rgba(52, 211, 153, 0.08);
+  --color-expense: #f87171;
+  --color-expense-bg: rgba(248, 113, 113, 0.08);
+  --color-warning: #fbbf24;
+  --color-danger: #ef4444;
+  --color-danger-hover: #dc2626;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-border-hover); }
+
+/* Focus ring */
+*:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
