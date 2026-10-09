@@ -1,0 +1,13 @@
+{
+  "name": "expense-tracker-ai",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Personal expense tracker with AI-assisted entry and spending insights",
+  "workspaces": ["server", "web"],
+  "scripts": {
+    "dev": "concurrently -k -n API,WEB -c blue,green \"npm run dev --workspace expense-tracker-server\" \"npm run dev --workspace expense-tracker-web\"",
+    "build": "npm run build --workspace expense-tracker-web",
+    "start": "npm run start --workspace expense-tracker-server"
+  },
+  "devDependencies": { "concurrently": "^9.1.2" }
+}
