@@ -15,6 +15,7 @@ import { SupabaseAuthGuard } from './common/guards/supabase-auth.guard.js';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: ['.env', 'apps/api/.env', '../.env'],
       validate: validateEnv,
     }),
     SupabaseModule,

@@ -8,20 +8,37 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 import { Controller, Get } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Public } from '../common/decorators/public.decorator.js';
 let HealthController = class HealthController {
+    configService;
+    constructor(configService) {
+        this.configService = configService;
+    }
     checkHealth() {
+        const supabaseUrl = this.configService.get('SUPABASE_URL', '');
+        const hasSupabase = !!supabaseUrl && !supabaseUrl.includes('placeholder');
+        const groqKey = this.configService.get('GROQ_API_KEY', '');
+        const hasGroq = !!groqKey && !groqKey.includes('placeholder');
         return {
             status: 'ok',
+            service: 'Ledgerly API',
             timestamp: new Date().toISOString(),
             uptime: process.uptime(),
+            environment: this.configService.get('NODE_ENV', 'development'),
+            configured: {
+                supabase: hasSupabase,
+                groq: hasGroq,
+            },
         };
     }
     root() {
         return {
             name: 'Ledgerly API',
             status: 'ok',
+            service: 'running',
             timestamp: new Date().toISOString(),
+            healthEndpoint: '/health',
         };
     }
 };
@@ -40,7 +57,8 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], HealthController.prototype, "root", null);
 HealthController = __decorate([
-    Controller()
+    Controller(),
+    __metadata("design:paramtypes", [ConfigService])
 ], HealthController);
 export { HealthController };
 //# sourceMappingURL=health.controller.js.map

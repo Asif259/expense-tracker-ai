@@ -23,6 +23,7 @@ AppModule = __decorate([
         imports: [
             ConfigModule.forRoot({
                 isGlobal: true,
+                envFilePath: ['.env', 'apps/api/.env', '../.env'],
                 validate: validateEnv,
             }),
             SupabaseModule,

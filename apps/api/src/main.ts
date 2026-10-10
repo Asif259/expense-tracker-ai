@@ -7,7 +7,7 @@ async function bootstrap() {
     const app = await NestFactory.create(AppModule);
     const configService = app.get(ConfigService);
 
-    const port = Number(process.env.PORT) || configService.get<number>('PORT', 3001);
+    const rawPort = process.env.PORT || configService.get<string | number>('PORT', 3001);
     const corsOriginRaw = configService.get<string>('CORS_ORIGIN', 'http://localhost:3000');
 
     const allowedOrigins = corsOriginRaw.includes(',')
@@ -21,8 +21,15 @@ async function bootstrap() {
       allowedHeaders: ['Content-Type', 'Authorization'],
     });
 
-    await app.listen(port, '0.0.0.0');
-    console.log(`[Ledgerly API] Server listening on port ${port} (0.0.0.0)`);
+    const isSocket = typeof rawPort === 'string' && isNaN(Number(rawPort));
+    if (isSocket) {
+      await app.listen(rawPort);
+      console.log(`[Ledgerly API] Server listening on socket ${rawPort}`);
+    } else {
+      const port = Number(rawPort) || 3001;
+      await app.listen(port, '0.0.0.0');
+      console.log(`[Ledgerly API] Server listening on port ${port} (0.0.0.0)`);
+    }
   } catch (error) {
     console.error('[Ledgerly API] Fatal startup error:', error);
     process.exit(1);
