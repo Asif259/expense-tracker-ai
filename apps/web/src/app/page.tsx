@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { ShieldCheck, Calculator, Zap, ArrowRight } from 'lucide-react';
 
 export default function Home() {
   const { user, loading } = useAuth();
@@ -30,13 +31,13 @@ export default function Home() {
           <ThemeToggle variant="compact" />
           <Link
             href="/login"
-            className="px-4 py-2 text-sm font-medium rounded-lg border border-[var(--color-border)] hover:border-[var(--color-border-hover)] hover:bg-[var(--color-surface)] transition-colors"
+            className="px-4 py-2 text-sm font-medium rounded-lg border border-[var(--color-border)] hover:border-[var(--color-border-hover)] hover:bg-[var(--color-surface)] transition-colors cursor-pointer"
           >
             Sign In
           </Link>
           <Link
             href="/login?mode=signup"
-            className="px-4 py-2 text-sm font-semibold rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] transition-colors shadow-sm"
+            className="px-4 py-2 text-sm font-semibold rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] transition-colors shadow-sm cursor-pointer"
           >
             Get Started
           </Link>
@@ -64,7 +65,10 @@ export default function Home() {
         <div className="w-full max-w-xl p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-left mb-10 shadow-sm">
           <div className="flex items-center justify-between text-xs text-[var(--color-text-dim)] border-b border-[var(--color-border)] pb-2 mb-3">
             <span>Natural Language Input</span>
-            <span className="text-[var(--color-mint)] font-medium">⚡ 0.2s Groq Inference</span>
+            <span className="text-[var(--color-mint)] font-medium inline-flex items-center gap-1">
+              <Zap className="w-3.5 h-3.5" />
+              <span>0.2s Groq Inference</span>
+            </span>
           </div>
           <p className="text-sm text-[var(--color-text)] mb-3 font-mono">
             &quot;Paid 1,200 BDT for grocery items at Agora yesterday evening&quot;
@@ -88,13 +92,14 @@ export default function Home() {
         <div className="flex flex-col sm:flex-row gap-4">
           <Link
             href="/login?mode=signup"
-            className="px-6 py-3 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] font-semibold text-sm transition-colors shadow-sm"
+            className="px-6 py-3 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] font-semibold text-sm transition-colors shadow-sm cursor-pointer inline-flex items-center gap-2"
           >
-            Create Free Account
+            <span>Create Free Account</span>
+            <ArrowRight className="w-4 h-4" />
           </Link>
           <Link
             href="/login"
-            className="px-6 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] text-[var(--color-text)] font-medium text-sm transition-colors"
+            className="px-6 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] text-[var(--color-text)] font-medium text-sm transition-colors cursor-pointer"
           >
             Sign In to Dashboard
           </Link>
@@ -104,21 +109,27 @@ export default function Home() {
       {/* Feature Pillars */}
       <section className="max-w-6xl mx-auto px-6 py-12 w-full grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="p-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]">
-          <div className="text-xl mb-2">🛡️</div>
+          <div className="w-10 h-10 rounded-lg bg-[var(--color-primary)]/10 text-[var(--color-primary)] flex items-center justify-center mb-3">
+            <ShieldCheck className="w-5 h-5" />
+          </div>
           <h3 className="text-base font-semibold mb-2">Zero Direct AI Mutation</h3>
           <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
             AI suggestions are created as pending drafts. Never inserted directly into ledger without explicit user confirmation.
           </p>
         </div>
         <div className="p-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]">
-          <div className="text-xl mb-2">🔢</div>
+          <div className="w-10 h-10 rounded-lg bg-[var(--color-mint)]/10 text-[var(--color-mint)] flex items-center justify-center mb-3">
+            <Calculator className="w-5 h-5" />
+          </div>
           <h3 className="text-base font-semibold mb-2">Fixed-Precision Arithmetic</h3>
           <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
             Exact decimal strings prevent IEEE-754 floating point drift. Up to 13 integer digits and 2 decimal places.
           </p>
         </div>
         <div className="p-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]">
-          <div className="text-xl mb-2">⚡</div>
+          <div className="w-10 h-10 rounded-lg bg-[var(--color-amber)]/10 text-[var(--color-amber)] flex items-center justify-center mb-3">
+            <Zap className="w-5 h-5" />
+          </div>
           <h3 className="text-base font-semibold mb-2">Supabase Row-Level Security</h3>
           <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
             Database-enforced isolation. Multi-tenant privacy backed by PostgreSQL SECURITY DEFINER procedures.

@@ -14,6 +14,11 @@ import {
 import { formatMoney, formatDate } from '@/lib/format';
 import { fetchCategories, Category } from '@/lib/categories';
 import Link from 'next/link';
+import {
+  TrendingUp,
+  ArrowRight,
+  Sparkles,
+} from 'lucide-react';
 
 export default function DashboardPage() {
   const { user, getToken } = useAuth();
@@ -209,7 +214,7 @@ export default function DashboardPage() {
               href="/ai-entry"
               className="px-3.5 py-2 rounded-xl bg-[var(--color-pale-mint)] text-[var(--color-text)] text-xs font-semibold hover:opacity-90 transition-all flex items-center gap-1.5 border border-[var(--color-border)]"
             >
-              <span>⚡</span>
+              <Sparkles className="w-3.5 h-3.5" />
               <span>AI Quick Entry</span>
             </Link>
 
@@ -278,11 +283,10 @@ export default function DashboardPage() {
                 Net Cash Flow
               </span>
               <span
-                className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                  netBalanceNum >= 0
-                    ? 'bg-[var(--color-pale-mint)] text-[var(--color-text)]'
-                    : 'bg-[var(--color-pale-yellow)] text-[var(--color-text)]'
-                }`}
+                className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${netBalanceNum >= 0
+                  ? 'bg-[var(--color-pale-mint)] text-[var(--color-text)]'
+                  : 'bg-[var(--color-pale-yellow)] text-[var(--color-text)]'
+                  }`}
               >
                 {netBalanceNum >= 0 ? '+ Positive' : '- Deficit'}
               </span>
@@ -419,33 +423,30 @@ export default function DashboardPage() {
                   <button
                     type="button"
                     onClick={() => setActiveReportTab('flow')}
-                    className={`pb-1 transition-colors cursor-pointer ${
-                      activeReportTab === 'flow'
-                        ? 'border-b-2 border-[var(--color-text)] text-[var(--color-text)]'
-                        : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
-                    }`}
+                    className={`pb-1 transition-colors cursor-pointer ${activeReportTab === 'flow'
+                      ? 'border-b-2 border-[var(--color-text)] text-[var(--color-text)]'
+                      : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
+                      }`}
                   >
                     Cash Flow
                   </button>
                   <button
                     type="button"
                     onClick={() => setActiveReportTab('breakdown')}
-                    className={`pb-1 transition-colors cursor-pointer ${
-                      activeReportTab === 'breakdown'
-                        ? 'border-b-2 border-[var(--color-text)] text-[var(--color-text)]'
-                        : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
-                    }`}
+                    className={`pb-1 transition-colors cursor-pointer ${activeReportTab === 'breakdown'
+                      ? 'border-b-2 border-[var(--color-text)] text-[var(--color-text)]'
+                      : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
+                      }`}
                   >
                     Spending Allocations
                   </button>
                   <button
                     type="button"
                     onClick={() => setActiveReportTab('loans')}
-                    className={`pb-1 transition-colors cursor-pointer ${
-                      activeReportTab === 'loans'
-                        ? 'border-b-2 border-[var(--color-text)] text-[var(--color-text)]'
-                        : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
-                    }`}
+                    className={`pb-1 transition-colors cursor-pointer ${activeReportTab === 'loans'
+                      ? 'border-b-2 border-[var(--color-text)] text-[var(--color-text)]'
+                      : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
+                      }`}
                   >
                     Debt Obligations
                   </button>
@@ -712,11 +713,10 @@ export default function DashboardPage() {
                       >
                         <div className="flex items-center gap-3 min-w-0">
                           <span
-                            className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-bold shrink-0 ${
-                              isIncome
-                                ? 'bg-[var(--color-pale-mint)] text-[var(--color-text)]'
-                                : 'bg-[var(--color-pale-yellow)] text-[var(--color-text)]'
-                            }`}
+                            className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-bold shrink-0 ${isIncome
+                              ? 'bg-[var(--color-pale-mint)] text-[var(--color-text)]'
+                              : 'bg-[var(--color-pale-yellow)] text-[var(--color-text)]'
+                              }`}
                           >
                             {isIncome ? '↓' : '↑'}
                           </span>
@@ -823,8 +823,9 @@ export default function DashboardPage() {
               </div>
 
               {/* Lightly tinted badge callout */}
-              <div className="p-2.5 rounded-lg bg-[var(--color-pale-mint)] border border-[var(--color-border)] text-xs text-[var(--color-text)]">
-                <span>↗ Cash balance positive across verified ledger records.</span>
+              <div className="p-2.5 rounded-lg bg-[var(--color-pale-mint)] border border-[var(--color-border)] text-xs text-[var(--color-text)] flex items-center gap-1.5">
+                <TrendingUp className="w-3.5 h-3.5 text-[var(--color-mint)] shrink-0" />
+                <span>Cash balance positive across verified ledger records.</span>
               </div>
             </div>
 
@@ -836,31 +837,35 @@ export default function DashboardPage() {
 
               <Link
                 href="/ai-entry?prompt=What%20caused%20the%20highest%20expense%20this%20month%3F"
-                className="block p-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] text-xs text-[var(--color-text)] transition-colors shadow-[0_1px_2px_0_rgba(0,0,0,0.02)]"
+                className="flex items-center justify-between p-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] text-xs text-[var(--color-text)] transition-colors shadow-[0_1px_2px_0_rgba(0,0,0,0.02)] cursor-pointer"
               >
-                What caused my top expense this month? →
+                <span>What caused my top expense this month?</span>
+                <ArrowRight className="w-3.5 h-3.5 text-[var(--color-text-muted)] shrink-0" />
               </Link>
 
               <Link
                 href="/loans"
-                className="block p-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] text-xs text-[var(--color-text)] transition-colors shadow-[0_1px_2px_0_rgba(0,0,0,0.02)]"
+                className="flex items-center justify-between p-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] text-xs text-[var(--color-text)] transition-colors shadow-[0_1px_2px_0_rgba(0,0,0,0.02)] cursor-pointer"
               >
-                Review bilateral loan repayment schedules →
+                <span>Review bilateral loan repayment schedules</span>
+                <ArrowRight className="w-3.5 h-3.5 text-[var(--color-text-muted)] shrink-0" />
               </Link>
 
               {drafts.length > 0 && (
                 <Link
                   href="/ai-entry"
-                  className="block p-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] text-xs text-[var(--color-text)] transition-colors shadow-[0_1px_2px_0_rgba(0,0,0,0.02)]"
+                  className="flex items-center justify-between p-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] text-xs text-[var(--color-text)] transition-colors shadow-[0_1px_2px_0_rgba(0,0,0,0.02)] cursor-pointer"
                 >
-                  Verify {drafts.length} pending AI draft entries →
+                  <span>Verify {drafts.length} pending AI draft entries</span>
+                  <ArrowRight className="w-3.5 h-3.5 text-[var(--color-text-muted)] shrink-0" />
                 </Link>
               )}
             </div>
 
             {/* Natural language AI Ask input box matching bottom right in screenshot */}
             <div className="border border-[var(--color-border)] bg-[var(--color-surface)] rounded-xl p-4 shadow-[0_1px_2px_0_rgba(0,0,0,0.02)] space-y-2.5">
-              <span className="text-xs font-semibold text-[var(--color-text)] block">
+              <span className="text-xs font-semibold text-[var(--color-text)] block flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-[var(--color-secondary)]" />
                 Quick Ledger Query
               </span>
               <div className="flex gap-2">
@@ -873,9 +878,10 @@ export default function DashboardPage() {
                 />
                 <Link
                   href={aiAskInput ? `/ai-entry?prompt=${encodeURIComponent(aiAskInput)}` : '/ai-entry'}
-                  className="px-3 py-2 rounded-lg bg-[var(--color-primary)] text-[var(--color-primary-contrast)] text-xs font-semibold hover:bg-[var(--color-primary-hover)] transition-colors shrink-0"
+                  className="px-3 py-2 rounded-lg bg-[var(--color-primary)] text-[var(--color-primary-contrast)] text-xs font-semibold hover:bg-[var(--color-primary-hover)] transition-colors shrink-0 cursor-pointer flex items-center gap-1"
                 >
-                  Submit
+                  <span>Submit</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
             </div>

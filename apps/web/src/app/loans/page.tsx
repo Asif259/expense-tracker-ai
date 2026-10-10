@@ -16,6 +16,7 @@ import { LoanCalculator } from '@/components/loan-calculator';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { toast } from '@/components/toast';
 import Link from 'next/link';
+import { Plus, ArrowRight, ArrowDownLeft, ArrowUpRight, AlertCircle, Trash2, X } from 'lucide-react';
 
 export default function LoansPage() {
   const { getToken } = useAuth();
@@ -141,9 +142,10 @@ export default function LoansPage() {
           <div className="flex items-center gap-3">
             <Link
               href="/loans/new"
-              className="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] text-sm font-semibold px-4 py-2 rounded-xl transition-colors shadow-lg shadow-[var(--color-primary)]/15"
+              className="inline-flex items-center gap-1.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] text-sm font-semibold px-4 py-2 rounded-xl transition-colors shadow-lg shadow-[var(--color-primary)]/15 cursor-pointer"
             >
-              + New Loan
+              <Plus className="w-4 h-4" />
+              <span>New Loan</span>
             </Link>
           </div>
         </div>
@@ -176,14 +178,17 @@ export default function LoansPage() {
                       <div>
                         <div className="text-xs text-[var(--color-text-muted)] flex items-center justify-between">
                           <span>You Are Owed (Receivables)</span>
-                          <span className="w-4 h-4 rounded bg-[var(--color-pale-mint)] text-[var(--color-text)] flex items-center justify-center text-[10px] font-bold">↓</span>
+                          <span className="w-5 h-5 rounded bg-[var(--color-pale-mint)] text-[var(--color-text)] flex items-center justify-center">
+                            <ArrowDownLeft className="w-3.5 h-3.5 text-[var(--color-mint)]" />
+                          </span>
                         </div>
                         <div className="text-xl font-bold font-mono text-[var(--color-text)] mt-0.5">
                           {formatMoney(s.outstanding_receivables, cur)}
                         </div>
                         {s.overdue_receivables > 0 && (
-                          <div className="text-[11px] text-[var(--color-warning)] mt-0.5">
-                            ⚠ {formatMoney(s.overdue_receivables, cur)} overdue
+                          <div className="text-[11px] text-[var(--color-warning)] mt-0.5 flex items-center gap-1">
+                            <AlertCircle className="w-3 h-3" />
+                            <span>{formatMoney(s.overdue_receivables, cur)} overdue</span>
                           </div>
                         )}
                       </div>
@@ -191,14 +196,17 @@ export default function LoansPage() {
                       <div className="pt-2 border-t border-[var(--color-border)]">
                         <div className="text-xs text-[var(--color-text-muted)] flex items-center justify-between">
                           <span>You Owe (Payables)</span>
-                          <span className="w-4 h-4 rounded bg-[var(--color-pale-yellow)] text-[var(--color-text)] flex items-center justify-center text-[10px] font-bold">↑</span>
+                          <span className="w-5 h-5 rounded bg-[var(--color-pale-yellow)] text-[var(--color-text)] flex items-center justify-center">
+                            <ArrowUpRight className="w-3.5 h-3.5 text-[var(--color-amber)]" />
+                          </span>
                         </div>
                         <div className="text-xl font-bold font-mono text-[var(--color-text)] mt-0.5">
                           {formatMoney(s.outstanding_payables, cur)}
                         </div>
                         {s.overdue_payables > 0 && (
-                          <div className="text-[11px] text-[var(--color-warning)] mt-0.5">
-                            ⚠ {formatMoney(s.overdue_payables, cur)} overdue
+                          <div className="text-[11px] text-[var(--color-warning)] mt-0.5 flex items-center gap-1">
+                            <AlertCircle className="w-3 h-3" />
+                            <span>{formatMoney(s.overdue_payables, cur)} overdue</span>
                           </div>
                         )}
                       </div>
@@ -223,7 +231,7 @@ export default function LoansPage() {
                 setDirectionFilter('');
                 setStatusFilter('');
               }}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
                 !directionFilter && !statusFilter
                   ? 'bg-[var(--color-primary)] text-[var(--color-primary-contrast)] shadow-sm'
                   : 'bg-[var(--color-bg)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
@@ -233,7 +241,7 @@ export default function LoansPage() {
             </button>
             <button
               onClick={() => setDirectionFilter(directionFilter === 'lent' ? '' : 'lent')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
                 directionFilter === 'lent'
                   ? 'bg-[var(--color-pale-mint)] text-[var(--color-text)] border border-[var(--color-border)] shadow-sm'
                   : 'bg-[var(--color-bg)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
@@ -243,7 +251,7 @@ export default function LoansPage() {
             </button>
             <button
               onClick={() => setDirectionFilter(directionFilter === 'borrowed' ? '' : 'borrowed')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
                 directionFilter === 'borrowed'
                   ? 'bg-[var(--color-pale-yellow)] text-[var(--color-text)] border border-[var(--color-border)] shadow-sm'
                   : 'bg-[var(--color-bg)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
@@ -253,7 +261,7 @@ export default function LoansPage() {
             </button>
             <button
               onClick={() => setStatusFilter(statusFilter === 'active' ? '' : 'active')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
                 statusFilter === 'active'
                   ? 'bg-[var(--color-pale-cyan)] border border-[var(--color-border)] text-[var(--color-text)]'
                   : 'bg-[var(--color-bg)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
@@ -263,7 +271,7 @@ export default function LoansPage() {
             </button>
             <button
               onClick={() => setStatusFilter(statusFilter === 'overdue' ? '' : 'overdue')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
                 statusFilter === 'overdue'
                   ? 'bg-[var(--color-warning-bg)] border border-[var(--color-warning)]/30 text-[var(--color-text)]'
                   : 'bg-[var(--color-bg)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
@@ -273,7 +281,7 @@ export default function LoansPage() {
             </button>
             <button
               onClick={() => setStatusFilter(statusFilter === 'settled' ? '' : 'settled')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
                 statusFilter === 'settled'
                   ? 'bg-[var(--color-surface-hover)] border border-[var(--color-border)] text-[var(--color-text-dim)]'
                   : 'bg-[var(--color-bg)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
@@ -323,7 +331,7 @@ export default function LoansPage() {
                       <div>
                         <Link
                           href={`/loans/${loan.id}`}
-                          className="font-bold text-base text-[var(--color-text)] hover:text-[var(--color-primary)] transition-colors"
+                          className="font-bold text-base text-[var(--color-text)] hover:text-[var(--color-primary)] transition-colors cursor-pointer"
                         >
                           {loan.person_name}
                         </Link>
@@ -408,9 +416,10 @@ export default function LoansPage() {
                   <div className="pt-4 mt-4 border-t border-[var(--color-border)] flex items-center justify-between gap-2">
                     <Link
                       href={`/loans/${loan.id}`}
-                      className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors font-medium"
+                      className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors font-medium inline-flex items-center gap-1 cursor-pointer"
                     >
-                      History & Details →
+                      <span>History & Details</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
 
                     <div className="flex items-center gap-2">
@@ -421,17 +430,18 @@ export default function LoansPage() {
                             setRepaymentAmount('');
                             setRepaymentDate(new Date().toISOString().split('T')[0]);
                           }}
-                          className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] transition-colors"
+                          className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] transition-colors cursor-pointer inline-flex items-center gap-1"
                         >
-                          + Repay
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>Repay</span>
                         </button>
                       )}
                       <button
                         onClick={() => setDeleteTarget(loan)}
-                        className="p-1.5 rounded-lg text-[var(--color-text-dim)] hover:text-[var(--color-danger)] transition-colors"
+                        className="p-1.5 rounded-lg text-[var(--color-text-dim)] hover:text-[var(--color-danger)] transition-colors cursor-pointer"
                         title="Delete Loan"
                       >
-                        🗑
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
@@ -451,9 +461,9 @@ export default function LoansPage() {
                 </h3>
                 <button
                   onClick={() => setRepaymentTarget(null)}
-                  className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] text-sm"
+                  className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] text-sm cursor-pointer"
                 >
-                  ✕
+                  <X className="w-4 h-4" />
                 </button>
               </div>
 
@@ -507,7 +517,7 @@ export default function LoansPage() {
                     <select
                       value={repaymentMethod}
                       onChange={(e) => setRepaymentMethod(e.target.value as any)}
-                      className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl px-3 py-2 text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] capitalize"
+                      className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl px-3 py-2 text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] capitalize cursor-pointer"
                     >
                       <option value="bkash">bKash</option>
                       <option value="nagad">Nagad</option>
@@ -535,14 +545,14 @@ export default function LoansPage() {
                   <button
                     type="button"
                     onClick={() => setRepaymentTarget(null)}
-                    className="w-1/2 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text-muted)] font-medium"
+                    className="w-1/2 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text-muted)] font-medium cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={repaying}
-                    className="w-1/2 py-2.5 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] font-semibold transition-colors disabled:opacity-50"
+                    className="w-1/2 py-2.5 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] font-semibold transition-colors disabled:opacity-50 cursor-pointer"
                   >
                     {repaying ? 'Recording...' : 'Confirm Repayment'}
                   </button>

@@ -15,6 +15,13 @@ import {
 import { formatMoney, formatDate, SUPPORTED_CURRENCIES } from '@/lib/format';
 import { toast } from '@/components/toast';
 import { ConfirmDialog } from '@/components/confirm-dialog';
+import {
+  CheckCircle2,
+  AlertTriangle,
+  Check,
+  Sparkles,
+  RefreshCw,
+} from 'lucide-react';
 
 const QUICK_EXAMPLES = [
   'Spent 350 taka on lunch today',
@@ -228,12 +235,14 @@ function AiEntryInner() {
               <button
                 type="submit"
                 disabled={parsing}
-                className="px-5 py-2.5 text-xs font-semibold rounded-xl bg-[var(--color-secondary)] hover:bg-[var(--color-secondary-hover)] text-white transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-2 shadow-md shadow-[var(--color-secondary)]/20"
+                className="px-5 py-2.5 text-xs font-semibold rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-2 shadow-md shadow-[var(--color-secondary)]/20"
               >
-                {parsing && (
+                {parsing ? (
                   <div className="animate-spin h-3.5 w-3.5 border-2 border-white border-t-transparent rounded-full" />
+                ) : (
+                  <Sparkles className="w-3.5 h-3.5" />
                 )}
-                <span>{parsing ? 'Parsing with Groq...' : '⚡ Parse with AI'}</span>
+                <span>{parsing ? 'Parsing with Groq...' : 'Parse with AI'}</span>
               </button>
             </div>
           </form>
@@ -243,10 +252,12 @@ function AiEntryInner() {
         {parseResult && (
           <div className="p-6 rounded-xl border border-[var(--color-primary)]/40 bg-[var(--color-surface)] space-y-4 animate-[fadeIn_0.2s_ease-out]">
             <div className="flex items-center justify-between pb-3 border-b border-[var(--color-border)]">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">
-                  {parseResult.success ? '✅' : '⚠️'}
-                </span>
+              <div className="flex items-center gap-2.5">
+                {parseResult.success ? (
+                  <CheckCircle2 className="w-5 h-5 text-[var(--color-mint)] shrink-0" />
+                ) : (
+                  <AlertTriangle className="w-5 h-5 text-[var(--color-amber)] shrink-0" />
+                )}
                 <div>
                   <h3 className="text-sm font-semibold">
                     {parseResult.success
@@ -332,12 +343,12 @@ function AiEntryInner() {
                   type="button"
                   disabled={actionDraftId === parseResult.draftId}
                   onClick={() => handleConfirm(parseResult.draftId!)}
-                  className="px-5 py-2.5 text-xs font-semibold rounded-xl bg-[var(--color-income)] hover:opacity-90 text-white dark:text-black transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2 shadow-md shadow-[var(--color-income)]/20 active:scale-[0.98]"
+                  className="px-5 py-2.5 text-xs font-semibold rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2 shadow-md shadow-[var(--color-primary)]/20 active:scale-[0.98]"
                 >
                   {actionDraftId === parseResult.draftId ? (
                     <div className="animate-spin h-3.5 w-3.5 border-2 border-current border-t-transparent rounded-full" />
                   ) : (
-                    <span className="font-bold">✓</span>
+                    <Check className="w-4 h-4" />
                   )}
                   <span>Confirm &amp; Record to Ledger</span>
                 </button>
@@ -357,9 +368,10 @@ function AiEntryInner() {
             </div>
             <button
               onClick={loadPendingDrafts}
-              className="text-xs text-[var(--color-primary)] hover:underline cursor-pointer"
+              className="text-xs text-[var(--color-primary)] hover:underline cursor-pointer flex items-center gap-1.5 font-medium"
             >
-              Refresh
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Refresh</span>
             </button>
           </div>
 
@@ -420,7 +432,7 @@ function AiEntryInner() {
                         {actionDraftId === d.id ? (
                           <div className="animate-spin h-3.5 w-3.5 border-2 border-[var(--color-primary-contrast)] border-t-transparent rounded-full" />
                         ) : (
-                          <span>✓</span>
+                          <Check className="w-3.5 h-3.5" />
                         )}
                         <span>Confirm</span>
                       </button>

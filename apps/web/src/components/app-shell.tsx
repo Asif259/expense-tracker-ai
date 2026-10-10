@@ -5,6 +5,16 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/theme-toggle';
+import {
+  LayoutDashboard,
+  ReceiptText,
+  HandCoins,
+  Sparkles,
+  Plus,
+  LogOut,
+  Menu,
+  X,
+} from 'lucide-react';
 
 interface NavItem {
   href: string;
@@ -18,46 +28,27 @@ const NAV_ITEMS: NavItem[] = [
     href: '/dashboard',
     label: 'Dashboard',
     icon: (active) => (
-      <svg
+      <LayoutDashboard
         className={`w-5 h-5 transition-colors ${active ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-muted)] group-hover:text-[var(--color-text)]'}`}
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        strokeWidth="2"
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" />
-      </svg>
+      />
     ),
   },
   {
     href: '/transactions',
     label: 'Transactions',
     icon: (active) => (
-      <svg
+      <ReceiptText
         className={`w-5 h-5 transition-colors ${active ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-muted)] group-hover:text-[var(--color-text)]'}`}
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        strokeWidth="2"
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-      </svg>
+      />
     ),
   },
   {
     href: '/loans',
     label: 'Debts & Loans',
-    badge: 'Phase 6',
     icon: (active) => (
-      <svg
+      <HandCoins
         className={`w-5 h-5 transition-colors ${active ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-muted)] group-hover:text-[var(--color-text)]'}`}
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        strokeWidth="2"
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-      </svg>
+      />
     ),
   },
   {
@@ -65,15 +56,9 @@ const NAV_ITEMS: NavItem[] = [
     label: 'AI Smart Entry',
     badge: 'AI',
     icon: (active) => (
-      <svg
+      <Sparkles
         className={`w-5 h-5 transition-colors ${active ? 'text-[var(--color-secondary)]' : 'text-[var(--color-text-muted)] group-hover:text-[var(--color-text)]'}`}
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        strokeWidth="2"
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-      </svg>
+      />
     ),
   },
 ];
@@ -133,20 +118,15 @@ function ShellInner({ children }: { children: React.ReactNode }) {
               </span>
             </div>
           </Link>
-          <span className="text-[10px] font-semibold font-mono px-2 py-0.5 rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-primary)]">
-            v1.2
-          </span>
         </div>
 
         {/* Quick CTA */}
         <div className="p-4">
           <Link
             href="/transactions/new"
-            className="w-full h-10 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] font-semibold text-xs flex items-center justify-center gap-2 transition-all shadow-md shadow-[var(--color-primary)]/15 active:scale-[0.98]"
+            className="w-full h-10 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] font-semibold text-xs flex items-center justify-center gap-2 transition-all shadow-md shadow-[var(--color-primary)]/15 active:scale-[0.98] cursor-pointer"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
+            <Plus className="w-4 h-4" />
             <span>New Transaction</span>
           </Link>
         </div>
@@ -162,7 +142,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all ${
+                className={`group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
                   active
                     ? 'bg-[var(--color-surface)] text-[var(--color-text)] border border-[var(--color-border)] shadow-sm'
                     : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-hover)]'
@@ -216,9 +196,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
               aria-label="Sign out"
               className="p-1.5 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-expense)] hover:bg-[var(--color-expense-bg)] transition-colors cursor-pointer shrink-0"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
+              <LogOut className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -228,7 +206,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
           MOBILE TOPBAR + OVERLAY DRAWER
           ========================================================================= */}
       <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-[var(--color-surface-elevated)] border-b border-[var(--color-border)] z-30 flex items-center justify-between px-4">
-        <Link href="/dashboard" className="flex items-center gap-2">
+        <Link href="/dashboard" className="flex items-center gap-2 cursor-pointer">
           <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-secondary)] flex items-center justify-center shadow-md">
             <span className="text-black font-extrabold text-xs">L</span>
           </div>
@@ -241,25 +219,17 @@ function ShellInner({ children }: { children: React.ReactNode }) {
           <ThemeToggle variant="compact" />
           <Link
             href="/transactions/new"
-            className="w-9 h-9 rounded-lg bg-[var(--color-primary)] text-[var(--color-primary-contrast)] font-semibold flex items-center justify-center shadow-sm shadow-[var(--color-primary)]/20 active:scale-95 transition-transform"
+            className="w-9 h-9 rounded-lg bg-[var(--color-primary)] text-[var(--color-primary-contrast)] font-semibold flex items-center justify-center shadow-sm shadow-[var(--color-primary)]/20 active:scale-95 transition-transform cursor-pointer"
             aria-label="New transaction"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
+            <Plus className="w-4 h-4" />
           </Link>
           <button
             onClick={() => setMobileNavOpen(!mobileNavOpen)}
             className="w-9 h-9 rounded-lg bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text)] flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
             aria-label="Toggle navigation menu"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              {mobileNavOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-              )}
-            </svg>
+            {mobileNavOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
       </div>

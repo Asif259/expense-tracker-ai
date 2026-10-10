@@ -6,6 +6,7 @@ import { useAuth } from '@/context/auth-context';
 import { toast } from '@/components/toast';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { AlertCircle, ArrowLeft } from 'lucide-react';
 
 function LoginForm() {
   const router = useRouter();
@@ -73,7 +74,7 @@ function LoginForm() {
     <div className="w-full max-w-md p-8 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-2xl">
       {/* Brand header */}
       <div className="flex flex-col items-center mb-8">
-        <Link href="/" className="flex items-center gap-2 mb-2">
+        <Link href="/" className="flex items-center gap-2 mb-2 cursor-pointer">
           <div className="h-9 w-9 rounded-lg bg-[var(--color-primary)] flex items-center justify-center font-bold text-white text-lg">
             L
           </div>
@@ -121,7 +122,7 @@ function LoginForm() {
       {/* Error notification */}
       {errorMsg && (
         <div className="mb-6 p-3 rounded-lg border border-[var(--color-danger)]/50 bg-[var(--color-expense-bg)] text-xs text-[var(--color-expense)] flex items-start gap-2">
-          <span>⚠️</span>
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
           <span>{errorMsg}</span>
         </div>
       )}
@@ -181,8 +182,9 @@ function LoginForm() {
       </form>
 
       <div className="mt-6 text-center text-xs text-[var(--color-text-dim)]">
-        <Link href="/" className="hover:text-[var(--color-text)] transition-colors">
-          ← Back to Homepage
+        <Link href="/" className="hover:text-[var(--color-text)] transition-colors inline-flex items-center gap-1 cursor-pointer">
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>Back to Homepage</span>
         </Link>
       </div>
     </div>

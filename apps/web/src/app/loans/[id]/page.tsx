@@ -15,6 +15,7 @@ import { formatMoney, formatDate } from '@/lib/format';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { toast } from '@/components/toast';
 import Link from 'next/link';
+import { ArrowLeft, Plus, ArrowDownLeft, Trash2, X } from 'lucide-react';
 
 export default function LoanDetailPage() {
   return (
@@ -164,9 +165,10 @@ function LoanDetailContent() {
           <p className="text-sm text-[var(--color-text-muted)]">This loan may have been deleted or belongs to another user.</p>
           <Link
             href="/loans"
-            className="inline-block bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] text-xs font-semibold px-4 py-2 rounded-xl transition-colors shadow-sm"
+            className="inline-flex items-center gap-1.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] text-xs font-semibold px-4 py-2 rounded-xl transition-colors shadow-sm cursor-pointer"
           >
-            ← Back to Debts & Loans
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Back to Debts & Loans</span>
           </Link>
         </div>
       </AppShell>
@@ -184,14 +186,15 @@ function LoanDetailContent() {
         <div className="flex items-center justify-between">
           <Link
             href="/loans"
-            className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors inline-flex items-center gap-1 font-medium"
+            className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors inline-flex items-center gap-1 font-medium cursor-pointer"
           >
-            ← Back to Debts & Loans
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Back to Debts & Loans</span>
           </Link>
 
           <button
             onClick={() => setShowDeleteLoanDialog(true)}
-            className="text-xs text-[var(--color-danger)] hover:underline font-semibold"
+            className="text-xs text-[var(--color-danger)] hover:underline font-semibold cursor-pointer"
           >
             Delete Loan
           </button>
@@ -236,9 +239,10 @@ function LoanDetailContent() {
             {!isSettled && (
               <button
                 onClick={openRepayModal}
-                className="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors shadow-sm"
+                className="inline-flex items-center gap-1.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors shadow-sm cursor-pointer"
               >
-                + Record Repayment
+                <Plus className="w-4 h-4" />
+                <span>Record Repayment</span>
               </button>
             )}
           </div>
@@ -327,9 +331,10 @@ function LoanDetailContent() {
             {!isSettled && (
               <button
                 onClick={openRepayModal}
-                className="text-xs text-[var(--color-primary)] hover:underline font-semibold"
+                className="text-xs text-[var(--color-primary)] hover:underline font-semibold cursor-pointer inline-flex items-center gap-1"
               >
-                + Add Partial Payment
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Partial Payment</span>
               </button>
             )}
           </div>
@@ -358,7 +363,7 @@ function LoanDetailContent() {
                       </td>
                       <td className="py-3.5 px-4 font-semibold text-[var(--color-text)]">
                         <span className="inline-flex items-center gap-1.5">
-                          <span className="text-[10px] text-[var(--color-text-dim)]">↓</span>
+                          <ArrowDownLeft className="w-3.5 h-3.5 text-[var(--color-mint)]" />
                           <span>{formatMoney(rep.amount, loan.currency)}</span>
                         </span>
                       </td>
@@ -371,10 +376,10 @@ function LoanDetailContent() {
                       <td className="py-3.5 px-4 text-right">
                         <button
                           onClick={() => setDeleteRepaymentTarget(rep.id)}
-                          className="text-[var(--color-text-dim)] hover:text-[var(--color-danger)] transition-colors"
+                          className="text-[var(--color-text-dim)] hover:text-[var(--color-danger)] transition-colors cursor-pointer"
                           title="Delete Repayment Record"
                         >
-                          🗑
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </td>
                     </tr>
@@ -393,9 +398,9 @@ function LoanDetailContent() {
                 <h3 className="text-base font-bold text-[var(--color-text)]">Record Repayment</h3>
                 <button
                   onClick={() => setShowRepayModal(false)}
-                  className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] text-sm"
+                  className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] text-sm cursor-pointer"
                 >
-                  ✕
+                  <X className="w-4 h-4" />
                 </button>
               </div>
 
@@ -450,7 +455,7 @@ function LoanDetailContent() {
                       id="repay-method"
                       value={paymentMethod}
                       onChange={(e) => setPaymentMethod(e.target.value as any)}
-                      className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl px-3 py-2 text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] capitalize"
+                      className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl px-3 py-2 text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] capitalize cursor-pointer"
                     >
                       <option value="bkash">bKash</option>
                       <option value="nagad">Nagad</option>
@@ -493,14 +498,14 @@ function LoanDetailContent() {
                   <button
                     type="button"
                     onClick={() => setShowRepayModal(false)}
-                    className="w-1/2 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text-muted)] font-medium"
+                    className="w-1/2 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text-muted)] font-medium cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={submittingRepayment}
-                    className="w-1/2 py-2.5 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] font-semibold transition-colors disabled:opacity-50"
+                    className="w-1/2 py-2.5 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] font-semibold transition-colors disabled:opacity-50 cursor-pointer"
                   >
                     {submittingRepayment ? 'Saving...' : 'Confirm Repayment'}
                   </button>

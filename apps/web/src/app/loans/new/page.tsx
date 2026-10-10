@@ -8,6 +8,7 @@ import { createLoan } from '@/lib/api';
 import { SUPPORTED_CURRENCIES, formatMoney } from '@/lib/format';
 import { toast } from '@/components/toast';
 import Link from 'next/link';
+import { ArrowLeft, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 
 export default function NewLoanPage() {
   const router = useRouter();
@@ -81,9 +82,10 @@ export default function NewLoanPage() {
         <div>
           <Link
             href="/loans"
-            className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors inline-flex items-center gap-1 mb-2 font-medium"
+            className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors inline-flex items-center gap-1 mb-2 font-medium cursor-pointer"
           >
-            ← Back to Debts & Loans
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Back to Debts & Loans</span>
           </Link>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-[var(--color-text)] tracking-tight">
             Record New Loan
@@ -110,13 +112,16 @@ export default function NewLoanPage() {
                   role="radio"
                   aria-checked={direction === 'lent'}
                   onClick={() => setDirection('lent')}
-                  className={`p-3.5 rounded-xl border text-left transition-all ${
+                  className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
                     direction === 'lent'
                       ? 'border-[var(--color-mint)] bg-[var(--color-pale-mint)]/40 text-[var(--color-text)] font-semibold shadow-sm ring-1 ring-[var(--color-mint)]/30'
                       : 'border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text-muted)] hover:border-[var(--color-border-hover)]'
                   }`}
                 >
-                  <div className="text-base mb-1">↗️ I Lent Money</div>
+                  <div className="text-sm font-bold mb-1 inline-flex items-center gap-1.5 text-[var(--color-text)]">
+                    <ArrowUpRight className="w-4 h-4 text-[var(--color-mint)]" />
+                    <span>I Lent Money</span>
+                  </div>
                   <div className="text-xs text-[var(--color-text-muted)]">I expect to get this back</div>
                 </button>
 
@@ -125,13 +130,16 @@ export default function NewLoanPage() {
                   role="radio"
                   aria-checked={direction === 'borrowed'}
                   onClick={() => setDirection('borrowed')}
-                  className={`p-3.5 rounded-xl border text-left transition-all ${
+                  className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
                     direction === 'borrowed'
                       ? 'border-[var(--color-amber)] bg-[var(--color-pale-yellow)]/40 text-[var(--color-text)] font-semibold shadow-sm ring-1 ring-[var(--color-amber)]/30'
                       : 'border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text-muted)] hover:border-[var(--color-border-hover)]'
                   }`}
                 >
-                  <div className="text-base mb-1">↙️ I Borrowed Money</div>
+                  <div className="text-sm font-bold mb-1 inline-flex items-center gap-1.5 text-[var(--color-text)]">
+                    <ArrowDownLeft className="w-4 h-4 text-[var(--color-amber)]" />
+                    <span>I Borrowed Money</span>
+                  </div>
                   <div className="text-xs text-[var(--color-text-muted)]">I need to pay this back</div>
                 </button>
               </div>
@@ -196,7 +204,7 @@ export default function NewLoanPage() {
                   id="loan-currency"
                   value={currency}
                   onChange={(e) => setCurrency(e.target.value)}
-                  className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl px-3 py-2.5 text-sm text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] transition-colors"
+                  className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl px-3 py-2.5 text-sm text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] transition-colors cursor-pointer"
                 >
                   {SUPPORTED_CURRENCIES.map((c) => (
                     <option key={c} value={c}>
@@ -219,7 +227,7 @@ export default function NewLoanPage() {
                     type="button"
                     aria-pressed={paymentMethod === m}
                     onClick={() => setPaymentMethod(m)}
-                    className={`py-2 px-3 rounded-xl text-xs font-semibold capitalize border transition-all ${
+                    className={`py-2 px-3 rounded-xl text-xs font-semibold capitalize border transition-all cursor-pointer ${
                       paymentMethod === m
                         ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-[var(--color-primary)] ring-1 ring-[var(--color-primary)]/30'
                         : 'border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text-muted)] hover:border-[var(--color-border-hover)]'
@@ -282,7 +290,7 @@ export default function NewLoanPage() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full py-3 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] text-sm font-semibold transition-colors disabled:opacity-50 shadow-sm active:scale-[0.99]"
+                className="w-full py-3 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] text-sm font-semibold transition-colors disabled:opacity-50 shadow-sm active:scale-[0.99] cursor-pointer"
               >
                 {submitting ? 'Creating Loan...' : 'Save Loan Record'}
               </button>

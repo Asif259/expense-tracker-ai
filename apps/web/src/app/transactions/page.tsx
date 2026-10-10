@@ -13,6 +13,14 @@ import { formatMoney, formatDate } from '@/lib/format';
 import { fetchCategories, Category } from '@/lib/categories';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { toast } from '@/components/toast';
+import {
+  Sparkles,
+  Plus,
+  X,
+  ReceiptText,
+  Pencil,
+  Trash2,
+} from 'lucide-react';
 import Link from 'next/link';
 
 export default function TransactionsPage() {
@@ -147,16 +155,16 @@ export default function TransactionsPage() {
           <div className="flex items-center gap-3">
             <Link
               href="/ai-entry"
-              className="px-3.5 py-2 rounded-xl bg-[var(--color-secondary)]/15 border border-[var(--color-secondary)]/30 hover:bg-[var(--color-secondary)]/25 text-[var(--color-secondary)] text-xs font-semibold transition-all flex items-center gap-2"
+              className="px-3.5 py-2 rounded-xl bg-[var(--color-secondary)]/15 border border-[var(--color-secondary)]/30 hover:bg-[var(--color-secondary)]/25 text-[var(--color-secondary)] text-xs font-semibold transition-all flex items-center gap-2 cursor-pointer"
             >
-              <span>⚡</span>
+              <Sparkles className="w-3.5 h-3.5" />
               <span>AI Quick Entry</span>
             </Link>
             <Link
               href="/transactions/new"
-              className="px-4 py-2 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] text-xs font-semibold transition-all flex items-center gap-1.5 shadow-md shadow-[var(--color-primary)]/15"
+              className="px-4 py-2 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] text-xs font-semibold transition-all flex items-center gap-1.5 shadow-md shadow-[var(--color-primary)]/15 cursor-pointer"
             >
-              <span>+</span>
+              <Plus className="w-3.5 h-3.5" />
               <span>Add Transaction</span>
             </Link>
           </div>
@@ -261,9 +269,10 @@ export default function TransactionsPage() {
               <button
                 type="button"
                 onClick={handleClearFilters}
-                className="text-xs text-[var(--color-text-dim)] hover:text-[var(--color-text)] transition-colors cursor-pointer p-1"
+                className="text-xs text-[var(--color-text-dim)] hover:text-[var(--color-text)] transition-colors cursor-pointer p-1 flex items-center gap-1"
               >
-                Reset all filters ✕
+                <span>Reset all filters</span>
+                <X className="w-3.5 h-3.5" />
               </button>
             </div>
           )}
@@ -279,14 +288,14 @@ export default function TransactionsPage() {
             </div>
           ) : transactions.length === 0 ? (
             <div className="text-center py-16 px-4">
-              <div className="text-3xl mb-3">🧾</div>
+              <ReceiptText className="w-10 h-10 text-[var(--color-text-muted)] opacity-50 mx-auto mb-3" />
               <h3 className="text-sm font-semibold mb-1">No transactions found</h3>
               <p className="text-xs text-[var(--color-text-muted)] mb-4 max-w-sm mx-auto">
                 No ledger entries matched your query criteria or you haven&apos;t added any yet.
               </p>
               <Link
                 href="/transactions/new"
-                className="px-4 py-2 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] text-xs font-semibold transition-colors inline-block shadow-md shadow-[var(--color-primary)]/15"
+                className="px-4 py-2 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] text-xs font-semibold transition-colors inline-block shadow-md shadow-[var(--color-primary)]/15 cursor-pointer"
               >
                 Create Transaction
               </Link>

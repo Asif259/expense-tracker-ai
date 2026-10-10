@@ -7,6 +7,11 @@
     "packages/*"
   ],
   "scripts": {
+    "build": "npm run build:shared && npm run build --workspaces",
+    "build:shared": "npm run build --workspace=@ledgerly/shared-types",
+    "build:api": "npm run build:shared && npm run build --workspace=api",
+    "build:web": "npm run build:shared && npm run build --workspace=web",
+    "start:api": "npm run start:prod --workspace=api",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "npm run typecheck --workspaces --if-present",
