@@ -21,20 +21,14 @@ This document provides exact, step-by-step instructions to deploy the Ledgerly m
 
 ## 2. Hostinger Backend Setup (NestJS API)
 
-### Option A: Hostinger Managed Node.js App Manager
-1. **Repository Root:** Select repository root directory (`.`).
-2. **Node.js Version:** Select `20.x` or `22.x`.
-3. **Application Root / Working Directory:** `.` (Monorepo root)
-4. **Build Command:**
-   ```bash
-   npm run build:api
-   ```
-   *(This builds `@ledgerly/shared-types` first, then compiles NestJS into `apps/api/dist/main.js`)*
-5. **Start Command / Entry Point:**
-   ```bash
-   npm run start:api
-   ```
-   *Alternatively direct Node entry:* `node apps/api/dist/main.js`
+### Option A: Hostinger Managed Node.js Settings Modal
+Fill out the **"Change build and output settings"** modal in Hostinger as follows:
+
+1. **Build command \***: `npm run build:api`
+   *(This automatically builds `@ledgerly/shared-types` first and compiles NestJS into `apps/api/dist`)*
+2. **Package manager \***: `npm`
+3. **Output directory \***: `apps/api/dist` *(or `dist` if Application Root is set to `apps/api`)*
+4. **Entry file \***: `main.js` *(or `dist/main.js`)*
 
 ### Option B: Hostinger VPS (PM2 + Nginx)
 If using a Hostinger VPS with SSH access:
