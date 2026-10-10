@@ -4,6 +4,7 @@ import { useAuth } from '@/context/auth-context';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ThemeToggle } from '@/components/theme-toggle';
 import {
   LayoutDashboard,
@@ -106,8 +107,9 @@ function ShellInner({ children }: { children: React.ReactNode }) {
         {/* Brand header */}
         <div className="h-16 flex items-center justify-between px-6 border-b border-[var(--color-border)]">
           <Link href="/dashboard" className="flex items-center gap-2.5 group">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-secondary)] flex items-center justify-center shadow-lg shadow-[var(--color-primary)]/20">
-              <span className="text-black font-extrabold text-sm tracking-tighter">L</span>
+            <div className="relative w-8 h-8 shrink-0">
+              <Image src="/logo.webp" alt="Ledgerly Logo" fill sizes="32px" className="object-contain dark:hidden" priority />
+              <Image src="/logo-dark.webp" alt="Ledgerly Logo" fill sizes="32px" className="object-contain hidden dark:block" priority />
             </div>
             <div>
               <span className="text-base font-bold text-[var(--color-text)] tracking-tight group-hover:text-[var(--color-primary)] transition-colors">
@@ -207,8 +209,9 @@ function ShellInner({ children }: { children: React.ReactNode }) {
           ========================================================================= */}
       <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-[var(--color-surface-elevated)] border-b border-[var(--color-border)] z-30 flex items-center justify-between px-4">
         <Link href="/dashboard" className="flex items-center gap-2 cursor-pointer">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-secondary)] flex items-center justify-center shadow-md">
-            <span className="text-black font-extrabold text-xs">L</span>
+          <div className="relative w-7 h-7 shrink-0">
+            <Image src="/logo.webp" alt="Ledgerly Logo" fill sizes="28px" className="object-contain dark:hidden" priority />
+            <Image src="/logo-dark.webp" alt="Ledgerly Logo" fill sizes="28px" className="object-contain hidden dark:block" priority />
           </div>
           <span className="text-base font-bold text-[var(--color-text)] tracking-tight">
             Ledgerly

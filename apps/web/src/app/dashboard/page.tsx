@@ -338,7 +338,7 @@ export default function DashboardPage() {
           <div className="p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-[0_1px_2px_0_rgba(0,0,0,0.02)]">
             <div className="flex items-center gap-3">
               <span className="w-8 h-8 rounded-lg bg-[var(--color-pale-mint)] text-[var(--color-text)] flex items-center justify-center text-sm font-bold">
-                ⚡
+                <Sparkles className="w-4 h-4" />
               </span>
               <div>
                 <h4 className="text-xs font-bold text-[var(--color-text)]">
@@ -696,7 +696,7 @@ export default function DashboardPage() {
             <div className="border border-[var(--color-border)] bg-[var(--color-surface)] rounded-xl p-5 shadow-[0_1px_2px_0_rgba(0,0,0,0.02)] space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)] flex items-center gap-1.5">
-                  <span>⚡</span> AI Ledger Insights
+                  <Sparkles className="w-3.5 h-3.5" /> AI Ledger Insights
                 </span>
                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-[var(--color-pale-cyan)] text-[var(--color-text)]">
                   Live

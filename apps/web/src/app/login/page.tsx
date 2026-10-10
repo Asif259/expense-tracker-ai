@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import { toast } from '@/components/toast';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { AlertCircle, ArrowLeft } from 'lucide-react';
 
@@ -75,8 +76,9 @@ function LoginForm() {
       {/* Brand header */}
       <div className="flex flex-col items-center mb-8">
         <Link href="/" className="flex items-center gap-2 mb-2 cursor-pointer">
-          <div className="h-9 w-9 rounded-lg bg-[var(--color-primary)] flex items-center justify-center font-bold text-white text-lg">
-            L
+          <div className="relative h-10 w-10 shrink-0">
+            <Image src="/logo.webp" alt="Ledgerly Logo" fill sizes="40px" className="object-contain dark:hidden" priority />
+            <Image src="/logo-dark.webp" alt="Ledgerly Logo" fill sizes="40px" className="object-contain hidden dark:block" priority />
           </div>
           <span className="text-xl font-bold tracking-tight">Ledgerly</span>
         </Link>

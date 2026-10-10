@@ -4,6 +4,7 @@ import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { ShieldCheck, Calculator, Zap, ArrowRight } from 'lucide-react';
 
@@ -22,8 +23,9 @@ export default function Home() {
       {/* Header */}
       <header className="border-b border-[var(--color-border)] px-6 py-4 flex items-center justify-between max-w-7xl mx-auto w-full">
         <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-lg bg-[var(--color-primary)] flex items-center justify-center font-bold text-[var(--color-primary-contrast)] text-base shadow-sm">
-            L
+          <div className="relative w-8 h-8 shrink-0">
+            <Image src="/logo.webp" alt="Ledgerly Logo" fill sizes="32px" className="object-contain dark:hidden" priority />
+            <Image src="/logo-dark.webp" alt="Ledgerly Logo" fill sizes="32px" className="object-contain hidden dark:block" priority />
           </div>
           <span className="font-bold text-lg tracking-tight">Ledgerly</span>
         </div>
