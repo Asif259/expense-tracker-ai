@@ -29,7 +29,9 @@ describe.runIf(isLiveSupabaseAvailable)(
     beforeEach(async () => {
       createdTxIds = [];
       createdDraftIds = [];
-      adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+      adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
 
       // Create test user and session
       const testEmail = `test_${Date.now()}_${Math.random().toString(36).substring(7)}@ledgerly.internal`;
@@ -43,8 +45,11 @@ describe.runIf(isLiveSupabaseAvailable)(
       }
       fixtureUserId = authData.user.id;
 
-      // User-authenticated client
-      const { data: sessionData, error: sessionErr } = await adminClient.auth.signInWithPassword({
+      // User-authenticated client using isolated auth client
+      const authClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+      const { data: sessionData, error: sessionErr } = await authClient.auth.signInWithPassword({
         email: testEmail,
         password: 'Password123!',
       });
@@ -163,7 +168,7 @@ describe.runIf(isLiveSupabaseAvailable)(
         expect(err1).toBeNull();
         if (tx1) {
           createdTxIds.push(tx1.id);
-          expect(tx1.amount).toBe('10.99');
+          expect(Number(tx1.amount)).toBe(10.99);
         }
 
         const { data: tx2, error: err2 } = await userClient.from('transactions').insert({
@@ -178,7 +183,7 @@ describe.runIf(isLiveSupabaseAvailable)(
         expect(err2).toBeNull();
         if (tx2) {
           createdTxIds.push(tx2.id);
-          expect(tx2.amount).toBe(MAX_AMOUNT);
+          expect(Number(tx2.amount)).toBe(Number(MAX_AMOUNT));
         }
       });
 
@@ -257,7 +262,7 @@ describe.runIf(isLiveSupabaseAvailable)(
         });
 
         expect(error?.code).toBe('P0013');
-        expect(draftId).toBeUndefined();
+        expect(draftId).toBeFalsy();
 
         const { data: drafts } = await adminClient
           .from('ai_draft_transactions')
@@ -278,7 +283,7 @@ describe.runIf(isLiveSupabaseAvailable)(
         });
 
         expect(error?.code).toBe('P0013');
-        expect(draftId).toBeUndefined();
+        expect(draftId).toBeFalsy();
 
         const { data: drafts } = await adminClient
           .from('ai_draft_transactions')

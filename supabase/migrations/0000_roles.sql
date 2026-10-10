@@ -10,4 +10,5 @@ BEGIN
 END
 $$;
 
-GRANT USAGE ON SCHEMA public TO ledgerly_app;
+GRANT CREATE, USAGE ON SCHEMA public TO ledgerly_app;
+GRANT ledgerly_app TO postgres;

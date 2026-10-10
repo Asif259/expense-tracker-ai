@@ -1,6 +1,9 @@
 -- 0001_profiles.sql
 -- Profiles table and auto-provisioning trigger from auth.users
 
+GRANT ledgerly_app TO postgres;
+GRANT CREATE, USAGE ON SCHEMA public TO ledgerly_app;
+
 CREATE TABLE IF NOT EXISTS public.profiles (
   id               UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   full_name        TEXT,
@@ -50,5 +53,10 @@ CREATE POLICY "profiles_insert_from_trigger"
   TO ledgerly_app
   WITH CHECK (true);
 
+CREATE POLICY "profiles_select_ledgerly_app"
+  ON public.profiles FOR SELECT
+  TO ledgerly_app
+  USING (true);
+
 GRANT SELECT, UPDATE ON public.profiles TO authenticated;
-GRANT INSERT ON public.profiles TO ledgerly_app;
+GRANT SELECT, INSERT ON public.profiles TO ledgerly_app;

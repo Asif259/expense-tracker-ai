@@ -225,16 +225,26 @@ export default function NewTransactionPage() {
             </label>
             <select
               required
+              disabled={filteredCategories.length === 0}
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
-              className="w-full px-3.5 py-2 text-sm rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
+              className="w-full px-3.5 py-2 text-sm rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none disabled:opacity-50"
             >
-              {filteredCategories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
+              {filteredCategories.length === 0 ? (
+                <option value="">No {type} categories available in database</option>
+              ) : (
+                filteredCategories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))
+              )}
             </select>
+            {categories.length === 0 && (
+              <span className="text-xs text-[var(--color-warning)] mt-1 block">
+                ⚠️ Categories unavailable from database. Connect live database and run migrations to create categories.
+              </span>
+            )}
           </div>
 
           {/* Date */}

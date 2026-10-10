@@ -27,7 +27,7 @@ CREATE POLICY "drafts_delete_own"
 CREATE POLICY "drafts_select_ledgerly_app"
   ON public.ai_draft_transactions FOR SELECT
   TO ledgerly_app
-  USING (user_id = auth.uid());
+  USING (true);
 
 CREATE POLICY "drafts_lock_ledgerly_app"
   ON public.ai_draft_transactions FOR UPDATE
@@ -383,6 +383,6 @@ BEGIN
 END;
 $$;
 
-ALTER FUNCTION public.confirm_ai_draft(UUID) OWNER TO ledgerly_app;
+ALTER FUNCTION public.confirm_ai_draft(UUID) OWNER TO postgres;
 REVOKE ALL ON FUNCTION public.confirm_ai_draft(UUID) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.confirm_ai_draft(UUID) TO authenticated;

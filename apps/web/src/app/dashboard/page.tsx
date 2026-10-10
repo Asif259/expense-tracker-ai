@@ -69,31 +69,46 @@ export default function DashboardPage() {
     return map;
   }, [categories]);
 
-  // Financial summary computation using string-safe / numeric calculation
-  const summary = useMemo(() => {
-    let incomeTotal = 0;
-    let expenseTotal = 0;
-    const baseCurrency = transactions[0]?.currency || 'BDT';
+  // Financial summary computation: group by currency so different currencies are NEVER summed together
+  const currencySummaries = useMemo(() => {
+    const map = new Map<string, { income: number; expense: number; count: number }>();
 
     for (const tx of transactions) {
+      const cur = tx.currency || 'BDT';
+      const existing = map.get(cur) || { income: 0, expense: 0, count: 0 };
       const num = parseFloat(tx.amount) || 0;
       if (tx.type === 'income') {
-        incomeTotal += num;
+        existing.income += num;
       } else {
-        expenseTotal += num;
+        existing.expense += num;
       }
+      existing.count += 1;
+      map.set(cur, existing);
     }
 
-    const netBalance = incomeTotal - expenseTotal;
+    if (map.size === 0) {
+      return [
+        {
+          currency: 'BDT',
+          incomeTotal: '0.00',
+          expenseTotal: '0.00',
+          netBalance: '0.00',
+          count: 0,
+        },
+      ];
+    }
 
-    return {
-      incomeTotal: incomeTotal.toFixed(2),
-      expenseTotal: expenseTotal.toFixed(2),
-      netBalance: netBalance.toFixed(2),
-      currency: baseCurrency,
-      count: transactions.length,
-    };
+    return Array.from(map.entries()).map(([currency, data]) => ({
+      currency,
+      incomeTotal: data.income.toFixed(2),
+      expenseTotal: data.expense.toFixed(2),
+      netBalance: (data.income - data.expense).toFixed(2),
+      count: data.count,
+    }));
   }, [transactions]);
+
+  const summary = currencySummaries[0];
+  const otherCurrencies = currencySummaries.slice(1);
 
   const recentTransactions = useMemo(() => {
     return transactions.slice(0, 5);
@@ -248,6 +263,39 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
+
+        {/* Multi-Currency Balances (if user holds transactions in multiple currencies) */}
+        {otherCurrencies.length > 0 && (
+          <div className="p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]">
+            <h4 className="text-xs font-semibold text-[var(--color-text-dim)] uppercase tracking-wider mb-3">
+              Additional Currencies
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              {otherCurrencies.map((c) => (
+                <div
+                  key={c.currency}
+                  className="p-3 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface-hover)] flex items-center justify-between"
+                >
+                  <span className="text-xs font-mono font-medium">{c.currency}</span>
+                  <div className="text-right">
+                    <span
+                      className={`text-xs font-mono font-semibold ${
+                        parseFloat(c.netBalance) >= 0
+                          ? 'text-[var(--color-income)]'
+                          : 'text-[var(--color-expense)]'
+                      }`}
+                    >
+                      {formatMoney(c.netBalance, c.currency)}
+                    </span>
+                    <span className="block text-[10px] text-[var(--color-text-dim)]">
+                      {c.count} txn{c.count > 1 ? 's' : ''}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Recent Transactions Section */}
         <div className="border border-[var(--color-border)] bg-[var(--color-surface)] rounded-xl p-5">

@@ -213,5 +213,24 @@ describe('AI Drafts API (/ai-drafts)', () => {
       expect(res.body.message).toContain('Draft not found');
       expect(JSON.stringify(res.body)).not.toContain('auth.uid()');
     });
+
+    it('rejects duplicate confirmation attempts with 404', async () => {
+      // Simulate RPC error when draft was already confirmed/deleted
+      mockUserClient.rpc.mockResolvedValueOnce({
+        data: null,
+        error: {
+          code: 'P0001',
+          message: 'draft_not_available',
+          details: 'Draft not found, expired, already confirmed, or locked',
+        },
+      });
+
+      const res = await request(app.getHttpServer())
+        .post(`/ai-drafts/${draftId}/confirm`)
+        .set('Authorization', `Bearer ${validToken}`)
+        .expect(404);
+
+      expect(res.body.message).toContain('already confirmed');
+    });
   });
 });
