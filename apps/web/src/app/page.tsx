@@ -24,8 +24,8 @@ export default function Home() {
       <header className="border-b border-[var(--color-border)] px-6 py-4 flex items-center justify-between max-w-7xl mx-auto w-full">
         <div className="flex items-center gap-3">
           <div className="relative w-8 h-8 shrink-0">
-            <Image src="/logo.webp" alt="Ledgerly Logo" fill sizes="32px" className="object-contain dark:hidden" priority />
-            <Image src="/logo-dark.webp" alt="Ledgerly Logo" fill sizes="32px" className="object-contain hidden dark:block" priority />
+            <Image src="/logo-dark.webp" alt="Ledgerly Logo" fill sizes="32px" className="object-contain dark:hidden" priority />
+            <Image src="/logo.webp" alt="Ledgerly Logo" fill sizes="32px" className="object-contain hidden dark:block" priority />
           </div>
           <span className="font-bold text-lg tracking-tight">Ledgerly</span>
         </div>
