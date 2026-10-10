@@ -92,11 +92,7 @@ Set these environment variables in Hostinger's environment panel or `.env` file 
 1. Connect your repository to **Vercel**.
 2. Set **Root Directory** to `apps/web`.
 3. Set **Framework Preset** to `Next.js`.
-4. **Build Command:**
-   ```bash
-   npm run build:web
-   ```
-   *(Or default `next build` if Vercel automatically runs workspace root install)*
+4. **Build Command:** Leave as Vercel default (`next build`) or `npm run build:web`.
 5. **Output Directory:** `.next` (default).
 
 ---
