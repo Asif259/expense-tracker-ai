@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import AppShell from '@/components/app-shell';
+import CashFlowChart from '@/components/dashboard/cash-flow-chart';
 import { useAuth } from '@/context/auth-context';
 import {
   listTransactions,
@@ -461,32 +462,9 @@ export default function DashboardPage() {
                 </span>
               </div>
 
-              {/* Minimalist Chart / Visual Representation with subtle gridlines */}
-              <div className="h-44 sm:h-52 w-full border border-[var(--color-border)] rounded-lg bg-[var(--color-bg)] p-4 flex flex-col justify-between relative overflow-hidden">
-                {/* Horizontal gridlines */}
-                <div className="absolute inset-x-0 top-1/4 border-b border-dashed border-[var(--color-border)] pointer-events-none" />
-                <div className="absolute inset-x-0 top-2/4 border-b border-dashed border-[var(--color-border)] pointer-events-none" />
-                <div className="absolute inset-x-0 top-3/4 border-b border-dashed border-[var(--color-border)] pointer-events-none" />
-
-                {/* Simulated clean bars / dots matching screenshot */}
-                <div className="relative z-10 flex items-end justify-around h-full pt-4 pb-2">
-                  <div className="flex flex-col items-center gap-1.5">
-                    <div className="w-5 sm:w-6 bg-[#6DD0A1] rounded-t-sm h-24 transition-all" />
-                    <span className="text-[10px] text-[var(--color-text-muted)] font-mono">Inflow</span>
-                  </div>
-                  <div className="flex flex-col items-center gap-1.5">
-                    <div className="w-5 sm:w-6 bg-[#F5C258] rounded-t-sm h-16 transition-all" />
-                    <span className="text-[10px] text-[var(--color-text-muted)] font-mono">Outflow</span>
-                  </div>
-                  <div className="flex flex-col items-center gap-1.5">
-                    <div className="w-5 sm:w-6 bg-[#6CB3F9] rounded-t-sm h-12 transition-all" />
-                    <span className="text-[10px] text-[var(--color-text-muted)] font-mono">Receivables</span>
-                  </div>
-                  <div className="flex flex-col items-center gap-1.5">
-                    <div className="w-5 sm:w-6 bg-[#5452CF] rounded-t-sm h-8 transition-all" />
-                    <span className="text-[10px] text-[var(--color-text-muted)] font-mono">Payables</span>
-                  </div>
-                </div>
+              {/* Chart.js Cash Flow Visualization */}
+              <div className="h-44 sm:h-52 w-full border border-[var(--color-border)] rounded-lg bg-[var(--color-bg)] p-4 relative">
+                <CashFlowChart transactions={transactions} currency={summary.currency} />
               </div>
 
               {/* Four summary cells beneath chart with neutral financial figures */}
