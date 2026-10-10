@@ -11,12 +11,13 @@ import {
   Loan,
   CurrencyLoanSummary,
 } from '@/lib/api';
-import { formatMoney, formatDate } from '@/lib/format';
-import { LoanCalculator } from '@/components/loan-calculator';
+import { formatMoney } from '@/lib/format';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { toast } from '@/components/toast';
 import Link from 'next/link';
-import { Plus, ArrowRight, ArrowDownLeft, ArrowUpRight, AlertCircle, Trash2, X } from 'lucide-react';
+import { Plus, ArrowRight, ArrowDownLeft, ArrowUpRight, AlertCircle, Trash2, X, BarChart3 } from 'lucide-react';
+import { LoanBalanceChart, RepaymentHistoryChart } from '@/components/charts';
+import { aggregateLoanPortfolio, aggregateRepaymentHistory } from '@/lib/chart-aggregation';
 
 export default function LoansPage() {
   const { getToken } = useAuth();
@@ -125,6 +126,38 @@ export default function LoansPage() {
   };
 
   const currenciesList = useMemo(() => Object.keys(summaries), [summaries]);
+  const [selectedCurrencyState, setSelectedCurrencyState] = useState<string>('');
+  const [showCharts, setShowCharts] = useState(true);
+
+  const chartCurrency = useMemo(() => {
+    if (selectedCurrencyState && currenciesList.includes(selectedCurrencyState)) {
+      return selectedCurrencyState;
+    }
+    return currenciesList[0] || 'BDT';
+  }, [selectedCurrencyState, currenciesList]);
+
+  const activeLoanSummary = useMemo(() => {
+    const fromApi = summaries[chartCurrency];
+    if (fromApi) {
+      return {
+        currency: chartCurrency,
+        totalLent: fromApi.total_lent,
+        totalBorrowed: fromApi.total_borrowed,
+        repaidLent: fromApi.total_repaid_lent,
+        repaidBorrowed: fromApi.total_repaid_borrowed,
+        outstandingReceivables: fromApi.outstanding_receivables,
+        outstandingPayables: fromApi.outstanding_payables,
+        activeCount: fromApi.active_loans_count,
+        settledCount: fromApi.settled_loans_count,
+        overdueCount: fromApi.overdue_loans_count,
+      };
+    }
+    return aggregateLoanPortfolio(loans, chartCurrency);
+  }, [summaries, loans, chartCurrency]);
+
+  const repaymentHistoryData = useMemo(() => {
+    return aggregateRepaymentHistory(loans, chartCurrency);
+  }, [loans, chartCurrency]);
 
   return (
     <AppShell>
@@ -132,14 +165,25 @@ export default function LoansPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-[var(--color-text)] tracking-tight">
+            <h1 className="text-page-title">
               Debt & Loan Management
             </h1>
-            <p className="text-sm text-[var(--color-text-muted)] mt-1">
+            <p className="text-secondary mt-1">
               Track money you lent to others and money you borrowed with partial repayment history.
             </p>
           </div>
           <div className="flex items-center gap-3">
+            {currenciesList.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowCharts(!showCharts)}
+                className="inline-flex items-center gap-1.5 bg-[var(--color-surface)] border border-[var(--color-border)] hover:bg-[var(--color-surface-hover)] text-[var(--color-text)] text-xs font-semibold px-3 py-2 rounded-xl transition-colors cursor-pointer"
+              >
+                <BarChart3 className="w-4 h-4 text-[var(--color-primary)]" />
+                <span>{showCharts ? 'Hide Visual Analytics' : 'Show Visual Analytics'}</span>
+              </button>
+            )}
+
             <Link
               href="/loans/new"
               className="inline-flex items-center gap-1.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] text-sm font-semibold px-4 py-2 rounded-xl transition-colors shadow-lg shadow-[var(--color-primary)]/15 cursor-pointer"
@@ -149,6 +193,46 @@ export default function LoansPage() {
             </Link>
           </div>
         </div>
+
+        {/* Visual Chart Analytics Section */}
+        {showCharts && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-section-title">
+                Portfolio Analytics & Velocity
+              </h2>
+              {currenciesList.length > 1 && (
+                <div className="flex items-center gap-1.5 text-xs">
+                  <span className="text-[var(--color-text-muted)]">Currency:</span>
+                  <select
+                    value={chartCurrency}
+                    onChange={(e) => setSelectedCurrencyState(e.target.value)}
+                    className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-2 py-1 font-semibold text-[var(--color-text)]"
+                  >
+                    {currenciesList.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <LoanBalanceChart
+                summary={activeLoanSummary}
+                currency={chartCurrency}
+                loading={loading}
+              />
+              <RepaymentHistoryChart
+                data={repaymentHistoryData}
+                currency={chartCurrency}
+                loading={loading}
+              />
+            </div>
+          </div>
+        )}
 
 
         {/* Currency Summary Metric Cards */}
@@ -182,7 +266,7 @@ export default function LoansPage() {
                             <ArrowDownLeft className="w-3.5 h-3.5 text-[var(--color-mint)]" />
                           </span>
                         </div>
-                        <div className="text-xl font-bold font-mono text-[var(--color-text)] mt-0.5">
+                        <div className="text-metric-sm mt-0.5">
                           {formatMoney(s.outstanding_receivables, cur)}
                         </div>
                         {s.overdue_receivables > 0 && (
@@ -200,7 +284,7 @@ export default function LoansPage() {
                             <ArrowUpRight className="w-3.5 h-3.5 text-[var(--color-amber)]" />
                           </span>
                         </div>
-                        <div className="text-xl font-bold font-mono text-[var(--color-text)] mt-0.5">
+                        <div className="text-metric-sm mt-0.5">
                           {formatMoney(s.outstanding_payables, cur)}
                         </div>
                         {s.overdue_payables > 0 && (
@@ -372,10 +456,10 @@ export default function LoansPage() {
                       <div className="text-xs text-[var(--color-text-muted)]">
                         {isLent ? 'Remaining to Collect:' : 'Remaining to Repay:'}
                       </div>
-                      <div className="text-2xl font-extrabold text-[var(--color-text)] mt-0.5 tracking-tight">
+                      <div className="text-2xl font-extrabold tabular-nums text-[var(--color-text)] mt-0.5 tracking-tight">
                         {formatMoney(loan.outstanding_balance, loan.currency)}
                       </div>
-                      <div className="text-xs text-[var(--color-text-dim)] mt-1">
+                      <div className="text-xs text-[var(--color-text-dim)] mt-1 tabular-nums">
                         Principal: {formatMoney(loan.principal_amount, loan.currency)} • Repaid:{' '}
                         {formatMoney(loan.total_repaid, loan.currency)}
                       </div>
@@ -516,7 +600,7 @@ export default function LoansPage() {
                     </label>
                     <select
                       value={repaymentMethod}
-                      onChange={(e) => setRepaymentMethod(e.target.value as any)}
+                      onChange={(e) => setRepaymentMethod(e.target.value as 'cash' | 'bkash' | 'nagad' | 'bank' | 'other')}
                       className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl px-3 py-2 text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] capitalize cursor-pointer"
                     >
                       <option value="bkash">bKash</option>

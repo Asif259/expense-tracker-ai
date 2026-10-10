@@ -113,7 +113,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
               <span className="text-base font-bold text-[var(--color-text)] tracking-tight group-hover:text-[var(--color-primary)] transition-colors">
                 Ledgerly
               </span>
-              <span className="block text-[10px] text-[var(--color-text-dim)] font-mono leading-none">
+              <span className="block text-[10px] text-[var(--color-text-dim)] font-semibold tracking-wider leading-none">
                 FINANCIAL AI
               </span>
             </div>
@@ -158,7 +158,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
                 </div>
                 {item.badge && (
                   <span
-                    className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
+                    className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
                       item.badge === 'AI'
                         ? 'bg-[var(--color-secondary-bg)] text-[var(--color-secondary)] border border-[var(--color-secondary)]/20'
                         : 'bg-[var(--color-surface-hover)] text-[var(--color-text-dim)]'
@@ -178,14 +178,14 @@ function ShellInner({ children }: { children: React.ReactNode }) {
 
           <div className="flex items-center justify-between gap-3 p-2 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] shadow-sm">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-full bg-[var(--color-surface-hover)] border border-[var(--color-border-hover)] flex items-center justify-center font-bold text-xs font-mono text-[var(--color-primary)] shrink-0">
+              <div className="w-8 h-8 rounded-full bg-[var(--color-surface-hover)] border border-[var(--color-border-hover)] flex items-center justify-center font-bold text-xs text-[var(--color-primary)] shrink-0">
                 {userInitials}
               </div>
               <div className="min-w-0">
                 <span className="block text-xs font-semibold text-[var(--color-text)] truncate">
                   Account
                 </span>
-                <span className="block text-[11px] text-[var(--color-text-dim)] truncate font-mono">
+                <span className="block text-[11px] text-[var(--color-text-dim)] truncate">
                   {user.email}
                 </span>
               </div>
@@ -270,7 +270,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
                   <span>{item.label}</span>
                 </div>
                 {item.badge && (
-                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-dim)]">
+                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-dim)]">
                     {item.badge}
                   </span>
                 )}
@@ -282,7 +282,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
         <div className="p-4 border-t border-[var(--color-border)] bg-[var(--color-surface)] space-y-2.5">
           <ThemeToggle variant="full" />
           <div className="flex items-center justify-between">
-            <span className="text-xs text-[var(--color-text-dim)] font-mono truncate max-w-[180px]">
+            <span className="text-xs text-[var(--color-text-dim)] truncate max-w-[180px]">
               {user.email}
             </span>
           </div>

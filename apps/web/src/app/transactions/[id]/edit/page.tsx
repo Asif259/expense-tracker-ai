@@ -208,7 +208,7 @@ function EditTransactionForm() {
               required
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="w-full px-3.5 py-2.5 text-sm font-mono rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
+              className="w-full px-3.5 py-2.5 text-sm tabular-nums rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
             />
           </div>
 
@@ -303,7 +303,7 @@ function EditTransactionForm() {
               <span className="text-[var(--color-text-muted)]">Updated Value:</span>
               <span className="font-semibold text-[var(--color-text)] capitalize">{type}</span>
             </div>
-            <div className="font-mono font-bold text-sm text-[var(--color-text)] flex items-center gap-1.5">
+            <div className="tabular-nums font-bold text-sm text-[var(--color-text)] flex items-center gap-1.5">
               <span className={`text-[10px] px-1.5 py-0.5 rounded font-sans font-semibold ${type === 'income' ? 'bg-[var(--color-pale-mint)] text-[var(--color-text)]' : 'bg-[var(--color-pale-yellow)] text-[var(--color-text)]'}`}>
                 {type === 'income' ? '↑ Inflow' : '↓ Outflow'}
               </span>

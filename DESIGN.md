@@ -69,18 +69,70 @@ themes:
 rules:
   financial_numbers:
     rule: "Never use colorful text for financial amounts, metric values, counts, or percentage figures."
+    numeric_variant: "font-variant-numeric: tabular-nums lining-nums; (Inter primary, NOT monospace)"
     light: "Render in #111111 (var(--color-text))"
     dark: "Render in #F4F4F4 (var(--color-text))"
     direction_indicators: "Use small arrows, icons, lightly tinted badges (pale-mint, pale-cyan, pale-yellow), or thin chart lines"
     badge_text: "Keep text inside metric badges neutral where readable contrast permits"
+    alignment: "Right-align monetary columns in tables with consistent currency symbol positioning"
 
 typography:
-  family: "'Inter', system-ui, -apple-system, sans-serif"
+  family: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+  mono: "var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace"
   heading-weight: 700
   body-weight: 400
-  mono: "'JetBrains Mono', monospace"
-
-spacing:
+  scale:
+    page-title:
+      size: "clamp(1.5rem, 2.5vw, 1.875rem)" # 24px - 30px
+      weight: 700
+      line-height: 1.2
+      tracking: "-0.025em"
+      role: "Main page headings"
+    section-title:
+      size: "clamp(1.125rem, 1.5vw, 1.25rem)" # 18px - 20px
+      weight: 600
+      line-height: 1.3
+      tracking: "-0.015em"
+      role: "Secondary section headings, major card headers"
+    card-title:
+      size: "0.9375rem" # 15px
+      weight: 600
+      line-height: 1.35
+      role: "Widget & card titles"
+    metric:
+      size: "clamp(1.5rem, 2vw, 1.875rem)" # 24px - 30px
+      weight: 700
+      line-height: 1.2
+      tracking: "-0.02em"
+      numeric: "tabular-nums lining-nums"
+      role: "Primary dashboard financial amounts"
+    metric-sm:
+      size: "1.125rem" # 18px
+      weight: 600
+      line-height: 1.25
+      numeric: "tabular-nums lining-nums"
+      role: "Secondary balances, budget totals"
+    body:
+      size: "0.875rem" # 14px
+      weight: 400
+      line-height: 1.5
+      role: "Standard reading text, inputs"
+    secondary:
+      size: "0.8125rem" # 13px
+      weight: 400
+      line-height: 1.45
+      role: "Descriptions, secondary table cells"
+    label:
+      size: "0.75rem" # 12px
+      weight: 600
+      line-height: 1.4
+      tracking: "0.02em"
+      role: "Form labels, table headers, metadata badges"
+    caption:
+      size: "0.6875rem" # 11px
+      weight: 400
+      line-height: 1.35
+      role: "Timestamps, tertiary hints, chart axis subtext"
   unit: "4px"
   scale: [0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24]
 

@@ -2,23 +2,45 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import AppShell from '@/components/app-shell';
-import CashFlowChart from '@/components/dashboard/cash-flow-chart';
 import { useAuth } from '@/context/auth-context';
 import {
   listTransactions,
   listDrafts,
   getLoanSummary,
+  listLoans,
   Transaction,
   AiDraft,
+  Loan,
   CurrencyLoanSummary,
 } from '@/lib/api';
 import { formatMoney, formatDate } from '@/lib/format';
 import { fetchCategories, Category } from '@/lib/categories';
+import {
+  aggregateMonthlyCashFlow,
+  aggregateSpendingTrend,
+  aggregateCategoryBreakdown,
+  aggregateLoanPortfolio,
+  aggregateRepaymentHistory,
+  aggregateBudgetProgress,
+  getCurrenciesFromTransactions,
+  DateRangePreset,
+} from '@/lib/chart-aggregation';
+import {
+  IncomeExpenseChart,
+  SpendingTrendChart,
+  CategoryBreakdownChart,
+  BudgetProgressChart,
+  LoanBalanceChart,
+  RepaymentHistoryChart,
+} from '@/components/charts';
 import Link from 'next/link';
 import {
   TrendingUp,
   ArrowRight,
   Sparkles,
+  ArrowDownLeft,
+  ArrowUpRight,
+  Wallet,
 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -28,18 +50,24 @@ export default function DashboardPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [drafts, setDrafts] = useState<AiDraft[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [loans, setLoans] = useState<Loan[]>([]);
   const [loanSummaries, setLoanSummaries] = useState<Record<string, CurrencyLoanSummary>>({});
   const [activeReportTab, setActiveReportTab] = useState<'flow' | 'breakdown' | 'loans'>('flow');
+  const [selectedRange, setSelectedRange] = useState<DateRangePreset>('30d');
+  const [selectedCurrency, setSelectedCurrency] = useState<string>('BDT');
   const [aiAskInput, setAiAskInput] = useState('');
   const [currentDateFormatted, setCurrentDateFormatted] = useState('');
+  const [nowDate, setNowDate] = useState<Date | null>(null);
 
   useEffect(() => {
+    const now = new Date();
+    setNowDate(now);
     setCurrentDateFormatted(
       new Intl.DateTimeFormat('en-US', {
         weekday: 'long',
         month: 'short',
         day: 'numeric',
-      }).format(new Date())
+      }).format(now)
     );
   }, []);
 
@@ -54,18 +82,27 @@ export default function DashboardPage() {
         const token = await getToken();
         if (!token) return;
 
-        const [cats, txRes, draftRes, loanRes] = await Promise.all([
+        const [cats, txRes, draftRes, loanSummaryRes, loanListRes] = await Promise.all([
           fetchCategories(),
           listTransactions(token, { limit: 100 }),
           listDrafts(token).catch(() => ({ data: [], total: 0 })),
           getLoanSummary(token).catch(() => ({ currencies: {} })),
+          listLoans(token, { limit: 100 }).catch(() => ({ data: [], total: 0, limit: 100, offset: 0 })),
         ]);
 
         if (mounted) {
           setCategories(cats);
-          setTransactions(txRes.data || []);
+          const txList = txRes.data || [];
+          setTransactions(txList);
           setDrafts(draftRes.data || []);
-          setLoanSummaries(loanRes.currencies || {});
+          setLoanSummaries(loanSummaryRes.currencies || {});
+          setLoans(loanListRes.data || []);
+
+          // Automatically select first available active currency if transactions exist
+          const distinctCurrencies = getCurrenciesFromTransactions(txList);
+          if (distinctCurrencies.length > 0 && !distinctCurrencies.includes(selectedCurrency)) {
+            setSelectedCurrency(distinctCurrencies[0]);
+          }
         }
       } catch (err: unknown) {
         if (mounted) {
@@ -93,6 +130,19 @@ export default function DashboardPage() {
     return map;
   }, [categories]);
 
+  // Extract distinct currency options
+  const allCurrencies = useMemo(() => {
+    const set = new Set<string>();
+    for (const tx of transactions) {
+      if (tx.currency) set.add(tx.currency);
+    }
+    for (const cur of Object.keys(loanSummaries)) {
+      set.add(cur);
+    }
+    if (set.size === 0) set.add('BDT');
+    return Array.from(set);
+  }, [transactions, loanSummaries]);
+
   // Financial summary computation: group by currency so different currencies are NEVER summed together
   const currencySummaries = useMemo(() => {
     const map = new Map<string, { income: number; expense: number; count: number }>();
@@ -113,7 +163,7 @@ export default function DashboardPage() {
     if (map.size === 0) {
       return [
         {
-          currency: 'BDT',
+          currency: selectedCurrency,
           incomeTotal: '0.00',
           expenseTotal: '0.00',
           netBalance: '0.00',
@@ -129,88 +179,123 @@ export default function DashboardPage() {
       netBalance: (data.income - data.expense).toFixed(2),
       count: data.count,
     }));
-  }, [transactions]);
+  }, [transactions, selectedCurrency]);
 
-  const summary = currencySummaries[0];
-  const otherCurrencies = currencySummaries.slice(1);
+  const currentSummary = useMemo(() => {
+    const match = currencySummaries.find((s) => s.currency === selectedCurrency);
+    if (match) return match;
+    return {
+      currency: selectedCurrency,
+      incomeTotal: '0.00',
+      expenseTotal: '0.00',
+      netBalance: '0.00',
+      count: 0,
+    };
+  }, [currencySummaries, selectedCurrency]);
 
-  // Top spending categories breakdown for main currency
-  const categoryBreakdown = useMemo(() => {
-    const expenseTx = transactions.filter(
-      (tx) => tx.type === 'expense' && (tx.currency || 'BDT') === summary.currency
-    );
-    const catTotals = new Map<string, number>();
-    let totalExpense = 0;
+  const otherCurrencies = useMemo(() => {
+    return currencySummaries.filter((s) => s.currency !== selectedCurrency && s.count > 0);
+  }, [currencySummaries, selectedCurrency]);
 
-    for (const tx of expenseTx) {
-      const amt = parseFloat(tx.amount) || 0;
-      totalExpense += amt;
-      const catName = categoryMap.get(tx.category_id)?.name || 'General Expense';
-      catTotals.set(catName, (catTotals.get(catName) || 0) + amt);
+  // Chart datasets derived safely using pure aggregation functions
+  const monthlyCashFlowData = useMemo(() => {
+    return aggregateMonthlyCashFlow(transactions, selectedCurrency);
+  }, [transactions, selectedCurrency]);
+
+  const spendingTrendData = useMemo(() => {
+    return aggregateSpendingTrend(transactions, selectedCurrency, selectedRange, nowDate);
+  }, [transactions, selectedCurrency, selectedRange, nowDate]);
+
+  const categoryBreakdownData = useMemo(() => {
+    return aggregateCategoryBreakdown(transactions, categories, selectedCurrency);
+  }, [transactions, categories, selectedCurrency]);
+
+  const loanPortfolioSummary = useMemo(() => {
+    const summaryFromApi = loanSummaries[selectedCurrency];
+    if (summaryFromApi) {
+      return {
+        currency: selectedCurrency,
+        totalLent: summaryFromApi.total_lent,
+        totalBorrowed: summaryFromApi.total_borrowed,
+        repaidLent: summaryFromApi.total_repaid_lent,
+        repaidBorrowed: summaryFromApi.total_repaid_borrowed,
+        outstandingReceivables: summaryFromApi.outstanding_receivables,
+        outstandingPayables: summaryFromApi.outstanding_payables,
+        activeCount: summaryFromApi.active_loans_count,
+        settledCount: summaryFromApi.settled_loans_count,
+        overdueCount: summaryFromApi.overdue_loans_count,
+      };
     }
+    return aggregateLoanPortfolio(loans, selectedCurrency);
+  }, [loanSummaries, loans, selectedCurrency]);
 
-    if (totalExpense === 0) return [];
+  const repaymentHistoryData = useMemo(() => {
+    return aggregateRepaymentHistory(loans, selectedCurrency);
+  }, [loans, selectedCurrency]);
 
-    return Array.from(catTotals.entries())
-      .map(([name, amount]) => ({
-        name,
-        amount,
-        percentage: Math.round((amount / totalExpense) * 100),
-      }))
-      .sort((a, b) => b.amount - a.amount)
-      .slice(0, 5);
-  }, [transactions, summary.currency, categoryMap]);
+  // Budget progress data (using actual category totals vs empty/zero limits)
+  const budgetProgressData = useMemo(() => {
+    return aggregateBudgetProgress(transactions, [], selectedCurrency);
+  }, [transactions, selectedCurrency]);
 
   const recentTransactions = useMemo(() => {
     return transactions.slice(0, 5);
   }, [transactions]);
 
-  // Aggregate loans for main currency
-  const mainLoanSummary = loanSummaries[summary.currency] || null;
-
-  const totalInflowNum = parseFloat(summary.incomeTotal) || 0;
-  const totalOutflowNum = parseFloat(summary.expenseTotal) || 0;
-  const netBalanceNum = parseFloat(summary.netBalance) || 0;
-  const avgPerTx = summary.count > 0 ? (totalOutflowNum / summary.count).toFixed(2) : '0.00';
+  const totalInflowNum = parseFloat(currentSummary.incomeTotal) || 0;
+  const totalOutflowNum = parseFloat(currentSummary.expenseTotal) || 0;
+  const netBalanceNum = parseFloat(currentSummary.netBalance) || 0;
+  const avgPerTx = currentSummary.count > 0 ? (totalOutflowNum / currentSummary.count).toFixed(2) : '0.00';
 
   // Savings / Retention rate
   const retentionRate = totalInflowNum > 0
     ? Math.max(0, Math.min(100, Math.round(((totalInflowNum - totalOutflowNum) / totalInflowNum) * 100)))
     : 0;
 
-  // Debt obligations vs monthly inflow
-  const debtRatio = totalInflowNum > 0 && mainLoanSummary
-    ? Math.min(100, Math.round((Number(mainLoanSummary.outstanding_payables) / totalInflowNum) * 100))
+  // Debt obligations ratio vs monthly inflow
+  const debtRatio = totalInflowNum > 0 && loanPortfolioSummary
+    ? Math.min(100, Math.round((Number(loanPortfolioSummary.outstandingPayables) / totalInflowNum) * 100))
     : 0;
 
   const userName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'Josh';
-
-  // Palette colors for multi-segment category progress bar
-  const segmentColors = [
-    '#F5C258', // Amber
-    '#6DD0A1', // Mint Green
-    '#6CB3F9', // Soft Blue
-    '#5452CF', // Indigo
-    '#D3FDFE', // Pale Cyan
-  ];
 
   return (
     <AppShell>
       <div className="space-y-6">
         {/* =========================================================================
-            HEADER & GREETING (Minimalist Enterprise Header matching reference)
+            HEADER & GREETING WITH CURRENCY SELECTOR
             ========================================================================= */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--color-text)]">
+            <h1 className="text-page-title">
               Good Day, {userName}
             </h1>
-            <p className="text-xs text-[var(--color-text-muted)] mt-1">
+            <p className="text-secondary mt-1">
               {currentDateFormatted} • Verified financial intelligence ledger
             </p>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* Currency Selector */}
+            {allCurrencies.length > 1 && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-xs">
+                <Wallet className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
+                <span className="text-[11px] font-semibold text-[var(--color-text-muted)]">Currency:</span>
+                <select
+                  value={selectedCurrency}
+                  onChange={(e) => setSelectedCurrency(e.target.value)}
+                  className="bg-transparent text-xs font-semibold text-[var(--color-text)] focus:outline-none cursor-pointer"
+                  aria-label="Select currency for charts and analytics"
+                >
+                  {allCurrencies.map((c) => (
+                    <option key={c} value={c} className="bg-[var(--color-surface)] text-[var(--color-text)]">
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <Link
               href="/ai-entry"
               className="px-3.5 py-2 rounded-xl bg-[var(--color-pale-mint)] text-[var(--color-text)] text-xs font-semibold hover:opacity-90 transition-all flex items-center gap-1.5 border border-[var(--color-border)]"
@@ -284,25 +369,26 @@ export default function DashboardPage() {
                 Net Cash Flow
               </span>
               <span
-                className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${netBalanceNum >= 0
-                  ? 'bg-[var(--color-pale-mint)] text-[var(--color-text)]'
-                  : 'bg-[var(--color-pale-yellow)] text-[var(--color-text)]'
-                  }`}
+                className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                  netBalanceNum >= 0
+                    ? 'bg-[var(--color-pale-mint)] text-[var(--color-text)]'
+                    : 'bg-[var(--color-pale-yellow)] text-[var(--color-text)]'
+                }`}
               >
                 {netBalanceNum >= 0 ? '+ Positive' : '- Deficit'}
               </span>
             </div>
             <div className="mt-3">
               {/* Financial Number Rule: Always rendered in neutral text #111111 / #F4F4F4 */}
-              <div className="text-2xl font-bold font-mono tracking-tight text-[var(--color-text)]">
+              <div className="text-metric">
                 {loading ? (
                   <div className="h-8 w-32 bg-[var(--color-surface-hover)] animate-pulse rounded" />
                 ) : (
-                  formatMoney(summary.netBalance, summary.currency)
+                  formatMoney(currentSummary.netBalance, currentSummary.currency)
                 )}
               </div>
-              <span className="text-[11px] text-[var(--color-text-muted)] mt-1 block">
-                Inflow minus outflow
+              <span className="text-caption mt-1 block">
+                Inflow minus outflow in {currentSummary.currency}
               </span>
             </div>
           </div>
@@ -318,14 +404,14 @@ export default function DashboardPage() {
               </span>
             </div>
             <div className="mt-3">
-              <div className="text-2xl font-bold font-mono tracking-tight text-[var(--color-text)]">
+              <div className="text-metric">
                 {loading ? (
                   <div className="h-8 w-32 bg-[var(--color-surface-hover)] animate-pulse rounded" />
                 ) : (
-                  formatMoney(summary.incomeTotal, summary.currency)
+                  formatMoney(currentSummary.incomeTotal, currentSummary.currency)
                 )}
               </div>
-              <span className="text-[11px] text-[var(--color-text-muted)] mt-1 block">
+              <span className="text-caption mt-1 block">
                 Recorded earnings & deposits
               </span>
             </div>
@@ -342,14 +428,14 @@ export default function DashboardPage() {
               </span>
             </div>
             <div className="mt-3">
-              <div className="text-2xl font-bold font-mono tracking-tight text-[var(--color-text)]">
+              <div className="text-metric">
                 {loading ? (
                   <div className="h-8 w-32 bg-[var(--color-surface-hover)] animate-pulse rounded" />
                 ) : (
-                  formatMoney(summary.expenseTotal, summary.currency)
+                  formatMoney(currentSummary.expenseTotal, currentSummary.currency)
                 )}
               </div>
-              <span className="text-[11px] text-[var(--color-text-muted)] mt-1 block">
+              <span className="text-caption mt-1 block">
                 Recorded expenses & payments
               </span>
             </div>
@@ -361,19 +447,19 @@ export default function DashboardPage() {
               <span className="text-xs font-medium text-[var(--color-text-muted)]">
                 Ledger Records
               </span>
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[var(--color-pale-cyan)] text-[var(--color-text)]">
-                {summary.currency}
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[var(--color-pale-cyan)] text-[var(--color-text)] tabular-nums">
+                {currentSummary.currency}
               </span>
             </div>
             <div className="mt-3">
-              <div className="text-2xl font-bold font-mono tracking-tight text-[var(--color-text)]">
+              <div className="text-metric">
                 {loading ? (
                   <div className="h-8 w-20 bg-[var(--color-surface-hover)] animate-pulse rounded" />
                 ) : (
-                  summary.count
+                  currentSummary.count
                 )}
               </div>
-              <span className="text-[11px] text-[var(--color-text-muted)] mt-1 block">
+              <span className="text-caption mt-1 block">
                 Audited ledger entries
               </span>
             </div>
@@ -383,25 +469,32 @@ export default function DashboardPage() {
         {/* Additional Held Currencies */}
         {otherCurrencies.length > 0 && (
           <div className="p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[0_1px_2px_0_rgba(0,0,0,0.02)]">
-            <h4 className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-2.5">
-              Additional Held Currencies
-            </h4>
+            <div className="flex items-center justify-between mb-2.5">
+              <h4 className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">
+                Additional Held Currencies
+              </h4>
+              <span className="text-[11px] text-[var(--color-text-muted)]">
+                Click a currency to switch analytics view
+              </span>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
               {otherCurrencies.map((c) => (
-                <div
+                <button
                   key={c.currency}
-                  className="p-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] flex items-center justify-between"
+                  type="button"
+                  onClick={() => setSelectedCurrency(c.currency)}
+                  className="p-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] hover:bg-[var(--color-surface-hover)] transition-all flex items-center justify-between text-left cursor-pointer"
                 >
-                  <span className="text-xs font-mono font-bold text-[var(--color-text)]">{c.currency}</span>
+                  <span className="text-xs font-bold text-[var(--color-text)]">{c.currency}</span>
                   <div className="text-right">
-                    <span className="text-xs font-mono font-bold text-[var(--color-text)]">
+                    <span className="text-xs tabular-nums font-bold text-[var(--color-text)] block">
                       {formatMoney(c.netBalance, c.currency)}
                     </span>
                     <span className="block text-[10px] text-[var(--color-text-muted)]">
-                      {c.count} records
+                      {c.count} records • Click to view
                     </span>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           </div>
@@ -411,245 +504,104 @@ export default function DashboardPage() {
             SPLIT LAYOUT: MAIN WORKSPACE (8 COLS) + CONTEXTUAL INSIGHTS (4 COLS)
             ========================================================================= */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* LEFT 8 COLUMNS: MAIN REPORT WORKSPACE */}
+          {/* LEFT 8 COLUMNS: MAIN CHART & REPORT WORKSPACE */}
           <div className="lg:col-span-8 space-y-6">
-            {/* 1. Main Interactive Flow Report Card */}
-            <div className="border border-[var(--color-border)] bg-[var(--color-surface)] rounded-xl p-5 sm:p-6 shadow-[0_1px_2px_0_rgba(0,0,0,0.02)]">
-              {/* Header with tabs */}
-              <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-3">
-                <span className="text-[11px] uppercase font-bold tracking-wider text-[var(--color-text-muted)]">
-                  Report
-                </span>
-                <div className="flex items-center gap-4 text-xs font-semibold">
-                  <button
-                    type="button"
-                    onClick={() => setActiveReportTab('flow')}
-                    className={`pb-1 transition-colors cursor-pointer ${activeReportTab === 'flow'
+            {/* Visual Analytics Tab Navigation */}
+            <div className="border border-[var(--color-border)] bg-[var(--color-surface)] rounded-xl p-4 shadow-[0_1px_2px_0_rgba(0,0,0,0.02)] flex items-center justify-between">
+              <span className="text-[11px] uppercase font-bold tracking-wider text-[var(--color-text-muted)]">
+                Analytics Domain
+              </span>
+              <div className="flex items-center gap-3 sm:gap-6 text-xs font-semibold">
+                <button
+                  type="button"
+                  onClick={() => setActiveReportTab('flow')}
+                  className={`pb-1 transition-colors cursor-pointer ${
+                    activeReportTab === 'flow'
                       ? 'border-b-2 border-[var(--color-text)] text-[var(--color-text)]'
                       : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
-                      }`}
-                  >
-                    Cash Flow
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveReportTab('breakdown')}
-                    className={`pb-1 transition-colors cursor-pointer ${activeReportTab === 'breakdown'
-                      ? 'border-b-2 border-[var(--color-text)] text-[var(--color-text)]'
-                      : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
-                      }`}
-                  >
-                    Spending Allocations
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveReportTab('loans')}
-                    className={`pb-1 transition-colors cursor-pointer ${activeReportTab === 'loans'
-                      ? 'border-b-2 border-[var(--color-text)] text-[var(--color-text)]'
-                      : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
-                      }`}
-                  >
-                    Debt Obligations
-                  </button>
-                </div>
-              </div>
-
-              {/* Sub-header */}
-              <div className="pt-4 pb-2">
-                <span className="text-xs font-bold text-[var(--color-text)]">Ledger Overview</span>
-                <span className="text-xs text-[var(--color-text-muted)] ml-2">
-                  All verified activity in {summary.currency}
-                </span>
-              </div>
-
-              {/* Chart.js Cash Flow Visualization */}
-              <div className="h-44 sm:h-52 w-full border border-[var(--color-border)] rounded-lg bg-[var(--color-bg)] p-4 relative">
-                <CashFlowChart transactions={transactions} currency={summary.currency} />
-              </div>
-
-              {/* Four summary cells beneath chart with neutral financial figures */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-4 border-t border-[var(--color-border)] text-center">
-                <div>
-                  <span className="text-[11px] text-[var(--color-text-muted)] block">Total Inflow</span>
-                  <span className="text-sm font-bold font-mono text-[var(--color-text)] mt-0.5 block">
-                    {formatMoney(summary.incomeTotal, summary.currency)}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[11px] text-[var(--color-text-muted)] block">Total Outflow</span>
-                  <span className="text-sm font-bold font-mono text-[var(--color-text)] mt-0.5 block">
-                    {formatMoney(summary.expenseTotal, summary.currency)}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[11px] text-[var(--color-text-muted)] block">Net Balance</span>
-                  <span className="text-sm font-bold font-mono text-[var(--color-text)] mt-0.5 block">
-                    {formatMoney(summary.netBalance, summary.currency)}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[11px] text-[var(--color-text-muted)] block">Avg / Entry</span>
-                  <span className="text-sm font-bold font-mono text-[var(--color-text)] mt-0.5 block">
-                    {formatMoney(avgPerTx, summary.currency)}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* 2. Top Spending Categories with Multi-Segment Progress Bar */}
-            <div className="border border-[var(--color-border)] bg-[var(--color-surface)] rounded-xl p-5 sm:p-6 shadow-[0_1px_2px_0_rgba(0,0,0,0.02)]">
-              <div className="flex items-center justify-between mb-2">
-                <div>
-                  <h2 className="text-xs uppercase font-bold tracking-wider text-[var(--color-text-muted)]">
-                    Top Expense Categories
-                  </h2>
-                  <div className="text-xl font-bold font-mono text-[var(--color-text)] mt-1">
-                    {formatMoney(summary.expenseTotal, summary.currency)}
-                  </div>
-                </div>
-                <Link
-                  href="/transactions"
-                  className="px-3 py-1.5 rounded-lg border border-[var(--color-border)] text-xs font-semibold text-[var(--color-text)] hover:bg-[var(--color-surface-hover)] transition-colors"
+                  }`}
                 >
-                  Details
-                </Link>
-              </div>
-
-              {/* Multi-Segment Horizontal Stacked Bar */}
-              {categoryBreakdown.length > 0 ? (
-                <div className="mt-4 space-y-4">
-                  <div className="h-2.5 w-full bg-[var(--color-bg)] rounded-full overflow-hidden flex">
-                    {categoryBreakdown.map((item, idx) => (
-                      <div
-                        key={item.name}
-                        className="h-full first:rounded-l-full last:rounded-r-full transition-all"
-                        style={{
-                          width: `${item.percentage}%`,
-                          backgroundColor: segmentColors[idx % segmentColors.length],
-                        }}
-                        title={`${item.name}: ${item.percentage}%`}
-                      />
-                    ))}
-                  </div>
-
-                  {/* Legend Row matching screenshot */}
-                  <div className="flex flex-wrap items-center gap-4 text-xs">
-                    {categoryBreakdown.map((item, idx) => (
-                      <div key={item.name} className="flex items-center gap-1.5">
-                        <span
-                          className="w-2.5 h-2.5 rounded-full shrink-0"
-                          style={{ backgroundColor: segmentColors[idx % segmentColors.length] }}
-                        />
-                        <span className="text-[var(--color-text-muted)]">{item.name}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Detailed Rows */}
-                  <div className="divide-y divide-[var(--color-border)] pt-1">
-                    {categoryBreakdown.map((item, idx) => (
-                      <div key={item.name} className="py-2.5 flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className="w-2 h-2 rounded-full shrink-0"
-                            style={{ backgroundColor: segmentColors[idx % segmentColors.length] }}
-                          />
-                          <span className="font-medium text-[var(--color-text)]">{item.name}</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span className="text-[var(--color-text-muted)] font-mono">{item.percentage}%</span>
-                          <span className="font-mono font-semibold text-[var(--color-text)]">
-                            {formatMoney(item.amount.toFixed(2), summary.currency)}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="py-8 text-center text-xs text-[var(--color-text-muted)]">
-                  No expense records categorized yet in {summary.currency}.
-                </div>
-              )}
-            </div>
-
-            {/* 3. Debts & Loans Summary */}
-            <div className="border border-[var(--color-border)] bg-[var(--color-surface)] rounded-xl p-5 sm:p-6 shadow-[0_1px_2px_0_rgba(0,0,0,0.02)]">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h2 className="text-sm font-bold text-[var(--color-text)] tracking-tight">
-                    Debts & Loans Portfolio
-                  </h2>
-                  <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
-                    Receivables expected vs repayment liabilities.
-                  </p>
-                </div>
-                <Link
-                  href="/loans"
-                  className="text-xs text-[var(--color-text)] hover:underline font-semibold"
+                  Cash Flow & Trend
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveReportTab('breakdown')}
+                  className={`pb-1 transition-colors cursor-pointer ${
+                    activeReportTab === 'breakdown'
+                      ? 'border-b-2 border-[var(--color-text)] text-[var(--color-text)]'
+                      : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
+                  }`}
                 >
-                  Manage Portfolio →
-                </Link>
+                  Allocations & Budgets
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveReportTab('loans')}
+                  className={`pb-1 transition-colors cursor-pointer ${
+                    activeReportTab === 'loans'
+                      ? 'border-b-2 border-[var(--color-text)] text-[var(--color-text)]'
+                      : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
+                  }`}
+                >
+                  Debt & Loans
+                </button>
               </div>
-
-              {Object.keys(loanSummaries).length === 0 ? (
-                <div className="p-6 rounded-lg bg-[var(--color-bg)] border border-[var(--color-border)] text-center">
-                  <p className="text-xs text-[var(--color-text-muted)] mb-2.5">
-                    No active loan or debt records found.
-                  </p>
-                  <Link
-                    href="/loans/new"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--color-primary)] text-[var(--color-primary-contrast)] text-xs font-semibold"
-                  >
-                    + Record a Loan
-                  </Link>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                  {Object.keys(loanSummaries).map((cur) => {
-                    const ls = loanSummaries[cur]!;
-                    return (
-                      <div
-                        key={cur}
-                        className="p-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] space-y-3"
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-[var(--color-text)] font-mono">
-                            {cur}
-                          </span>
-                          <span className="text-[11px] text-[var(--color-text-muted)] font-mono">
-                            {ls.active_loans_count} active {ls.overdue_loans_count > 0 && `• ${ls.overdue_loans_count} overdue`}
-                          </span>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-2.5 pt-1">
-                          <div className="p-2.5 rounded-md bg-[var(--color-surface)] border border-[var(--color-border)]">
-                            <span className="text-[10px] uppercase font-semibold text-[var(--color-text-muted)] block">
-                              Owed to You
-                            </span>
-                            {/* Neutral financial figure */}
-                            <span className="text-sm font-bold font-mono text-[var(--color-text)] mt-0.5 block">
-                              {formatMoney(ls.outstanding_receivables, cur)}
-                            </span>
-                          </div>
-                          <div className="p-2.5 rounded-md bg-[var(--color-surface)] border border-[var(--color-border)]">
-                            <span className="text-[10px] uppercase font-semibold text-[var(--color-text-muted)] block">
-                              You Owe
-                            </span>
-                            {/* Neutral financial figure */}
-                            <span className="text-sm font-bold font-mono text-[var(--color-text)] mt-0.5 block">
-                              {formatMoney(ls.outstanding_payables, cur)}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
             </div>
 
-            {/* 4. Recent Transactions Table */}
+            {/* TAB CONTENT 1: CASH FLOW & SPENDING TREND */}
+            {activeReportTab === 'flow' && (
+              <div className="space-y-6">
+                <IncomeExpenseChart
+                  data={monthlyCashFlowData}
+                  currency={selectedCurrency}
+                  loading={loading}
+                />
+
+                <SpendingTrendChart
+                  data={spendingTrendData}
+                  currency={selectedCurrency}
+                  selectedRange={selectedRange}
+                  onRangeChange={setSelectedRange}
+                  loading={loading}
+                />
+              </div>
+            )}
+
+            {/* TAB CONTENT 2: ALLOCATIONS & BUDGETS */}
+            {activeReportTab === 'breakdown' && (
+              <div className="space-y-6">
+                <CategoryBreakdownChart
+                  data={categoryBreakdownData}
+                  currency={selectedCurrency}
+                  loading={loading}
+                />
+
+                <BudgetProgressChart
+                  data={budgetProgressData}
+                  currency={selectedCurrency}
+                  loading={loading}
+                />
+              </div>
+            )}
+
+            {/* TAB CONTENT 3: DEBT & LOANS OBLIGATIONS */}
+            {activeReportTab === 'loans' && (
+              <div className="space-y-6">
+                <LoanBalanceChart
+                  summary={loanPortfolioSummary}
+                  currency={selectedCurrency}
+                  loading={loading}
+                />
+
+                <RepaymentHistoryChart
+                  data={repaymentHistoryData}
+                  currency={selectedCurrency}
+                  loading={loading}
+                />
+              </div>
+            )}
+
+            {/* Recent Ledger Activity Table */}
             <div className="border border-[var(--color-border)] bg-[var(--color-surface)] rounded-xl p-5 sm:p-6 shadow-[0_1px_2px_0_rgba(0,0,0,0.02)]">
               <div className="flex items-center justify-between mb-4">
                 <div>
@@ -691,10 +643,11 @@ export default function DashboardPage() {
                       >
                         <div className="flex items-center gap-3 min-w-0">
                           <span
-                            className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-bold shrink-0 ${isIncome
-                              ? 'bg-[var(--color-pale-mint)] text-[var(--color-text)]'
-                              : 'bg-[var(--color-pale-yellow)] text-[var(--color-text)]'
-                              }`}
+                            className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-bold shrink-0 ${
+                              isIncome
+                                ? 'bg-[var(--color-pale-mint)] text-[var(--color-text)]'
+                                : 'bg-[var(--color-pale-yellow)] text-[var(--color-text)]'
+                            }`}
                           >
                             {isIncome ? '↓' : '↑'}
                           </span>
@@ -704,7 +657,7 @@ export default function DashboardPage() {
                                 {cat ? cat.name : 'Uncategorized'}
                               </span>
                               {tx.is_ai_generated && (
-                                <span className="px-1 py-0.2 rounded text-[9px] font-mono font-semibold bg-[var(--color-pale-cyan)] text-[var(--color-text)] border border-[var(--color-border)]">
+                                <span className="px-1 py-0.2 rounded text-[9px] font-semibold bg-[var(--color-pale-cyan)] text-[var(--color-text)] border border-[var(--color-border)]">
                                   AI
                                 </span>
                               )}
@@ -717,7 +670,7 @@ export default function DashboardPage() {
 
                         <div className="text-right shrink-0 pl-3">
                           {/* Neutral financial figure */}
-                          <div className="text-xs sm:text-sm font-bold font-mono text-[var(--color-text)]">
+                          <div className="text-xs sm:text-sm font-bold tabular-nums text-[var(--color-text)]">
                             {isIncome ? '+' : '-'} {formatMoney(tx.amount, tx.currency)}
                           </div>
                           <Link
@@ -736,7 +689,7 @@ export default function DashboardPage() {
           </div>
 
           {/* =========================================================================
-              RIGHT 4 COLUMNS: CONTEXTUAL INSIGHTS PANEL (Matching screenshot)
+              RIGHT 4 COLUMNS: CONTEXTUAL INSIGHTS PANEL
               ========================================================================= */}
           <div className="lg:col-span-4 space-y-5">
             {/* Contextual AI Summary Card */}
@@ -752,16 +705,16 @@ export default function DashboardPage() {
 
               <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
                 {netBalanceNum >= 0
-                  ? `Strong retention: You have preserved ${retentionRate}% of your inflow this period. Spending remains well-balanced against income.`
-                  : `Operating deficit: Outflow exceeds inflow by ${formatMoney(Math.abs(netBalanceNum).toFixed(2), summary.currency)}. Review discretionary categories.`}
+                  ? `Strong retention: You have preserved ${retentionRate}% of your inflow this period in ${selectedCurrency}. Spending remains well-balanced against income.`
+                  : `Operating deficit: Outflow exceeds inflow by ${formatMoney(Math.abs(netBalanceNum).toFixed(2), selectedCurrency)}. Review discretionary categories.`}
               </p>
 
-              {/* Progress Breakdown Bars matching Scope 1, 2, 3 in screenshot */}
+              {/* Progress Breakdown Bars */}
               <div className="border-t border-[var(--color-border)] pt-3.5 space-y-3">
                 <div className="space-y-1">
                   <div className="flex justify-between text-xs">
                     <span className="text-[var(--color-text-muted)]">Inflow Retention</span>
-                    <span className="font-mono font-bold text-[var(--color-text)]">{retentionRate}%</span>
+                    <span className="tabular-nums font-bold text-[var(--color-text)]">{retentionRate}%</span>
                   </div>
                   <div className="h-1.5 w-full bg-[var(--color-bg)] rounded-full overflow-hidden">
                     <div
@@ -774,7 +727,7 @@ export default function DashboardPage() {
                 <div className="space-y-1">
                   <div className="flex justify-between text-xs">
                     <span className="text-[var(--color-text-muted)]">Debt Obligations</span>
-                    <span className="font-mono font-bold text-[var(--color-text)]">{debtRatio}%</span>
+                    <span className="tabular-nums font-bold text-[var(--color-text)]">{debtRatio}%</span>
                   </div>
                   <div className="h-1.5 w-full bg-[var(--color-bg)] rounded-full overflow-hidden">
                     <div
@@ -787,14 +740,14 @@ export default function DashboardPage() {
                 <div className="space-y-1">
                   <div className="flex justify-between text-xs">
                     <span className="text-[var(--color-text-muted)]">Top Expense Weight</span>
-                    <span className="font-mono font-bold text-[var(--color-text)]">
-                      {categoryBreakdown[0]?.percentage || 0}%
+                    <span className="tabular-nums font-bold text-[var(--color-text)]">
+                      {categoryBreakdownData[0]?.percentage || 0}%
                     </span>
                   </div>
                   <div className="h-1.5 w-full bg-[var(--color-bg)] rounded-full overflow-hidden">
                     <div
                       className="h-full bg-[#F5C258] rounded-full transition-all"
-                      style={{ width: `${categoryBreakdown[0]?.percentage || 0}%` }}
+                      style={{ width: `${categoryBreakdownData[0]?.percentage || 0}%` }}
                     />
                   </div>
                 </div>
@@ -802,8 +755,8 @@ export default function DashboardPage() {
 
               {/* Lightly tinted badge callout */}
               <div className="p-2.5 rounded-lg bg-[var(--color-pale-mint)] border border-[var(--color-border)] text-xs text-[var(--color-text)] flex items-center gap-1.5">
-                <TrendingUp className="w-3.5 h-3.5 text-[var(--color-mint)] shrink-0" />
-                <span>Cash balance positive across verified ledger records.</span>
+                <TrendingUp className="w-3.5 h-3.5 text-[var(--color-primary)] shrink-0" />
+                <span>Cash balance verified across records in {selectedCurrency}.</span>
               </div>
             </div>
 
@@ -840,7 +793,7 @@ export default function DashboardPage() {
               )}
             </div>
 
-            {/* Natural language AI Ask input box matching bottom right in screenshot */}
+            {/* Natural language AI Ask input box */}
             <div className="border border-[var(--color-border)] bg-[var(--color-surface)] rounded-xl p-4 shadow-[0_1px_2px_0_rgba(0,0,0,0.02)] space-y-2.5">
               <span className="text-xs font-semibold text-[var(--color-text)] block flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-[var(--color-secondary)]" />

@@ -292,7 +292,7 @@ function AiEntryInner() {
                   <span className="text-[var(--color-text-dim)] block uppercase tracking-wider text-[10px]">
                     Amount
                   </span>
-                  <span className="font-bold font-mono text-[var(--color-text)] text-sm">
+                  <span className="font-bold tabular-nums text-[var(--color-text)] text-sm">
                     {parseResult.extracted.amount
                       ? formatMoney(
                           parseResult.extracted.amount,
@@ -315,7 +315,7 @@ function AiEntryInner() {
                   <span className="text-[var(--color-text-dim)] block uppercase tracking-wider text-[10px]">
                     Date
                   </span>
-                  <span className="font-semibold text-[var(--color-text)] font-mono">
+                  <span className="font-semibold text-[var(--color-text)] tabular-nums">
                     {parseResult.extracted.transaction_date || 'Today'}
                   </span>
                 </div>
@@ -402,14 +402,14 @@ function AiEntryInner() {
                   >
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-mono font-semibold text-[var(--color-text)]">
+                        <span className="text-xs tabular-nums font-semibold text-[var(--color-text)]">
                           {formatMoney(amount, currency)}
                         </span>
                         <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase bg-[var(--color-bg)] border border-[var(--color-border)] text-[var(--color-text-muted)]">
                           {type}
                         </span>
                         {txDate && (
-                          <span className="text-[11px] font-mono text-[var(--color-text-dim)]">
+                          <span className="text-[11px] tabular-nums text-[var(--color-text-dim)]">
                             • {formatDate(txDate)}
                           </span>
                         )}

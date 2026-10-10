@@ -70,13 +70,13 @@ export default function Home() {
               <span>0.2s Groq Inference</span>
             </span>
           </div>
-          <p className="text-sm text-[var(--color-text)] mb-3 font-mono">
+          <p className="text-sm text-[var(--color-text)] mb-3 font-medium">
             &quot;Paid 1,200 BDT for grocery items at Agora yesterday evening&quot;
           </p>
           <div className="grid grid-cols-3 gap-2 pt-2 border-t border-[var(--color-border)]/50 text-xs">
             <div>
               <span className="text-[var(--color-text-dim)] block">Amount</span>
-              <span className="font-semibold text-[var(--color-text)]">৳1,200.00</span>
+              <span className="font-semibold tabular-nums text-[var(--color-text)]">৳1,200.00</span>
             </div>
             <div>
               <span className="text-[var(--color-text-dim)] block">Category</span>

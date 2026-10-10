@@ -18,8 +18,6 @@ import {
   Plus,
   X,
   ReceiptText,
-  Pencil,
-  Trash2,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -147,8 +145,8 @@ export default function TransactionsPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Transactions</h1>
-            <p className="text-xs text-[var(--color-text-muted)] mt-1">
+            <h1 className="text-page-title">Transactions</h1>
+            <p className="text-secondary mt-1">
               Browse, filter, and audit your verified financial ledger.
             </p>
           </div>
@@ -324,7 +322,7 @@ export default function TransactionsPage() {
                         key={tx.id}
                         className="hover:bg-[var(--color-surface-hover)] transition-colors"
                       >
-                        <td className="py-3.5 px-4 font-mono text-[var(--color-text-muted)]">
+                        <td className="py-3.5 px-4 tabular-nums text-[var(--color-text-muted)]">
                           {formatDate(tx.transaction_date)}
                         </td>
                         <td className="py-3.5 px-4">
@@ -354,7 +352,7 @@ export default function TransactionsPage() {
                             )}
                           </div>
                         </td>
-                        <td className="py-3.5 px-4 text-right font-mono font-semibold">
+                        <td className="py-3.5 px-4 text-right tabular-nums font-semibold">
                           <span className="text-[var(--color-text)]">
                             {isIncome ? '+' : '-'} {formatMoney(tx.amount, tx.currency)}
                           </span>
