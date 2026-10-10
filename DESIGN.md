@@ -1,25 +1,78 @@
 ---
-# Ledgerly Design System
-version: "1.0"
-updated: "2026-10-09"
+# Ledgerly Design System: Minimalist Analytics (Light + Dark)
+version: "3.0"
+updated: "2026-10-10"
 
-palette:
-  bg: "#0a0a0f"
-  surface: "#12121a"
-  surface-hover: "#1a1a26"
-  border: "#1e1e2e"
-  border-hover: "#2a2a3e"
-  text: "#e4e4ef"
-  text-muted: "#8888a4"
-  text-dim: "#5a5a72"
-  primary: "#6366f1"       # Indigo-500 — trust, precision
-  primary-hover: "#818cf8"
-  income: "#34d399"        # Emerald — positive cash flow
-  income-bg: "rgba(52, 211, 153, 0.08)"
-  expense: "#f87171"       # Red-400 — outgoing money
-  expense-bg: "rgba(248, 113, 113, 0.08)"
-  warning: "#fbbf24"
-  danger: "#ef4444"
+themes:
+  light:
+    bg: "#F9FBFC"                 # Near-white canvas from reference screenshot
+    surface-elevated: "#FFFFFF"   # Sidebar, topbars, elevated panels
+    surface: "#FFFFFF"            # Clean white cards, tables
+    surface-hover: "#F3F4F7"      # Subtle hover surface
+    border: "#EDEFF3"             # Thin, subtle gray borders
+    border-hover: "#DDE0E6"       # Focused/hovered borders
+    text: "#111111"               # Primary text & neutral financial numbers
+    text-muted: "#6E7179"         # Muted gray supporting text & subtitles
+    text-dim: "#9CA3AF"           # Tertiary text - timestamps, hints
+    primary: "#6DD0A1"            # Mint green accent/primary CTA
+    primary-hover: "#5BBF90"      # Mint green hover
+    primary-contrast: "#111111"   # High-contrast text on mint CTA
+    secondary: "#5452CF"          # Indigo secondary accent
+    secondary-hover: "#4543B5"    # Indigo hover
+    secondary-bg: "rgba(84, 82, 207, 0.08)"
+    accent-blue: "#6CB3F9"        # Soft blue
+    accent-amber: "#F5C258"       # Amber
+    pale-mint: "#CEF1E4"          # Lightly tinted mint badge
+    pale-cyan: "#D3FDFE"          # Lightly tinted cyan badge
+    pale-yellow: "#FDF1B2"        # Lightly tinted yellow badge
+    income: "#6DD0A1"             # Indicator direction only (icons/charts)
+    income-bg: "#CEF1E4"          # Mint badge background
+    expense: "#E11D48"            # Outgoing indicator direction only
+    expense-bg: "rgba(225, 29, 72, 0.08)"
+    warning: "#F5C258"            # Amber alerts
+    warning-bg: "#FDF1B2"
+    danger: "#DC2626"
+    danger-hover: "#B91C1C"
+    card-shadow: "0 1px 2px 0 rgba(0, 0, 0, 0.02)" # Modest/near-flat shadow
+
+  dark:
+    bg: "#0B0B0B"                 # Dark canvas
+    surface-elevated: "#161618"   # Dark sidebar & panels
+    surface: "#1C1C1F"            # Dark cards & panels
+    surface-hover: "#242428"      # Interactive hover
+    border: "#2E2E32"             # Subtle dark borders
+    border-hover: "#3E3E44"
+    text: "#F4F4F4"               # Primary text & neutral financial numbers
+    text-muted: "#9E9EA4"         # Muted supporting text
+    text-dim: "#68686E"
+    primary: "#6DD0A1"            # Mint green accent
+    primary-hover: "#5BBF90"
+    primary-contrast: "#0B0B0B"   # Deep dark text on mint
+    secondary: "#7A78E0"          # Indigo / violet accent
+    secondary-hover: "#6A68D5"
+    secondary-bg: "rgba(122, 120, 224, 0.12)"
+    accent-blue: "#6CB3F9"
+    accent-amber: "#F5C258"
+    pale-mint: "rgba(109, 208, 161, 0.15)"
+    pale-cyan: "rgba(108, 179, 249, 0.15)"
+    pale-yellow: "rgba(245, 194, 88, 0.15)"
+    income: "#6DD0A1"
+    income-bg: "rgba(109, 208, 161, 0.15)"
+    expense: "#F43F5E"
+    expense-bg: "rgba(244, 63, 94, 0.15)"
+    warning: "#F5C258"
+    warning-bg: "rgba(245, 194, 88, 0.15)"
+    danger: "#EF4444"
+    danger-hover: "#DC2626"
+    card-shadow: "none"
+
+rules:
+  financial_numbers:
+    rule: "Never use colorful text for financial amounts, metric values, counts, or percentage figures."
+    light: "Render in #111111 (var(--color-text))"
+    dark: "Render in #F4F4F4 (var(--color-text))"
+    direction_indicators: "Use small arrows, icons, lightly tinted badges (pale-mint, pale-cyan, pale-yellow), or thin chart lines"
+    badge_text: "Keep text inside metric badges neutral where readable contrast permits"
 
 typography:
   family: "'Inter', system-ui, -apple-system, sans-serif"
@@ -39,43 +92,46 @@ rounded:
   full: "9999px"
 
 components:
+  sidebar:
+    width: "256px"
+    bg: "surface-elevated"
+    border: "border"
   card:
     bg: "surface"
     border: "border"
-    radius: "lg"
+    radius: "xl"
     padding: "6"
   button:
-    radius: "md"
-    height: "36px"
-    font-weight: 500
+    radius: "lg"
+    height: "38px"
+    font-weight: 600
   input:
-    bg: "bg"
+    bg: "surface"
     border: "border"
-    radius: "md"
-    height: "40px"
+    radius: "lg"
+    height: "42px"
 ---
 
-# Design Rationale
+# Design Rationale: Dual-Theme Architecture
 
-## Direction
-Ledgerly targets a premium dark financial dashboard aesthetic. The deep near-black background
-conveys seriousness about money. Indigo as the accent provides trust without being the standard
-blue seen in banking apps.
+## Light Mode Rationale
+Following clean, spacious dashboard aesthetics (Creative Tim reference model):
+- `#F5F5F5` canvas with crisp `#FFFFFF` cards and sidebar.
+- High-contrast `#292929` body text with `#595959` muted labels.
+- Restrained teal-blue `#159EAC` with crisp white button text.
+- Subtle card borders `#E2E4E7` paired with soft micro-shadows (`--shadow-card`).
+- Balanced emerald `#059669` and rose `#E11D48` metrics.
 
-## Color Logic
-- **Income/Expense**: Emerald green for incoming money, soft red for outgoing. These colors are
-  semantically universal for financial apps.
-- **No purple**: Avoided intentionally. Indigo sits close but reads as professional, not playful.
-- **Muted text hierarchy**: Three text levels (bright, muted, dim) create depth without noise.
+## Dark Mode Rationale
+Following sleek financial management dark dashboards:
+- `#0B0B0B` deep canvas with `#191919` sidebar and `#222222` charcoal cards.
+- High-contrast `#F4F4F4` text and `#A3A3A3` muted labels.
+- `#00D6C8` primary teal accent paired with `#050505` black button text (12:1 WCAG AAA).
+- `#A970F5` purple accent selectively for AI Smart Entry, badges, and secondary indicators.
+- Border-delineated surfaces (`#363636`) without artificial glow.
 
-## Typography
-Inter for its exceptional numeric legibility — critical for a finance app displaying monetary
-amounts. Tabular nums enabled where amounts are listed.
-
-## Layout
-Single-column max-width 7xl container. Cards with subtle borders rather than shadows for the
-dark theme. Responsive breakpoints at md (768px) for nav collapse.
-
-## Interaction
-Minimal animation: color transitions on hover (150ms), loading spinners. No decorative
-motion. Financial tools need to feel fast and stable.
+## Theme Switching Mechanics
+- Pure CSS Custom Properties dynamically mapped to `:root, [data-theme="light"], .light` and `[data-theme="dark"], .dark`.
+- Synchronized client-side state via `ThemeContext`, persistent in `localStorage`.
+- Zero-FOUC (Flash of Unstyled Content) inline `<head>` script reading stored preference or OS `prefers-color-scheme`.
+- Accessible Sun/Moon toggle with tooltip and `aria-label` in persistent sidebar footer and mobile drawer.

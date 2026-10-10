@@ -53,6 +53,12 @@ export function mapDatabaseError(error: PostgrestError | Error | null | undefine
       case 'P0014': // description_too_long
         return new BadRequestException('Description must be at most 500 characters');
 
+      case 'P0015': // loan_already_settled
+        return new BadRequestException('Loan has already been fully settled');
+
+      case 'P0016': // repayment_exceeds_balance
+        return new BadRequestException('Repayment amount exceeds outstanding loan balance');
+
       // PostgreSQL Standard Error Codes
       case '23503': // foreign_key_violation
         return new BadRequestException('Referenced record does not exist');

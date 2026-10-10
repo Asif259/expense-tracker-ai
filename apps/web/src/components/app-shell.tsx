@@ -4,12 +4,78 @@ import { useAuth } from '@/context/auth-context';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
+import { ThemeToggle } from '@/components/theme-toggle';
 
-const NAV_ITEMS = [
-  { href: '/dashboard', label: 'Dashboard', icon: '📊' },
-  { href: '/transactions', label: 'Transactions', icon: '💳' },
-  { href: '/transactions/new', label: 'New', icon: '➕' },
-  { href: '/ai-entry', label: 'AI Entry', icon: '🤖' },
+interface NavItem {
+  href: string;
+  label: string;
+  badge?: string;
+  icon: (active: boolean) => React.ReactNode;
+}
+
+const NAV_ITEMS: NavItem[] = [
+  {
+    href: '/dashboard',
+    label: 'Dashboard',
+    icon: (active) => (
+      <svg
+        className={`w-5 h-5 transition-colors ${active ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-muted)] group-hover:text-[var(--color-text)]'}`}
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" />
+      </svg>
+    ),
+  },
+  {
+    href: '/transactions',
+    label: 'Transactions',
+    icon: (active) => (
+      <svg
+        className={`w-5 h-5 transition-colors ${active ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-muted)] group-hover:text-[var(--color-text)]'}`}
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+      </svg>
+    ),
+  },
+  {
+    href: '/loans',
+    label: 'Debts & Loans',
+    badge: 'Phase 6',
+    icon: (active) => (
+      <svg
+        className={`w-5 h-5 transition-colors ${active ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-muted)] group-hover:text-[var(--color-text)]'}`}
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+      </svg>
+    ),
+  },
+  {
+    href: '/ai-entry',
+    label: 'AI Smart Entry',
+    badge: 'AI',
+    icon: (active) => (
+      <svg
+        className={`w-5 h-5 transition-colors ${active ? 'text-[var(--color-secondary)]' : 'text-[var(--color-text-muted)] group-hover:text-[var(--color-text)]'}`}
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+      </svg>
+    ),
+  },
 ];
 
 function ShellInner({ children }: { children: React.ReactNode }) {
@@ -26,92 +92,250 @@ function ShellInner({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin h-8 w-8 border-2 border-[var(--color-primary)] border-t-transparent rounded-full" />
+      <div className="flex items-center justify-center min-h-screen bg-[var(--color-bg)]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="animate-spin h-9 w-9 border-2 border-[var(--color-primary)] border-t-transparent rounded-full" />
+          <span className="text-xs font-medium text-[var(--color-text-muted)] tracking-wider uppercase">Loading Ledgerly...</span>
+        </div>
       </div>
     );
   }
 
   if (!user) return null;
 
-  return (
-    <div className="min-h-screen flex flex-col">
-      {/* Top navigation bar */}
-      <header className="sticky top-0 z-50 border-b border-[var(--color-border)] bg-[var(--color-surface)]/80 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <Link href="/dashboard" className="text-lg font-bold tracking-tight text-[var(--color-primary)]">
-              Ledgerly
-            </Link>
-            <nav className="hidden md:flex items-center gap-1">
-              {NAV_ITEMS.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                    pathname === item.href || (item.href !== '/dashboard' && pathname?.startsWith(item.href))
-                      ? 'bg-[var(--color-primary)]/10 text-[var(--color-primary)]'
-                      : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-hover)]'
-                  }`}
-                >
-                  <span className="mr-1.5">{item.icon}</span>
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
-          </div>
+  const isNavActive = (href: string) => {
+    if (href === '/dashboard') return pathname === '/dashboard';
+    return pathname?.startsWith(href);
+  };
 
-          <div className="flex items-center gap-3">
-            <span className="hidden sm:inline text-xs text-[var(--color-text-dim)] truncate max-w-[160px]">
-              {user.email}
-            </span>
+  const userInitials = (user.email || 'User')
+    .slice(0, 2)
+    .toUpperCase();
+
+  return (
+    <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] flex">
+      {/* =========================================================================
+          DESKTOP PERSISTENT SIDEBAR (w-64, #191919 elevated surface)
+          ========================================================================= */}
+      <aside className="hidden md:flex flex-col w-64 bg-[var(--color-surface-elevated)] border-r border-[var(--color-border)] fixed top-0 bottom-0 left-0 z-40 select-none">
+        {/* Brand header */}
+        <div className="h-16 flex items-center justify-between px-6 border-b border-[var(--color-border)]">
+          <Link href="/dashboard" className="flex items-center gap-2.5 group">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-secondary)] flex items-center justify-center shadow-lg shadow-[var(--color-primary)]/20">
+              <span className="text-black font-extrabold text-sm tracking-tighter">L</span>
+            </div>
+            <div>
+              <span className="text-base font-bold text-[var(--color-text)] tracking-tight group-hover:text-[var(--color-primary)] transition-colors">
+                Ledgerly
+              </span>
+              <span className="block text-[10px] text-[var(--color-text-dim)] font-mono leading-none">
+                FINANCIAL AI
+              </span>
+            </div>
+          </Link>
+          <span className="text-[10px] font-semibold font-mono px-2 py-0.5 rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-primary)]">
+            v1.2
+          </span>
+        </div>
+
+        {/* Quick CTA */}
+        <div className="p-4">
+          <Link
+            href="/transactions/new"
+            className="w-full h-10 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] font-semibold text-xs flex items-center justify-center gap-2 transition-all shadow-md shadow-[var(--color-primary)]/15 active:scale-[0.98]"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            <span>New Transaction</span>
+          </Link>
+        </div>
+
+        {/* Navigation list */}
+        <nav className="flex-1 px-3 py-2 space-y-1.5 overflow-y-auto">
+          <div className="px-3 pb-1 text-[11px] font-semibold text-[var(--color-text-dim)] uppercase tracking-wider">
+            Menu
+          </div>
+          {NAV_ITEMS.map((item) => {
+            const active = isNavActive(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all ${
+                  active
+                    ? 'bg-[var(--color-surface)] text-[var(--color-text)] border border-[var(--color-border)] shadow-sm'
+                    : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-hover)]'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`transition-transform duration-150 ${active ? 'scale-110' : 'group-hover:scale-105'}`}>
+                    {item.icon(active)}
+                  </div>
+                  <span className={active ? 'font-semibold text-[var(--color-primary)]' : ''}>
+                    {item.label}
+                  </span>
+                </div>
+                {item.badge && (
+                  <span
+                    className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
+                      item.badge === 'AI'
+                        ? 'bg-[var(--color-secondary-bg)] text-[var(--color-secondary)] border border-[var(--color-secondary)]/20'
+                        : 'bg-[var(--color-surface-hover)] text-[var(--color-text-dim)]'
+                    }`}
+                  >
+                    {item.badge}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* User Account & Appearance / Footer */}
+        <div className="p-4 border-t border-[var(--color-border)] bg-[var(--color-surface-elevated)] space-y-2.5">
+          <ThemeToggle variant="full" />
+
+          <div className="flex items-center justify-between gap-3 p-2 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] shadow-sm">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-full bg-[var(--color-surface-hover)] border border-[var(--color-border-hover)] flex items-center justify-center font-bold text-xs font-mono text-[var(--color-primary)] shrink-0">
+                {userInitials}
+              </div>
+              <div className="min-w-0">
+                <span className="block text-xs font-semibold text-[var(--color-text)] truncate">
+                  Account
+                </span>
+                <span className="block text-[11px] text-[var(--color-text-dim)] truncate font-mono">
+                  {user.email}
+                </span>
+              </div>
+            </div>
             <button
               onClick={signOut}
-              className="text-xs px-3 py-1.5 rounded-lg border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-border-hover)] transition-colors cursor-pointer"
+              title="Sign out of Ledgerly"
+              aria-label="Sign out"
+              className="p-1.5 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-expense)] hover:bg-[var(--color-expense-bg)] transition-colors cursor-pointer shrink-0"
             >
-              Sign out
-            </button>
-            {/* Mobile hamburger */}
-            <button
-              className="md:hidden p-1.5 rounded-lg hover:bg-[var(--color-surface-hover)] cursor-pointer"
-              onClick={() => setMobileNavOpen(!mobileNavOpen)}
-              aria-label="Toggle navigation"
-            >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                <rect y="3" width="20" height="2" rx="1" />
-                <rect y="9" width="20" height="2" rx="1" />
-                <rect y="15" width="20" height="2" rx="1" />
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
             </button>
           </div>
         </div>
+      </aside>
 
-        {/* Mobile nav dropdown */}
-        {mobileNavOpen && (
-          <nav className="md:hidden border-t border-[var(--color-border)] px-4 py-2 space-y-1">
-            {NAV_ITEMS.map((item) => (
+      {/* =========================================================================
+          MOBILE TOPBAR + OVERLAY DRAWER
+          ========================================================================= */}
+      <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-[var(--color-surface-elevated)] border-b border-[var(--color-border)] z-30 flex items-center justify-between px-4">
+        <Link href="/dashboard" className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-secondary)] flex items-center justify-center shadow-md">
+            <span className="text-black font-extrabold text-xs">L</span>
+          </div>
+          <span className="text-base font-bold text-[var(--color-text)] tracking-tight">
+            Ledgerly
+          </span>
+        </Link>
+
+        <div className="flex items-center gap-2">
+          <ThemeToggle variant="compact" />
+          <Link
+            href="/transactions/new"
+            className="w-9 h-9 rounded-lg bg-[var(--color-primary)] text-[var(--color-primary-contrast)] font-semibold flex items-center justify-center shadow-sm shadow-[var(--color-primary)]/20 active:scale-95 transition-transform"
+            aria-label="New transaction"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+          </Link>
+          <button
+            onClick={() => setMobileNavOpen(!mobileNavOpen)}
+            className="w-9 h-9 rounded-lg bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text)] flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
+            aria-label="Toggle navigation menu"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              {mobileNavOpen ? (
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+              )}
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Drawer Backdrop */}
+      {mobileNavOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-40 transition-opacity"
+          onClick={() => setMobileNavOpen(false)}
+        />
+      )}
+
+      {/* Mobile Drawer Menu */}
+      <div
+        className={`md:hidden fixed top-14 bottom-0 left-0 w-72 bg-[var(--color-surface-elevated)] border-r border-[var(--color-border)] z-50 transform transition-transform duration-200 ease-out flex flex-col justify-between ${
+          mobileNavOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="p-4 space-y-2 overflow-y-auto">
+          <div className="px-3 py-1 text-[11px] font-semibold text-[var(--color-text-dim)] uppercase tracking-wider">
+            Navigation
+          </div>
+          {NAV_ITEMS.map((item) => {
+            const active = isNavActive(item.href);
+            return (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={() => setMobileNavOpen(false)}
-                className={`block px-3 py-2 rounded-lg text-sm font-medium ${
-                  pathname === item.href
-                    ? 'bg-[var(--color-primary)]/10 text-[var(--color-primary)]'
-                    : 'text-[var(--color-text-muted)]'
+                className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                  active
+                    ? 'bg-[var(--color-primary)]/10 text-[var(--color-primary)] font-semibold border-l-2 border-[var(--color-primary)] pl-3'
+                    : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-hover)]'
                 }`}
               >
-                <span className="mr-2">{item.icon}</span>
-                {item.label}
+                <div className="flex items-center gap-3">
+                  {item.icon(active)}
+                  <span>{item.label}</span>
+                </div>
+                {item.badge && (
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-dim)]">
+                    {item.badge}
+                  </span>
+                )}
               </Link>
-            ))}
-          </nav>
-        )}
-      </header>
+            );
+          })}
+        </div>
 
-      {/* Main content */}
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-6">
-        {children}
-      </main>
+        <div className="p-4 border-t border-[var(--color-border)] bg-[var(--color-surface)] space-y-2.5">
+          <ThemeToggle variant="full" />
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-[var(--color-text-dim)] font-mono truncate max-w-[180px]">
+              {user.email}
+            </span>
+          </div>
+          <button
+            onClick={() => {
+              setMobileNavOpen(false);
+              signOut();
+            }}
+            className="w-full py-2 px-3 rounded-lg border border-[var(--color-border)] text-xs font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-expense)] hover:border-[var(--color-expense)] transition-colors cursor-pointer"
+          >
+            Sign out
+          </button>
+        </div>
+      </div>
+
+      {/* =========================================================================
+          MAIN APPLICATION CONTENT AREA (offset by desktop sidebar)
+          ========================================================================= */}
+      <div className="flex-1 flex flex-col md:pl-64 min-w-0">
+        <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 mt-14 md:mt-0">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }
@@ -120,8 +344,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <Suspense
       fallback={
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="animate-spin h-8 w-8 border-2 border-[var(--color-primary)] border-t-transparent rounded-full" />
+        <div className="flex items-center justify-center min-h-screen bg-[var(--color-bg)]">
+          <div className="animate-spin h-9 w-9 border-2 border-[var(--color-primary)] border-t-transparent rounded-full" />
         </div>
       }
     >

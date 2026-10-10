@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import { toast } from '@/components/toast';
 import Link from 'next/link';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 function LoginForm() {
   const router = useRouter();
@@ -164,10 +165,10 @@ function LoginForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-2.5 rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-sm font-medium transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
+          className="w-full py-2.5 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] text-sm font-semibold transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 mt-2 shadow-md shadow-[var(--color-primary)]/15"
         >
           {loading && (
-            <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+            <div className="animate-spin h-4 w-4 border-2 border-[var(--color-primary-contrast)] border-t-transparent rounded-full" />
           )}
           <span>
             {loading
@@ -190,7 +191,10 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-[var(--color-bg)] text-[var(--color-text)]">
+    <div className="min-h-screen flex items-center justify-center px-4 bg-[var(--color-bg)] text-[var(--color-text)] relative">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle variant="compact" />
+      </div>
       <Suspense
         fallback={
           <div className="animate-spin h-8 w-8 border-2 border-[var(--color-primary)] border-t-transparent rounded-full" />

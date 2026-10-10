@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import AppShell from '@/components/app-shell';
 import { useAuth } from '@/context/auth-context';
 import {
@@ -22,13 +23,21 @@ const QUICK_EXAMPLES = [
   'Uber ride to office 280 taka this morning',
 ];
 
-export default function AiEntryPage() {
+function AiEntryInner() {
   const { getToken } = useAuth();
+  const searchParams = useSearchParams();
 
   const [inputQuery, setInputQuery] = useState('');
   const [currencyPref, setCurrencyPref] = useState('BDT');
   const [parsing, setParsing] = useState(false);
   const [parseResult, setParseResult] = useState<ParseExpenseResult | null>(null);
+
+  useEffect(() => {
+    const prompt = searchParams.get('prompt');
+    if (prompt) {
+      setInputQuery(prompt);
+    }
+  }, [searchParams]);
 
   // Pending drafts
   const [drafts, setDrafts] = useState<AiDraft[]>([]);
@@ -219,7 +228,7 @@ export default function AiEntryPage() {
               <button
                 type="submit"
                 disabled={parsing}
-                className="px-5 py-2 text-xs font-semibold rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                className="px-5 py-2.5 text-xs font-semibold rounded-xl bg-[var(--color-secondary)] hover:bg-[var(--color-secondary-hover)] text-white transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-2 shadow-md shadow-[var(--color-secondary)]/20"
               >
                 {parsing && (
                   <div className="animate-spin h-3.5 w-3.5 border-2 border-white border-t-transparent rounded-full" />
@@ -323,12 +332,12 @@ export default function AiEntryPage() {
                   type="button"
                   disabled={actionDraftId === parseResult.draftId}
                   onClick={() => handleConfirm(parseResult.draftId!)}
-                  className="px-4 py-1.5 text-xs font-semibold rounded-lg bg-[var(--color-income)] hover:opacity-90 text-black transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                  className="px-5 py-2.5 text-xs font-semibold rounded-xl bg-[var(--color-income)] hover:opacity-90 text-white dark:text-black transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2 shadow-md shadow-[var(--color-income)]/20 active:scale-[0.98]"
                 >
                   {actionDraftId === parseResult.draftId ? (
-                    <div className="animate-spin h-3.5 w-3.5 border-2 border-black border-t-transparent rounded-full" />
+                    <div className="animate-spin h-3.5 w-3.5 border-2 border-current border-t-transparent rounded-full" />
                   ) : (
-                    <span>✓</span>
+                    <span className="font-bold">✓</span>
                   )}
                   <span>Confirm &amp; Record to Ledger</span>
                 </button>
@@ -406,10 +415,10 @@ export default function AiEntryPage() {
                       <button
                         disabled={actionDraftId === d.id}
                         onClick={() => handleConfirm(d.id)}
-                        className="px-3.5 py-1.5 text-xs font-medium rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                        className="px-4 py-2 text-xs font-semibold rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5 shadow-md shadow-[var(--color-primary)]/15"
                       >
                         {actionDraftId === d.id ? (
-                          <div className="animate-spin h-3.5 w-3.5 border-2 border-white border-t-transparent rounded-full" />
+                          <div className="animate-spin h-3.5 w-3.5 border-2 border-[var(--color-primary-contrast)] border-t-transparent rounded-full" />
                         ) : (
                           <span>✓</span>
                         )}
@@ -434,5 +443,21 @@ export default function AiEntryPage() {
         onCancel={() => setDiscardTargetId(null)}
       />
     </AppShell>
+  );
+}
+
+export default function AiEntryPage() {
+  return (
+    <Suspense
+      fallback={
+        <AppShell>
+          <div className="flex items-center justify-center min-h-[300px]">
+            <div className="animate-spin h-7 w-7 border-2 border-[var(--color-primary)] border-t-transparent rounded-full" />
+          </div>
+        </AppShell>
+      }
+    >
+      <AiEntryInner />
+    </Suspense>
   );
 }

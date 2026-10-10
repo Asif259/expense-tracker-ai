@@ -4,6 +4,7 @@ import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import Link from 'next/link';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export default function Home() {
   const { user, loading } = useAuth();
@@ -20,12 +21,13 @@ export default function Home() {
       {/* Header */}
       <header className="border-b border-[var(--color-border)] px-6 py-4 flex items-center justify-between max-w-7xl mx-auto w-full">
         <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-lg bg-[var(--color-primary)] flex items-center justify-center font-bold text-white text-base">
+          <div className="h-8 w-8 rounded-lg bg-[var(--color-primary)] flex items-center justify-center font-bold text-[var(--color-primary-contrast)] text-base shadow-sm">
             L
           </div>
           <span className="font-bold text-lg tracking-tight">Ledgerly</span>
         </div>
         <div className="flex items-center gap-3">
+          <ThemeToggle variant="compact" />
           <Link
             href="/login"
             className="px-4 py-2 text-sm font-medium rounded-lg border border-[var(--color-border)] hover:border-[var(--color-border-hover)] hover:bg-[var(--color-surface)] transition-colors"
@@ -34,7 +36,7 @@ export default function Home() {
           </Link>
           <Link
             href="/login?mode=signup"
-            className="px-4 py-2 text-sm font-medium rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white transition-colors"
+            className="px-4 py-2 text-sm font-semibold rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] transition-colors shadow-sm"
           >
             Get Started
           </Link>
@@ -59,10 +61,10 @@ export default function Home() {
         </p>
 
         {/* Live prompt mock display */}
-        <div className="w-full max-w-xl p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-left mb-10 shadow-2xl">
+        <div className="w-full max-w-xl p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-left mb-10 shadow-sm">
           <div className="flex items-center justify-between text-xs text-[var(--color-text-dim)] border-b border-[var(--color-border)] pb-2 mb-3">
             <span>Natural Language Input</span>
-            <span className="text-[var(--color-income)]">⚡ 0.2s Groq Inference</span>
+            <span className="text-[var(--color-mint)] font-medium">⚡ 0.2s Groq Inference</span>
           </div>
           <p className="text-sm text-[var(--color-text)] mb-3 font-mono">
             &quot;Paid 1,200 BDT for grocery items at Agora yesterday evening&quot;
@@ -70,7 +72,7 @@ export default function Home() {
           <div className="grid grid-cols-3 gap-2 pt-2 border-t border-[var(--color-border)]/50 text-xs">
             <div>
               <span className="text-[var(--color-text-dim)] block">Amount</span>
-              <span className="font-semibold text-[var(--color-expense)]">৳1,200.00</span>
+              <span className="font-semibold text-[var(--color-text)]">৳1,200.00</span>
             </div>
             <div>
               <span className="text-[var(--color-text-dim)] block">Category</span>
@@ -78,7 +80,7 @@ export default function Home() {
             </div>
             <div>
               <span className="text-[var(--color-text-dim)] block">Safety</span>
-              <span className="font-semibold text-[var(--color-income)]">Draft Review</span>
+              <span className="font-semibold text-[var(--color-text)]">Draft Review</span>
             </div>
           </div>
         </div>
@@ -86,7 +88,7 @@ export default function Home() {
         <div className="flex flex-col sm:flex-row gap-4">
           <Link
             href="/login?mode=signup"
-            className="px-6 py-3 rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-medium text-sm transition-colors shadow-lg"
+            className="px-6 py-3 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] font-semibold text-sm transition-colors shadow-sm"
           >
             Create Free Account
           </Link>

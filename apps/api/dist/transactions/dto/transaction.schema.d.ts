@@ -8,8 +8,8 @@ export declare const createTransactionSchema: z.ZodObject<{
     transaction_date: z.ZodEffects<z.ZodString, string, string>;
 }, "strict", z.ZodTypeAny, {
     type: "income" | "expense";
-    amount: string;
     currency: "BDT" | "USD" | "EUR" | "GBP" | "CAD" | "AUD" | "JPY" | "SGD" | "INR" | "CNY" | "AED" | "CHF" | "HKD" | "MYR" | "THB";
+    amount: string;
     category_id: string;
     transaction_date: string;
     description?: string | null | undefined;
@@ -31,29 +31,29 @@ export declare const updateTransactionSchema: z.ZodEffects<z.ZodObject<{
     transaction_date: z.ZodOptional<z.ZodEffects<z.ZodString, string, string>>;
 }, "strict", z.ZodTypeAny, {
     type?: "income" | "expense" | undefined;
-    amount?: string | undefined;
     currency?: "BDT" | "USD" | "EUR" | "GBP" | "CAD" | "AUD" | "JPY" | "SGD" | "INR" | "CNY" | "AED" | "CHF" | "HKD" | "MYR" | "THB" | undefined;
+    amount?: string | undefined;
     category_id?: string | undefined;
     description?: string | null | undefined;
     transaction_date?: string | undefined;
 }, {
     type?: "income" | "expense" | undefined;
-    amount?: string | number | undefined;
     currency?: "BDT" | "USD" | "EUR" | "GBP" | "CAD" | "AUD" | "JPY" | "SGD" | "INR" | "CNY" | "AED" | "CHF" | "HKD" | "MYR" | "THB" | undefined;
+    amount?: string | number | undefined;
     category_id?: string | undefined;
     description?: string | null | undefined;
     transaction_date?: string | undefined;
 }>, {
     type?: "income" | "expense" | undefined;
-    amount?: string | undefined;
     currency?: "BDT" | "USD" | "EUR" | "GBP" | "CAD" | "AUD" | "JPY" | "SGD" | "INR" | "CNY" | "AED" | "CHF" | "HKD" | "MYR" | "THB" | undefined;
+    amount?: string | undefined;
     category_id?: string | undefined;
     description?: string | null | undefined;
     transaction_date?: string | undefined;
 }, {
     type?: "income" | "expense" | undefined;
-    amount?: string | number | undefined;
     currency?: "BDT" | "USD" | "EUR" | "GBP" | "CAD" | "AUD" | "JPY" | "SGD" | "INR" | "CNY" | "AED" | "CHF" | "HKD" | "MYR" | "THB" | undefined;
+    amount?: string | number | undefined;
     category_id?: string | undefined;
     description?: string | null | undefined;
     transaction_date?: string | undefined;
@@ -75,11 +75,11 @@ export declare const transactionQuerySchema: z.ZodObject<{
     endDate?: string | undefined;
 }, {
     type?: "income" | "expense" | undefined;
+    limit?: number | undefined;
+    offset?: number | undefined;
     category_id?: string | undefined;
     startDate?: string | undefined;
     endDate?: string | undefined;
-    limit?: number | undefined;
-    offset?: number | undefined;
 }>;
 export type TransactionQueryDto = z.infer<typeof transactionQuerySchema>;
 export declare const transactionParamSchema: z.ZodObject<{

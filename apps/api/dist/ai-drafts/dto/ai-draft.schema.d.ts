@@ -8,8 +8,8 @@ export declare const createAiDraftSchema: z.ZodObject<{
     transaction_date: z.ZodEffects<z.ZodString, string, string>;
 }, "strict", z.ZodTypeAny, {
     type: "income" | "expense";
-    amount: string;
     currency: "BDT" | "USD" | "EUR" | "GBP" | "CAD" | "AUD" | "JPY" | "SGD" | "INR" | "CNY" | "AED" | "CHF" | "HKD" | "MYR" | "THB";
+    amount: string;
     category_id: string;
     transaction_date: string;
     description?: string | null | undefined;

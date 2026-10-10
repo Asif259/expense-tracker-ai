@@ -33,10 +33,10 @@ export function Toaster() {
 
   if (toasts.length === 0) return null;
 
-  const colorMap = {
-    success: 'border-[var(--color-income)] bg-[var(--color-income-bg)]',
-    error: 'border-[var(--color-expense)] bg-[var(--color-expense-bg)]',
-    info: 'border-[var(--color-primary)] bg-[var(--color-primary)]/5',
+  const borderMap = {
+    success: 'border-[var(--color-income)] text-[var(--color-income)]',
+    error: 'border-[var(--color-expense)] text-[var(--color-expense)]',
+    info: 'border-[var(--color-primary)] text-[var(--color-primary)]',
   };
 
   return (
@@ -44,7 +44,7 @@ export function Toaster() {
       {toasts.map((t) => (
         <div
           key={t.id}
-          className={`px-4 py-3 rounded-lg border text-sm text-[var(--color-text)] animate-[slideUp_0.2s_ease-out] ${colorMap[t.type]}`}
+          className={`px-4 py-3 rounded-xl border bg-[var(--color-surface)] shadow-xl text-sm font-medium animate-[slideUp_0.2s_ease-out] ${borderMap[t.type]}`}
         >
           {t.message}
         </div>

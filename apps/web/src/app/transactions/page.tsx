@@ -147,16 +147,16 @@ export default function TransactionsPage() {
           <div className="flex items-center gap-3">
             <Link
               href="/ai-entry"
-              className="px-4 py-2 rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-medium transition-colors flex items-center gap-2"
+              className="px-3.5 py-2 rounded-xl bg-[var(--color-secondary)]/15 border border-[var(--color-secondary)]/30 hover:bg-[var(--color-secondary)]/25 text-[var(--color-secondary)] text-xs font-semibold transition-all flex items-center gap-2"
             >
-              <span>🤖</span>
+              <span>⚡</span>
               <span>AI Quick Entry</span>
             </Link>
             <Link
               href="/transactions/new"
-              className="px-4 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] text-xs font-medium transition-colors flex items-center gap-1.5"
+              className="px-4 py-2 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] text-xs font-semibold transition-all flex items-center gap-1.5 shadow-md shadow-[var(--color-primary)]/15"
             >
-              <span>➕</span>
+              <span>+</span>
               <span>Add Transaction</span>
             </Link>
           </div>
@@ -167,16 +167,20 @@ export default function TransactionsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {/* Type filter */}
             <div>
-              <label className="block text-[11px] font-medium text-[var(--color-text-dim)] uppercase tracking-wider mb-1">
+              <label
+                htmlFor="filter-type"
+                className="block text-[11px] font-medium text-[var(--color-text-dim)] uppercase tracking-wider mb-1"
+              >
                 Type
               </label>
               <select
+                id="filter-type"
                 value={filterType}
                 onChange={(e) => {
                   setFilterType(e.target.value as '' | 'income' | 'expense');
                   setOffset(0);
                 }}
-                className="w-full px-3 py-1.5 text-xs rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
+                className="w-full px-3 py-2 text-xs rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
               >
                 <option value="">All Types</option>
                 <option value="income">Income Only</option>
@@ -186,16 +190,20 @@ export default function TransactionsPage() {
 
             {/* Category filter */}
             <div>
-              <label className="block text-[11px] font-medium text-[var(--color-text-dim)] uppercase tracking-wider mb-1">
+              <label
+                htmlFor="filter-category"
+                className="block text-[11px] font-medium text-[var(--color-text-dim)] uppercase tracking-wider mb-1"
+              >
                 Category
               </label>
               <select
+                id="filter-category"
                 value={filterCategory}
                 onChange={(e) => {
                   setFilterCategory(e.target.value);
                   setOffset(0);
                 }}
-                className="w-full px-3 py-1.5 text-xs rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
+                className="w-full px-3 py-2 text-xs rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
               >
                 <option value="">All Categories</option>
                 {filteredCategories.map((c) => (
@@ -208,33 +216,42 @@ export default function TransactionsPage() {
 
             {/* Start Date */}
             <div>
-              <label className="block text-[11px] font-medium text-[var(--color-text-dim)] uppercase tracking-wider mb-1">
+              <label
+                htmlFor="filter-start-date"
+                className="block text-[11px] font-medium text-[var(--color-text-dim)] uppercase tracking-wider mb-1"
+              >
                 Start Date
               </label>
               <input
+                id="filter-start-date"
                 type="date"
                 value={filterStartDate}
                 onChange={(e) => {
                   setFilterStartDate(e.target.value);
                   setOffset(0);
                 }}
-                className="w-full px-3 py-1.5 text-xs rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
-              />
+                className="w-full px-3 py-2 text-xs rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
+              >
+              </input>
             </div>
 
             {/* End Date */}
             <div>
-              <label className="block text-[11px] font-medium text-[var(--color-text-dim)] uppercase tracking-wider mb-1">
+              <label
+                htmlFor="filter-end-date"
+                className="block text-[11px] font-medium text-[var(--color-text-dim)] uppercase tracking-wider mb-1"
+              >
                 End Date
               </label>
               <input
+                id="filter-end-date"
                 type="date"
                 value={filterEndDate}
                 onChange={(e) => {
                   setFilterEndDate(e.target.value);
                   setOffset(0);
                 }}
-                className="w-full px-3 py-1.5 text-xs rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
+                className="w-full px-3 py-2 text-xs rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
               />
             </div>
           </div>
@@ -242,8 +259,9 @@ export default function TransactionsPage() {
           {(filterType || filterCategory || filterStartDate || filterEndDate) && (
             <div className="mt-3 pt-3 border-t border-[var(--color-border)] flex justify-end">
               <button
+                type="button"
                 onClick={handleClearFilters}
-                className="text-xs text-[var(--color-text-dim)] hover:text-[var(--color-text)] transition-colors cursor-pointer"
+                className="text-xs text-[var(--color-text-dim)] hover:text-[var(--color-text)] transition-colors cursor-pointer p-1"
               >
                 Reset all filters ✕
               </button>
@@ -268,28 +286,29 @@ export default function TransactionsPage() {
               </p>
               <Link
                 href="/transactions/new"
-                className="px-4 py-2 rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-medium transition-colors inline-block"
+                className="px-4 py-2 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] text-xs font-semibold transition-colors inline-block shadow-md shadow-[var(--color-primary)]/15"
               >
                 Create Transaction
               </Link>
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
+              <table className="w-full text-left text-xs" aria-label="Transactions ledger">
                 <thead className="border-b border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text-dim)] uppercase tracking-wider">
                   <tr>
-                    <th className="py-3 px-4 font-semibold">Date</th>
-                    <th className="py-3 px-4 font-semibold">Category</th>
-                    <th className="py-3 px-4 font-semibold">Description</th>
-                    <th className="py-3 px-4 font-semibold">Type</th>
-                    <th className="py-3 px-4 font-semibold text-right">Amount</th>
-                    <th className="py-3 px-4 font-semibold text-right">Actions</th>
+                    <th scope="col" className="py-3 px-4 font-semibold">Date</th>
+                    <th scope="col" className="py-3 px-4 font-semibold">Category</th>
+                    <th scope="col" className="py-3 px-4 font-semibold">Description</th>
+                    <th scope="col" className="py-3 px-4 font-semibold">Type</th>
+                    <th scope="col" className="py-3 px-4 font-semibold text-right">Amount</th>
+                    <th scope="col" className="py-3 px-4 font-semibold text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--color-border)]">
                   {transactions.map((tx) => {
                     const cat = categoryMap.get(tx.category_id);
                     const isIncome = tx.type === 'income';
+                    const categoryName = cat ? cat.name : 'Uncategorized';
 
                     return (
                       <tr
@@ -301,7 +320,7 @@ export default function TransactionsPage() {
                         </td>
                         <td className="py-3.5 px-4">
                           <span className="font-medium text-[var(--color-text)]">
-                            {cat ? cat.name : 'Unknown Category'}
+                            {categoryName}
                           </span>
                         </td>
                         <td className="py-3.5 px-4 text-[var(--color-text-muted)] max-w-xs truncate">
@@ -310,12 +329,13 @@ export default function TransactionsPage() {
                         <td className="py-3.5 px-4">
                           <div className="flex items-center gap-1.5">
                             <span
-                              className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${
+                              className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase inline-flex items-center gap-1 ${
                                 isIncome
-                                  ? 'bg-[var(--color-income-bg)] text-[var(--color-income)]'
-                                  : 'bg-[var(--color-expense-bg)] text-[var(--color-expense)]'
+                                  ? 'bg-[var(--color-pale-mint)] text-[var(--color-text)]'
+                                  : 'bg-[var(--color-pale-yellow)] text-[var(--color-text)]'
                               }`}
                             >
+                              <span className={`h-1 w-1 rounded-full ${isIncome ? 'bg-[var(--color-mint)]' : 'bg-[var(--color-amber)]'}`} />
                               {tx.type}
                             </span>
                             {tx.is_ai_generated && (
@@ -326,27 +346,23 @@ export default function TransactionsPage() {
                           </div>
                         </td>
                         <td className="py-3.5 px-4 text-right font-mono font-semibold">
-                          <span
-                            className={
-                              isIncome
-                                ? 'text-[var(--color-income)]'
-                                : 'text-[var(--color-expense)]'
-                            }
-                          >
-                            {isIncome ? '+' : '-'}
-                            {formatMoney(tx.amount, tx.currency)}
+                          <span className="text-[var(--color-text)]">
+                            {isIncome ? '+' : '-'} {formatMoney(tx.amount, tx.currency)}
                           </span>
                         </td>
                         <td className="py-3.5 px-4 text-right space-x-2">
                           <Link
                             href={`/transactions/${tx.id}/edit`}
-                            className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:underline transition-colors"
+                            aria-label={`Edit ${categoryName} transaction of ${formatMoney(tx.amount, tx.currency)}`}
+                            className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:underline transition-colors px-1 py-1"
                           >
                             Edit
                           </Link>
                           <button
+                            type="button"
                             onClick={() => setDeleteTarget(tx)}
-                            className="text-[var(--color-danger)] hover:underline cursor-pointer"
+                            aria-label={`Delete ${categoryName} transaction of ${formatMoney(tx.amount, tx.currency)}`}
+                            className="text-[var(--color-danger)] hover:underline cursor-pointer px-1 py-1"
                           >
                             Delete
                           </button>
@@ -360,23 +376,25 @@ export default function TransactionsPage() {
           )}
 
           {/* Pagination bar */}
-          <div className="p-4 border-t border-[var(--color-border)] flex items-center justify-between text-xs text-[var(--color-text-muted)]">
+          <div className="p-4 border-t border-[var(--color-border)] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[var(--color-text-muted)]">
             <span>
               Showing {transactions.length > 0 ? offset + 1 : 0} to{' '}
               {Math.min(offset + transactions.length, total)} of {total} records
             </span>
             <div className="flex gap-2">
               <button
+                type="button"
                 disabled={offset === 0 || loading}
                 onClick={() => setOffset(Math.max(0, offset - limit))}
-                className="px-3 py-1.5 rounded-lg border border-[var(--color-border)] hover:bg-[var(--color-surface-hover)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                className="px-3.5 py-2 min-h-[38px] rounded-lg border border-[var(--color-border)] hover:bg-[var(--color-surface-hover)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer text-xs font-medium"
               >
                 Previous
               </button>
               <button
+                type="button"
                 disabled={offset + limit >= total || loading}
                 onClick={() => setOffset(offset + limit)}
-                className="px-3 py-1.5 rounded-lg border border-[var(--color-border)] hover:bg-[var(--color-surface-hover)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                className="px-3.5 py-2 min-h-[38px] rounded-lg border border-[var(--color-border)] hover:bg-[var(--color-surface-hover)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer text-xs font-medium"
               >
                 Next
               </button>

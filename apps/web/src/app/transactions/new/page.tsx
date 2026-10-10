@@ -182,17 +182,19 @@ export default function NewTransactionPage() {
           {/* Amount & Currency Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="sm:col-span-2">
-              <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1.5">
+              <label htmlFor="tx-amount" className="block text-xs font-medium text-[var(--color-text-muted)] mb-1.5">
                 Amount <span className="text-[var(--color-danger)]">*</span>
               </label>
               <div className="relative">
                 <input
+                  id="tx-amount"
+                  name="amount"
                   type="text"
                   required
                   placeholder="e.g. 1250.00"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  className="w-full px-3.5 py-2 text-sm font-mono rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
+                  className="w-full px-3.5 py-2.5 text-sm font-mono rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
                 />
               </div>
               <span className="text-[10px] text-[var(--color-text-dim)] mt-1 block">
@@ -201,13 +203,15 @@ export default function NewTransactionPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1.5">
+              <label htmlFor="tx-currency" className="block text-xs font-medium text-[var(--color-text-muted)] mb-1.5">
                 Currency
               </label>
               <select
+                id="tx-currency"
+                name="currency"
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value)}
-                className="w-full px-3 py-2 text-sm rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
+                className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
               >
                 {SUPPORTED_CURRENCIES.map((c) => (
                   <option key={c} value={c}>
@@ -220,15 +224,17 @@ export default function NewTransactionPage() {
 
           {/* Category */}
           <div>
-            <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1.5">
+            <label htmlFor="tx-category" className="block text-xs font-medium text-[var(--color-text-muted)] mb-1.5">
               Category <span className="text-[var(--color-danger)]">*</span>
             </label>
             <select
+              id="tx-category"
+              name="categoryId"
               required
               disabled={filteredCategories.length === 0}
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
-              className="w-full px-3.5 py-2 text-sm rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none disabled:opacity-50"
+              className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none disabled:opacity-50"
             >
               {filteredCategories.length === 0 ? (
                 <option value="">No {type} categories available in database</option>
@@ -249,32 +255,53 @@ export default function NewTransactionPage() {
 
           {/* Date */}
           <div>
-            <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1.5">
+            <label htmlFor="tx-date" className="block text-xs font-medium text-[var(--color-text-muted)] mb-1.5">
               Transaction Date <span className="text-[var(--color-danger)]">*</span>
             </label>
             <input
+              id="tx-date"
+              name="transactionDate"
               type="date"
               required
               value={transactionDate}
               onChange={(e) => setTransactionDate(e.target.value)}
-              className="w-full px-3.5 py-2 text-sm rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
+              className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
             />
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1.5">
+            <label htmlFor="tx-description" className="block text-xs font-medium text-[var(--color-text-muted)] mb-1.5">
               Description (Optional)
             </label>
             <input
+              id="tx-description"
+              name="description"
               type="text"
               maxLength={500}
               placeholder="e.g. Monthly grocery at Agora"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-3.5 py-2 text-sm rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
+              className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
             />
           </div>
+
+          {/* Live Entry Summary / Peak-End confirmation preview */}
+          {amount && !isNaN(parseFloat(amount)) && parseFloat(amount) > 0 && (
+            <div className="p-3.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2">
+                <span className={`w-2 h-2 rounded-full ${type === 'income' ? 'bg-[var(--color-income)]' : 'bg-[var(--color-expense)]'}`} />
+                <span className="text-[var(--color-text-muted)]">Entry Preview:</span>
+                <span className="font-semibold text-[var(--color-text)] capitalize">{type}</span>
+              </div>
+              <div className="font-mono font-bold text-sm text-[var(--color-text)] flex items-center gap-1.5">
+                <span className={`text-[10px] px-1.5 py-0.5 rounded font-sans font-semibold ${type === 'income' ? 'bg-[var(--color-pale-mint)] text-[var(--color-text)]' : 'bg-[var(--color-pale-yellow)] text-[var(--color-text)]'}`}>
+                  {type === 'income' ? '↑ Inflow' : '↓ Outflow'}
+                </span>
+                <span>{amount} {currency}</span>
+              </div>
+            </div>
+          )}
 
           {/* Actions */}
           <div className="pt-3 border-t border-[var(--color-border)] flex items-center justify-end gap-3">
@@ -287,10 +314,10 @@ export default function NewTransactionPage() {
             <button
               type="submit"
               disabled={loading}
-              className="px-5 py-2 text-xs font-semibold rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-2"
+              className="px-5 py-2.5 text-xs font-semibold rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-2 shadow-md shadow-[var(--color-primary)]/15"
             >
               {loading && (
-                <div className="animate-spin h-3.5 w-3.5 border-2 border-white border-t-transparent rounded-full" />
+                <div className="animate-spin h-3.5 w-3.5 border-2 border-[var(--color-primary-contrast)] border-t-transparent rounded-full" />
               )}
               <span>{loading ? 'Saving...' : 'Record Transaction'}</span>
             </button>

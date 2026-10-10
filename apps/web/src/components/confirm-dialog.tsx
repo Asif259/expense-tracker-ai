@@ -34,7 +34,7 @@ export function ConfirmDialog({
 
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-6 max-w-sm w-full mx-4">
+      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text)] rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl">
         <h3 className="text-lg font-semibold mb-2">{title}</h3>
         <p className="text-sm text-[var(--color-text-muted)] mb-6">{message}</p>
         <div className="flex justify-end gap-3">

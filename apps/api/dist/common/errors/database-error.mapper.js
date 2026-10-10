@@ -29,6 +29,10 @@ export function mapDatabaseError(error) {
                 return new BadRequestException('Amount must have at most 2 decimal places');
             case 'P0014':
                 return new BadRequestException('Description must be at most 500 characters');
+            case 'P0015':
+                return new BadRequestException('Loan has already been fully settled');
+            case 'P0016':
+                return new BadRequestException('Repayment amount exceeds outstanding loan balance');
             case '23503':
                 return new BadRequestException('Referenced record does not exist');
             case '23505':

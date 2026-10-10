@@ -1,23 +1,72 @@
 @import "tailwindcss";
 
-:root {
-  --color-bg: #0a0a0f;
-  --color-surface: #12121a;
-  --color-surface-hover: #1a1a26;
-  --color-border: #1e1e2e;
-  --color-border-hover: #2a2a3e;
-  --color-text: #e4e4ef;
-  --color-text-muted: #8888a4;
-  --color-text-dim: #5a5a72;
-  --color-primary: #6366f1;
-  --color-primary-hover: #818cf8;
-  --color-income: #34d399;
-  --color-income-bg: rgba(52, 211, 153, 0.08);
-  --color-expense: #f87171;
-  --color-expense-bg: rgba(248, 113, 113, 0.08);
-  --color-warning: #fbbf24;
-  --color-danger: #ef4444;
-  --color-danger-hover: #dc2626;
+:root,
+[data-theme="light"],
+.light {
+  --color-bg: #F9FBFC;
+  --color-surface-elevated: #FFFFFF;
+  --color-surface: #FFFFFF;
+  --color-surface-hover: #F3F4F7;
+  --color-border: #EDEFF3;
+  --color-border-hover: #DDE0E6;
+  --color-text: #111111;
+  --color-text-muted: #6E7179;
+  --color-text-dim: #9CA3AF;
+  --color-primary: #6DD0A1;
+  --color-primary-hover: #5BBF90;
+  --color-primary-contrast: #111111;
+  --color-secondary: #5452CF;
+  --color-secondary-hover: #4543B5;
+  --color-secondary-bg: rgba(84, 82, 207, 0.08);
+  --color-accent-blue: #6CB3F9;
+  --color-accent-amber: #F5C258;
+  --color-pale-mint: #CEF1E4;
+  --color-pale-cyan: #D3FDFE;
+  --color-pale-yellow: #FDF1B2;
+  --color-income: #6DD0A1;
+  --color-income-bg: #CEF1E4;
+  --color-expense: #E11D48;
+  --color-expense-bg: rgba(225, 29, 72, 0.08);
+  --color-warning: #F5C258;
+  --color-warning-bg: #FDF1B2;
+  --color-danger: #DC2626;
+  --color-danger-hover: #B91C1C;
+  --shadow-card: 0 1px 2px 0 rgba(0, 0, 0, 0.02);
+  color-scheme: light;
+}
+
+[data-theme="dark"],
+.dark {
+  --color-bg: #0B0B0B;
+  --color-surface-elevated: #161618;
+  --color-surface: #1C1C1F;
+  --color-surface-hover: #242428;
+  --color-border: #2E2E32;
+  --color-border-hover: #3E3E44;
+  --color-text: #F4F4F4;
+  --color-text-muted: #9E9EA4;
+  --color-text-dim: #68686E;
+  --color-primary: #6DD0A1;
+  --color-primary-hover: #5BBF90;
+  --color-primary-contrast: #0B0B0B;
+  --color-secondary: #7A78E0;
+  --color-secondary-hover: #6A68D5;
+  --color-secondary-bg: rgba(122, 120, 224, 0.12);
+  --color-accent-blue: #6CB3F9;
+  --color-accent-amber: #F5C258;
+  --color-pale-mint: rgba(109, 208, 161, 0.15);
+  --color-pale-cyan: rgba(108, 179, 249, 0.15);
+  --color-pale-yellow: rgba(245, 194, 88, 0.15);
+  --color-income: #6DD0A1;
+  --color-income-bg: rgba(109, 208, 161, 0.15);
+  --color-expense: #F43F5E;
+  --color-expense-bg: rgba(244, 63, 94, 0.15);
+  --color-warning: #F5C258;
+  --color-warning-bg: rgba(245, 194, 88, 0.15);
+  --color-danger: #EF4444;
+  --color-danger-hover: #DC2626;
+  --shadow-card: none;
+  color-scheme: dark;
 }
 
 * {

@@ -204,3 +204,162 @@ export function discardDraft(token: string, id: string) {
     { method: 'DELETE' },
   );
 }
+
+// ── Debt & Loans ──
+
+export interface Loan {
+  id: string;
+  user_id: string;
+  person_name: string;
+  person_contact: string | null;
+  direction: 'lent' | 'borrowed';
+  principal_amount: number | string;
+  currency: string;
+  payment_method: 'cash' | 'bkash' | 'nagad' | 'bank' | 'other';
+  loan_date: string;
+  due_date: string | null;
+  notes: string | null;
+  total_repaid: number;
+  outstanding_balance: number;
+  progress_pct: number;
+  status: 'active' | 'overdue' | 'settled';
+  created_at: string;
+  updated_at: string;
+  repayments?: LoanRepayment[];
+}
+
+export interface LoanRepayment {
+  id: string;
+  loan_id: string;
+  user_id: string;
+  amount: number | string;
+  payment_date: string;
+  payment_method: 'cash' | 'bkash' | 'nagad' | 'bank' | 'other';
+  reference: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface CurrencyLoanSummary {
+  currency: string;
+  total_lent: number;
+  total_borrowed: number;
+  outstanding_receivables: number;
+  outstanding_payables: number;
+  overdue_receivables: number;
+  overdue_payables: number;
+  total_repaid_lent: number;
+  total_repaid_borrowed: number;
+  active_loans_count: number;
+  overdue_loans_count: number;
+  settled_loans_count: number;
+}
+
+export interface LoanListResponse {
+  data: Loan[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface LoanQuery {
+  direction?: 'lent' | 'borrowed';
+  status?: 'active' | 'overdue' | 'settled';
+  search?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export function createLoan(
+  token: string,
+  payload: {
+    person_name: string;
+    person_contact?: string | null;
+    direction: 'lent' | 'borrowed';
+    principal_amount: string | number;
+    currency: string;
+    payment_method: 'cash' | 'bkash' | 'nagad' | 'bank' | 'other';
+    loan_date: string;
+    due_date?: string | null;
+    notes?: string | null;
+  },
+) {
+  return request<Loan>('/loans', token, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function listLoans(token: string, query: LoanQuery = {}) {
+  const params = new URLSearchParams();
+  if (query.direction) params.set('direction', query.direction);
+  if (query.status) params.set('status', query.status);
+  if (query.search) params.set('search', query.search);
+  if (query.limit) params.set('limit', String(query.limit));
+  if (query.offset) params.set('offset', String(query.offset));
+
+  const qs = params.toString() ? `?${params.toString()}` : '';
+  return request<LoanListResponse>(`/loans${qs}`, token);
+}
+
+export function getLoanSummary(token: string) {
+  return request<{ currencies: Record<string, CurrencyLoanSummary> }>('/loans/summary', token);
+}
+
+export function getLoan(token: string, id: string) {
+  return request<Loan>(`/loans/${id}`, token);
+}
+
+export function updateLoan(
+  token: string,
+  id: string,
+  payload: {
+    person_name?: string;
+    person_contact?: string | null;
+    due_date?: string | null;
+    notes?: string | null;
+  },
+) {
+  return request<Loan>(`/loans/${id}`, token, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteLoan(token: string, id: string) {
+  return request<{ success: boolean }>(`/loans/${id}`, token, {
+    method: 'DELETE',
+  });
+}
+
+export function recordLoanRepayment(
+  token: string,
+  loanId: string,
+  payload: {
+    amount: string | number;
+    payment_date: string;
+    payment_method: 'cash' | 'bkash' | 'nagad' | 'bank' | 'other';
+    reference?: string | null;
+    notes?: string | null;
+  },
+) {
+  return request<{
+    repayment_id: string;
+    loan_id: string;
+    amount: number;
+    total_repaid: number;
+    outstanding_balance: number;
+    progress_pct: number;
+    status: 'active' | 'overdue' | 'settled';
+  }>(`/loans/${loanId}/repayments`, token, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteLoanRepayment(token: string, loanId: string, repaymentId: string) {
+  return request<{ success: boolean }>(`/loans/${loanId}/repayments/${repaymentId}`, token, {
+    method: 'DELETE',
+  });
+}
+
