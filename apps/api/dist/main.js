@@ -32,5 +32,8 @@ async function bootstrap() {
         process.exit(1);
     }
 }
-await bootstrap();
+bootstrap().catch((error) => {
+    console.error('[Ledgerly API] Fatal startup error:', error);
+    process.exit(1);
+});
 //# sourceMappingURL=main.js.map
