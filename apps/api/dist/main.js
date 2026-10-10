@@ -7,11 +7,32 @@ async function bootstrap() {
         const configService = app.get(ConfigService);
         const rawPort = process.env.PORT || configService.get('PORT', 3001);
         const corsOriginRaw = configService.get('CORS_ORIGIN', 'http://localhost:3000');
-        const allowedOrigins = corsOriginRaw.includes(',')
-            ? corsOriginRaw.split(',').map((o) => o.trim()).filter(Boolean)
-            : corsOriginRaw.trim();
+        const configuredOrigins = corsOriginRaw.split(',').map((o) => o.trim()).filter(Boolean);
+        const allowedOriginsSet = new Set();
+        for (const item of configuredOrigins) {
+            const trimmed = item.replace(/\/+$/, '');
+            allowedOriginsSet.add(trimmed);
+            if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+                allowedOriginsSet.add(`https://${trimmed}`);
+                allowedOriginsSet.add(`http://${trimmed}`);
+            }
+        }
         app.enableCors({
-            origin: allowedOrigins,
+            origin: (origin, callback) => {
+                if (!origin)
+                    return callback(null, true);
+                const cleanOrigin = origin.replace(/\/+$/, '');
+                if (allowedOriginsSet.has(cleanOrigin) ||
+                    allowedOriginsSet.has('*') ||
+                    cleanOrigin.endsWith('.vercel.app')) {
+                    return callback(null, true);
+                }
+                const hostOnly = cleanOrigin.replace(/^https?:\/\//, '');
+                if (allowedOriginsSet.has(hostOnly)) {
+                    return callback(null, true);
+                }
+                callback(null, false);
+            },
             credentials: true,
             methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
             allowedHeaders: ['Content-Type', 'Authorization'],
