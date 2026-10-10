@@ -19,10 +19,12 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present"
   },
+  "dependencies": {
+    "typescript": "^5.7.2"
+  },
   "devDependencies": {
     "@supabase/supabase-js": "^2.117.3",
     "@types/node": "^22.10.2",
-    "typescript": "^5.7.2",
     "vitest": "^2.1.8"
   }
 }
