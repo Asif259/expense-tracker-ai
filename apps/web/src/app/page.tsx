@@ -676,14 +676,7 @@ export default function Home() {
                   alt="Ledgerly Logo"
                   fill
                   sizes="24px"
-                  className="object-contain dark:hidden"
-                />
-                <Image
-                  src="/logo-dark.webp"
-                  alt="Ledgerly Logo"
-                  fill
-                  sizes="24px"
-                  className="object-contain hidden dark:block"
+                  className="object-contain"
                 />
               </div>
               <span className="font-bold text-base tracking-tight text-landing-text">
