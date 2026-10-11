@@ -10,6 +10,7 @@ import {
 } from 'react';
 import type { AuthChangeEvent, Session, User } from '@supabase/supabase-js';
 import { getSupabaseBrowserClient } from '@/lib/supabase';
+import { getAuthCallbackUrl } from '@/lib/auth-url';
 
 interface AuthContextValue {
   user: User | null;
@@ -17,7 +18,7 @@ interface AuthContextValue {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signUp: (email: string, password: string) => Promise<{ error: string | null }>;
-  signInWithGoogle: () => Promise<{ error: string | null }>;
+  signInWithGoogle: (options?: { returnPath?: string }) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   getToken: () => Promise<string | null>;
 }
@@ -66,17 +67,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [supabase],
   );
 
-  const signInWithGoogle = useCallback(async () => {
-    const redirectTo =
-      typeof window !== 'undefined'
-        ? `${window.location.origin}/auth/callback`
-        : '/auth/callback';
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo },
-    });
-    return { error: error?.message ?? null };
-  }, [supabase]);
+  const signInWithGoogle = useCallback(
+    async (options?: { returnPath?: string }) => {
+      const redirectTo = getAuthCallbackUrl(options?.returnPath);
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo },
+      });
+      return { error: error?.message ?? null };
+    },
+    [supabase],
+  );
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();

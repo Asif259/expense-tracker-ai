@@ -106,6 +106,7 @@ In Vercel Project Settings -> **Environment Variables**, add:
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes | `https://your-project.supabase.co` |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | `your-supabase-anon-key` |
 | `NEXT_PUBLIC_API_URL` | Yes | `https://api.yourdomain.com` |
+| `NEXT_PUBLIC_SITE_URL` | Yes | `https://ledgerly.vercel.app` *(production frontend domain for OAuth redirects)* |
 
 > 🔒 **Security Notice:** Do NOT add `SUPABASE_SERVICE_ROLE_KEY` or `GROQ_API_KEY` to Vercel. All secret keys remain exclusively on the Hostinger NestJS backend.
 
@@ -115,10 +116,13 @@ In Vercel Project Settings -> **Environment Variables**, add:
 
 1. **Authentication Redirect URLs:**
    - Navigate to **Supabase Dashboard -> Authentication -> URL Configuration**.
-   - Set **Site URL** to `https://ledgerly.vercel.app` (or custom domain).
-   - Add **Redirect URLs**:
+   - Set **Site URL** to `https://ledgerly.vercel.app` (must be your deployed frontend URL; if left as `http://localhost:3000`, Supabase will fall back to localhost).
+   - Add **Redirect URLs** to allowlist:
      - `https://ledgerly.vercel.app/**`
+     - `https://ledgerly.vercel.app/auth/callback`
      - `https://ledgerly.vercel.app/login`
+     - `http://localhost:3000/**` *(for local development)*
+     - `http://localhost:3000/auth/callback` *(for local development)*
 2. **Database Verification:**
    - Confirm RLS policies are enabled on all tables (`transactions`, `categories`, `ai_drafts`, `loans`, `loan_repayments`).
    - Verify category seed data exists in `categories` table.

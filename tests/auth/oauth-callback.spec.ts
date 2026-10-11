@@ -1,11 +1,19 @@
 /**
- * Google OAuth callback route — unit tests.
+ * Google OAuth redirect & callback route — unit tests.
  *
  * These tests are MOCKED. They do not call real Google or Supabase APIs.
  * Live integration requires a configured Google OAuth client and deployed URLs.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { NextRequest } from 'next/server';
+import {
+  getSiteUrl,
+  getAuthCallbackUrl,
+  getAuthRedirectOrigin,
+  isSafeReturnPath,
+  normalizeUrl,
+  isLocalhost,
+} from '../../apps/web/src/lib/auth-url';
 
 // ── Minimal mocks ────────────────────────────────────────────────────────────
 
@@ -32,25 +40,164 @@ const { GET } = await import(
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function makeRequest(search: Record<string, string>) {
-  const url = new URL('http://localhost:3000/auth/callback');
+function makeRequest(
+  search: Record<string, string>,
+  baseUrl = 'http://localhost:3000/auth/callback',
+  headers?: Record<string, string>,
+) {
+  const url = new URL(baseUrl);
   for (const [k, v] of Object.entries(search)) url.searchParams.set(k, v);
-  return new NextRequest(url.toString());
+  const req = new NextRequest(url.toString(), {
+    headers: headers ? new Headers(headers) : undefined,
+  });
+  return req;
 }
 
 // ── Tests ────────────────────────────────────────────────────────────────────
 
-describe('auth/callback GET — mocked', () => {
+describe('auth-url helper unit tests', () => {
+  const originalEnv = { ...process.env };
+
   beforeEach(() => {
-    vi.clearAllMocks();
+    process.env = { ...originalEnv };
   });
 
-  it('redirects to /dashboard on successful code exchange', async () => {
+  afterEach(() => {
+    process.env = { ...originalEnv };
+  });
+
+  it('normalizes URLs correctly (trims slashes, ensures protocol)', () => {
+    expect(normalizeUrl('https://example.com/')).toBe('https://example.com');
+    expect(normalizeUrl('example.com')).toBe('https://example.com');
+    expect(normalizeUrl('localhost:3000')).toBe('http://localhost:3000');
+    expect(normalizeUrl('')).toBe('');
+  });
+
+  it('detects localhost and loopback hosts correctly', () => {
+    expect(isLocalhost('localhost:3000')).toBe(true);
+    expect(isLocalhost('http://localhost:3000')).toBe(true);
+    expect(isLocalhost('127.0.0.1')).toBe(true);
+    expect(isLocalhost('https://ledgerly.vercel.app')).toBe(false);
+  });
+
+  it('uses NEXT_PUBLIC_SITE_URL in production environment', () => {
+    process.env.NODE_ENV = 'production';
+    process.env.NEXT_PUBLIC_SITE_URL = 'https://ledgerly.app';
+
+    const siteUrl = getSiteUrl({ isDev: false });
+    expect(siteUrl).toBe('https://ledgerly.app');
+
+    const callbackUrl = getAuthCallbackUrl();
+    expect(callbackUrl).toBe('https://ledgerly.app/auth/callback');
+  });
+
+  it('appends safe returnPath to callback URL', () => {
+    process.env.NODE_ENV = 'production';
+    process.env.NEXT_PUBLIC_SITE_URL = 'https://ledgerly.app';
+
+    const callbackUrl = getAuthCallbackUrl('/loans');
+    expect(callbackUrl).toBe('https://ledgerly.app/auth/callback?next=%2Floans');
+  });
+
+  it('prevents localhost from overriding production configuration', () => {
+    process.env.NODE_ENV = 'production';
+    process.env.NEXT_PUBLIC_SITE_URL = 'https://ledgerly.app';
+
+    // Even if browser window reports localhost, in production prodUrl wins
+    const siteUrl = getSiteUrl({
+      windowOrigin: 'http://localhost:3000',
+      isDev: false,
+    });
+    expect(siteUrl).toBe('https://ledgerly.app');
+
+    // Callback route redirect origin rejects localhost header in production
+    const origin = getAuthRedirectOrigin({
+      headers: { get: (name: string) => (name === 'x-forwarded-host' ? 'localhost:3000' : null) },
+      url: 'http://localhost:3000/auth/callback',
+    });
+    expect(origin).toBe('https://ledgerly.app');
+  });
+
+  it('preserves localhost for local development', () => {
+    delete process.env.NEXT_PUBLIC_SITE_URL;
+    process.env.NODE_ENV = 'development';
+
+    const siteUrl = getSiteUrl({
+      windowOrigin: 'http://localhost:3000',
+      isDev: true,
+    });
+    expect(siteUrl).toBe('http://localhost:3000');
+
+    const origin = getAuthRedirectOrigin({
+      url: 'http://localhost:3000/auth/callback',
+    });
+    expect(origin).toBe('http://localhost:3000');
+  });
+
+  describe('isSafeReturnPath open-redirect validation', () => {
+    it('allows valid relative paths', () => {
+      expect(isSafeReturnPath('/dashboard')).toBe(true);
+      expect(isSafeReturnPath('/transactions?page=2')).toBe(true);
+      expect(isSafeReturnPath('/loans')).toBe(true);
+    });
+
+    it('rejects external absolute URLs', () => {
+      expect(isSafeReturnPath('https://evil.com')).toBe(false);
+      expect(isSafeReturnPath('http://evil.com/dashboard')).toBe(false);
+      expect(isSafeReturnPath('//evil.com')).toBe(false);
+      expect(isSafeReturnPath('/\\evil.com')).toBe(false);
+    });
+
+    it('rejects dangerous protocols and formats', () => {
+      expect(isSafeReturnPath('javascript:alert(1)')).toBe(false);
+      expect(isSafeReturnPath('data:text/html,evil')).toBe(false);
+      expect(isSafeReturnPath(null)).toBe(false);
+      expect(isSafeReturnPath('')).toBe(false);
+      expect(isSafeReturnPath('relative/without/slash')).toBe(false);
+    });
+  });
+});
+
+describe('auth/callback GET route handler', () => {
+  const originalEnv = { ...process.env };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    process.env = { ...originalEnv };
+  });
+
+  afterEach(() => {
+    process.env = { ...originalEnv };
+  });
+
+  it('redirects to /dashboard on production domain when configured', async () => {
+    process.env.NODE_ENV = 'production';
+    process.env.NEXT_PUBLIC_SITE_URL = 'https://ledgerly.app';
     mockExchangeCodeForSession.mockResolvedValueOnce({ error: null });
-    const req = makeRequest({ code: 'valid-code-abc' });
+
+    const req = makeRequest({ code: 'valid-code-abc' }, 'https://ledgerly.app/auth/callback');
     const res = await GET(req);
+
     expect(res.status).toBe(307);
-    expect(new URL(res.headers.get('location')!).pathname).toBe('/dashboard');
+    const location = res.headers.get('location')!;
+    const locUrl = new URL(location);
+    expect(locUrl.origin).toBe('https://ledgerly.app');
+    expect(locUrl.pathname).toBe('/dashboard');
+  });
+
+  it('redirects to /dashboard on localhost in development', async () => {
+    delete process.env.NEXT_PUBLIC_SITE_URL;
+    process.env.NODE_ENV = 'development';
+    mockExchangeCodeForSession.mockResolvedValueOnce({ error: null });
+
+    const req = makeRequest({ code: 'valid-code-abc' }, 'http://localhost:3000/auth/callback');
+    const res = await GET(req);
+
+    expect(res.status).toBe(307);
+    const location = res.headers.get('location')!;
+    const locUrl = new URL(location);
+    expect(locUrl.origin).toBe('http://localhost:3000');
+    expect(locUrl.pathname).toBe('/dashboard');
   });
 
   it('redirects to custom safe next path on success', async () => {

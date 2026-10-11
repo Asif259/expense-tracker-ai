@@ -1,16 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-
-/** Only allow safe relative app paths as post-auth redirect targets. */
-function isSafeReturnPath(path: string | null): path is string {
-  if (!path) return false;
-  // Must be relative, no protocol, no double-slash (open-redirect prevention)
-  return path.startsWith('/') && !path.startsWith('//') && !path.includes(':');
-}
+import { getAuthRedirectOrigin, isSafeReturnPath } from '@/lib/auth-url';
 
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
+  const origin = getAuthRedirectOrigin(request);
   const code = searchParams.get('code');
   const next = searchParams.get('next');
   const returnPath = isSafeReturnPath(next) ? next : '/dashboard';

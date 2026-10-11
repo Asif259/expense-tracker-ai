@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import { toast } from '@/components/toast';
@@ -53,17 +53,18 @@ function LoginForm() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Show callback errors (e.g. OAuth failure redirected back here)
-  useEffect(() => {
+  // Derive callback error (e.g. OAuth failure redirected back here)
+  const callbackError = useMemo(() => {
     const cbError = searchParams.get('error');
-    if (cbError) {
-      try {
-        setErrorMsg(decodeURIComponent(cbError));
-      } catch {
-        setErrorMsg(cbError);
-      }
+    if (!cbError) return null;
+    try {
+      return decodeURIComponent(cbError);
+    } catch {
+      return cbError;
     }
   }, [searchParams]);
+
+  const activeError = errorMsg || callbackError;
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -120,7 +121,10 @@ function LoginForm() {
     setErrorMsg(null);
     setGoogleLoading(true);
     try {
-      const { error } = await signInWithGoogle();
+      const next = searchParams.get('next');
+      const { error } = await signInWithGoogle({
+        returnPath: next || undefined,
+      });
       if (error) {
         setErrorMsg(error);
         toast(error, 'error');
@@ -187,10 +191,10 @@ function LoginForm() {
       </div>
 
       {/* Error notification */}
-      {errorMsg && (
+      {activeError && (
         <div className="mb-6 p-3 rounded-xl border border-[var(--color-danger)]/50 bg-[var(--color-expense-bg)] text-xs text-[var(--color-expense)] flex items-start gap-2">
           <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-          <span>{errorMsg}</span>
+          <span>{activeError}</span>
         </div>
       )}
 
