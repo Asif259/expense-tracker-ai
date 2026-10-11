@@ -78,6 +78,7 @@ rules:
 
 typography:
   family: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans Bengali', sans-serif"
+  serif: '"New York", Charter, Georgia, Cambria, "Times New Roman", Times, serif'
   mono: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace"
   heading-weight: 700
   body-weight: 400
