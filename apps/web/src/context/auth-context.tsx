@@ -17,6 +17,7 @@ interface AuthContextValue {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signUp: (email: string, password: string) => Promise<{ error: string | null }>;
+  signInWithGoogle: () => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   getToken: () => Promise<string | null>;
 }
@@ -65,6 +66,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [supabase],
   );
 
+  const signInWithGoogle = useCallback(async () => {
+    const redirectTo =
+      typeof window !== 'undefined'
+        ? `${window.location.origin}/auth/callback`
+        : '/auth/callback';
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo },
+    });
+    return { error: error?.message ?? null };
+  }, [supabase]);
+
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     setUser(null);
@@ -77,8 +90,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [supabase]);
 
   const value = useMemo(
-    () => ({ user, session, loading, signIn, signUp, signOut, getToken }),
-    [user, session, loading, signIn, signUp, signOut, getToken],
+    () => ({ user, session, loading, signIn, signUp, signInWithGoogle, signOut, getToken }),
+    [user, session, loading, signIn, signUp, signInWithGoogle, signOut, getToken],
   );
 
   return <AuthContext value={value}>{children}</AuthContext>;
