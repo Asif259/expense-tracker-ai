@@ -77,8 +77,7 @@ function LoginForm() {
       <div className="flex flex-col items-center mb-8">
         <Link href="/" className="flex items-center gap-2 mb-2 cursor-pointer">
           <div className="relative h-10 w-10 shrink-0">
-            <Image src="/logo-dark.webp" alt="Ledgerly Logo" fill sizes="40px" className="object-contain dark:hidden" priority />
-            <Image src="/logo.webp" alt="Ledgerly Logo" fill sizes="40px" className="object-contain hidden dark:block" priority />
+            <Image src="/logo.webp" alt="Ledgerly Logo" fill sizes="40px" className="object-contain" priority />
           </div>
           <span className="text-xl font-bold tracking-tight">Ledgerly</span>
         </Link>

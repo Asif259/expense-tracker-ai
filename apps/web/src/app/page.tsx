@@ -7,10 +7,9 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { HeroIllustration } from '@/components/landing/hero-illustration';
-import { BenefitsIllustration } from '@/components/landing/benefits-illustration';
 import {
   Wallet,
-  Sparkles,
+  Target,
   BarChart3,
   HandCoins,
   CheckCircle2,
@@ -18,9 +17,9 @@ import {
   Menu,
   X,
   Receipt,
-  Target,
   ShieldCheck,
   ChevronRight,
+  Lock,
 } from 'lucide-react';
 
 export default function Home() {
@@ -68,19 +67,11 @@ export default function Home() {
           >
             <div className="relative w-8 h-8 shrink-0 transition-transform group-hover:scale-105">
               <Image
-                src="/logo-dark.webp"
-                alt="Ledgerly Logo"
-                fill
-                sizes="32px"
-                className="object-contain dark:hidden"
-                priority
-              />
-              <Image
                 src="/logo.webp"
                 alt="Ledgerly Logo"
                 fill
                 sizes="32px"
-                className="object-contain hidden dark:block"
+                className="object-contain"
                 priority
               />
             </div>
@@ -92,7 +83,7 @@ export default function Home() {
           {/* Desktop Navigation Links */}
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-landing-text-muted" aria-label="Main navigation">
             <a
-              href="#what-we-do"
+              href="#overview"
               className="hover:text-landing-text transition-colors py-1 focus-visible:outline-landing-teal"
             >
               Overview
@@ -104,16 +95,16 @@ export default function Home() {
               Features
             </a>
             <a
-              href="#how-it-works"
-              className="hover:text-landing-text transition-colors py-1 focus-visible:outline-landing-teal"
-            >
-              How It Works
-            </a>
-            <a
               href="#benefits"
               className="hover:text-landing-text transition-colors py-1 focus-visible:outline-landing-teal"
             >
               Benefits
+            </a>
+            <a
+              href="#how-it-works"
+              className="hover:text-landing-text transition-colors py-1 focus-visible:outline-landing-teal"
+            >
+              How It Works
             </a>
           </nav>
 
@@ -152,7 +143,7 @@ export default function Home() {
         {mobileMenuOpen && (
           <div className="md:hidden border-b border-landing-border bg-landing-surface px-4 pt-3 pb-6 space-y-3 animate-in fade-in slide-in-from-top-2">
             <a
-              href="#what-we-do"
+              href="#overview"
               onClick={() => setMobileMenuOpen(false)}
               className="block px-3 py-2 rounded-lg text-sm font-medium text-landing-text hover:bg-landing-mint/30"
             >
@@ -166,18 +157,18 @@ export default function Home() {
               Features
             </a>
             <a
-              href="#how-it-works"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block px-3 py-2 rounded-lg text-sm font-medium text-landing-text hover:bg-landing-mint/30"
-            >
-              How It Works
-            </a>
-            <a
               href="#benefits"
               onClick={() => setMobileMenuOpen(false)}
               className="block px-3 py-2 rounded-lg text-sm font-medium text-landing-text hover:bg-landing-mint/30"
             >
               Benefits
+            </a>
+            <a
+              href="#how-it-works"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block px-3 py-2 rounded-lg text-sm font-medium text-landing-text hover:bg-landing-mint/30"
+            >
+              How It Works
             </a>
             <div className="pt-3 border-t border-landing-border flex flex-col gap-2">
               <Link
@@ -200,13 +191,7 @@ export default function Home() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
             {/* Hero Left Column: Editorial Headline & Actions */}
             <div className="lg:col-span-6 xl:col-span-6 space-y-6 sm:space-y-8 text-left">
-              {/* Eyebrow Badge */}
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-landing-mint border border-landing-border text-xs font-semibold tracking-wider uppercase text-landing-teal-dark dark:text-landing-teal">
-                <span className="w-2 h-2 rounded-full bg-landing-teal" />
-                Personal Finance, Made Clear
-              </div>
-
-              {/* Dominant Editorial Serif Heading */}
+              {/* Dominant Editorial Serif Heading (No kicker / eyebrow) */}
               <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl text-landing-text font-normal tracking-tight leading-[1.08] max-w-xl">
                 Make sense of your money.
               </h1>
@@ -242,30 +227,63 @@ export default function Home() {
                   <span>No Bank Credentials Needed</span>
                 </div>
                 <div className="flex items-center gap-1.5">
+                  <Lock className="w-4 h-4 text-landing-teal" />
+                  <span>PostgreSQL Row-Level Security</span>
+                </div>
+                <div className="flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4 text-landing-teal" />
-                  <span>Zero Direct AI Mutations</span>
+                  <span>Exact Decimal Math</span>
                 </div>
               </div>
             </div>
 
-            {/* Hero Right Column: Friendly Finance Vector Artwork */}
+            {/* Hero Right Column: High-Fidelity Personal Finance Workspace Artwork */}
             <div className="lg:col-span-6 xl:col-span-6 flex justify-center">
-              <HeroIllustration />
+              <div className="relative w-full max-w-[560px] mx-auto flex items-center justify-center">
+                {/* Background Soft Organic Glow */}
+                <div className="absolute -inset-4 sm:-inset-8 -z-10 pointer-events-none opacity-80 overflow-visible">
+                  <svg
+                    viewBox="0 0 600 500"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="w-full h-full transform scale-105"
+                  >
+                    <path
+                      d="M480 220C520 320 460 440 360 490C250 540 130 500 70 400C10 300 20 170 110 90C200 10 340 30 420 90C470 125 450 165 480 220Z"
+                      fill="var(--color-landing-mint)"
+                      className="transition-colors duration-500"
+                    />
+                    <path
+                      d="M500 170C540 250 490 370 420 410C340 450 260 400 220 340C180 280 200 190 260 130C320 70 430 70 480 110C495 125 490 145 500 170Z"
+                      fill="var(--color-landing-aqua)"
+                      opacity="0.6"
+                      className="transition-colors duration-500"
+                    />
+                  </svg>
+                </div>
+
+                <Image
+                  src="/Hero-image.webp"
+                  alt="Ledgerly personal finance workspace with charts, category breakdown, and expense insights"
+                  width={1536}
+                  height={1024}
+                  priority
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 560px"
+                  className="w-full h-auto object-contain select-none drop-shadow-sm transition-transform duration-300 hover:scale-[1.01]"
+                />
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       {/* =========================================================================
-          3. "WHAT LEDGERLY DOES" SECTION (Inspired by "Our Offer")
+          3. "WHAT LEDGERLY DOES" SECTION
           ========================================================================= */}
-      <section id="what-we-do" className="py-20 bg-landing-alt border-y border-landing-border relative">
+      <section id="overview" className="py-20 bg-landing-alt border-y border-landing-border relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Centered Section Header */}
           <div className="text-center max-w-2xl mx-auto space-y-3 mb-16">
-            <span className="text-xs font-semibold tracking-widest uppercase text-landing-teal">
-              What We Do
-            </span>
             <h2 className="font-serif text-3xl sm:text-4xl text-landing-text font-normal tracking-tight">
               Everything you need to understand your money.
             </h2>
@@ -319,7 +337,7 @@ export default function Home() {
       </section>
 
       {/* =========================================================================
-          4. FEATURE SHOWCASE (Horizontal Cards inspired by Trekt Features)
+          4. FEATURE SHOWCASE
           ========================================================================= */}
       <section id="features" className="py-24 relative overflow-hidden">
         {/* Soft Organic Background Region */}
@@ -336,14 +354,11 @@ export default function Home() {
           {/* Section Header */}
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-14 gap-6">
             <div className="space-y-3 max-w-2xl">
-              <span className="text-xs font-semibold tracking-widest uppercase text-landing-teal">
-                Core Capabilities
-              </span>
               <h2 className="font-serif text-3xl sm:text-4xl text-landing-text font-normal tracking-tight">
                 Designed around your financial life.
               </h2>
               <p className="text-sm sm:text-base text-landing-text-muted leading-relaxed">
-                Every feature is crafted to give you control, confidence, and transparency without overwhelming complexity.
+                Every tool is crafted to give you control, confidence, and transparency without overwhelming complexity.
               </p>
             </div>
 
@@ -381,24 +396,24 @@ export default function Home() {
               </Link>
             </div>
 
-            {/* Card 2: AI-Powered Draft Entry */}
+            {/* Card 2: Budget Management (Grounded, non-AI) */}
             <div className="group p-6 rounded-2xl bg-landing-surface-card border border-landing-border shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">
               <div>
                 <div className="w-12 h-12 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-6 transition-transform group-hover:scale-110">
-                  <Sparkles className="w-6 h-6" />
+                  <Target className="w-6 h-6" />
                 </div>
                 <h3 className="font-semibold text-base sm:text-lg text-landing-text mb-2.5">
-                  AI-Assisted Entry
+                  Budget Management
                 </h3>
                 <p className="text-xs sm:text-sm text-landing-text-muted leading-relaxed mb-6">
-                  Type or dictate naturally. Ledgerly stages intelligent drafts for your review before anything commits to your ledger.
+                  Set comfortable monthly limits across categories. Monitor your burn rate in real time and stay ahead of overspending.
                 </p>
               </div>
               <a
-                href="#how-it-works"
+                href="#benefits"
                 className="inline-flex items-center gap-1.5 text-xs font-semibold text-landing-teal hover:text-landing-teal-dark transition-colors mt-auto"
               >
-                <span>See workflow</span>
+                <span>Manage budgets</span>
                 <ChevronRight className="w-3.5 h-3.5" />
               </a>
             </div>
@@ -413,7 +428,7 @@ export default function Home() {
                   Spending Analytics
                 </h3>
                 <p className="text-xs sm:text-sm text-landing-text-muted leading-relaxed mb-6">
-                  Understand your financial health with visual cash flow charts, category breakdown doughnuts, and trend lines.
+                  Understand your financial health with visual cash flow charts, category breakdown distributions, and monthly trends.
                 </p>
               </div>
               <a
@@ -451,22 +466,19 @@ export default function Home() {
       </section>
 
       {/* =========================================================================
-          5. BENEFITS SECTION (Two-column layout matching Trekt Benefits)
+          5. BENEFITS SECTION
           ========================================================================= */}
       <section id="benefits" className="py-20 sm:py-28 bg-landing-alt border-y border-landing-border relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
-            {/* Left Column: Mountain Journey Illustration */}
+            {/* Left Column: Financial Clarity & Debt Showcase (Real Ledger UI Preview) */}
             <div className="lg:col-span-6 flex justify-center order-2 lg:order-1">
-              <BenefitsIllustration />
+              <HeroIllustration />
             </div>
 
             {/* Right Column: Benefits Content & 2x2 Checklist */}
             <div className="lg:col-span-6 space-y-6 sm:space-y-8 order-1 lg:order-2">
               <div className="space-y-3">
-                <span className="text-xs font-semibold tracking-widest uppercase text-landing-teal">
-                  Why Ledgerly
-                </span>
                 <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl text-landing-text font-normal tracking-tight leading-tight">
                   Feel more confident about your money.
                 </h2>
@@ -475,7 +487,7 @@ export default function Home() {
                 </p>
               </div>
 
-              {/* 2-Column Checklist (matching Trekt's 2x2 teal circular checks) */}
+              {/* 2-Column Checklist */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-6 gap-x-6 pt-2">
                 {/* Benefit 1 */}
                 <div className="flex items-start gap-3">
@@ -522,17 +534,17 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Benefit 4 */}
+                {/* Benefit 4 (Data Privacy) */}
                 <div className="flex items-start gap-3">
                   <div className="mt-0.5 w-6 h-6 rounded-full bg-landing-teal text-white flex items-center justify-center shrink-0 shadow-sm">
                     <CheckCircle2 className="w-4 h-4" />
                   </div>
                   <div>
                     <h4 className="text-sm font-semibold text-landing-text mb-1">
-                      Safe AI review workflow
+                      Complete data privacy
                     </h4>
                     <p className="text-xs text-landing-text-muted leading-relaxed">
-                      Review and edit AI-suggested drafts before committing anything to ledger.
+                      Your records are strictly isolated via PostgreSQL RLS. No bank scraping.
                     </p>
                   </div>
                 </div>
@@ -554,14 +566,11 @@ export default function Home() {
       </section>
 
       {/* =========================================================================
-          6. HOW IT WORKS (3-Step Workflow)
+          6. HOW IT WORKS
           ========================================================================= */}
       <section id="how-it-works" className="py-20 sm:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto space-y-3 mb-16">
-            <span className="text-xs font-semibold tracking-widest uppercase text-landing-teal">
-              Simple Workflow
-            </span>
             <h2 className="font-serif text-3xl sm:text-4xl text-landing-text font-normal tracking-tight">
               Three steps to complete clarity.
             </h2>
@@ -578,7 +587,7 @@ export default function Home() {
               </span>
               <h3 className="font-semibold text-lg text-landing-text">1. Record</h3>
               <p className="text-xs sm:text-sm text-landing-text-muted leading-relaxed">
-                Add transactions with quick manual forms or type in plain natural language like &ldquo;Paid ৳500 for rickshaw and snacks&rdquo;.
+                Add transactions with quick manual forms with custom categories, dates, and accounts.
               </p>
             </div>
 
@@ -587,9 +596,9 @@ export default function Home() {
               <span className="font-serif text-4xl font-semibold text-landing-teal/40 block">
                 02
               </span>
-              <h3 className="font-semibold text-lg text-landing-text">2. Review</h3>
+              <h3 className="font-semibold text-lg text-landing-text">2. Analyze</h3>
               <p className="text-xs sm:text-sm text-landing-text-muted leading-relaxed">
-                Inspect categorized entries. Confirm amounts and dates with complete confidence—no automatic mutations without your permission.
+                Inspect categorized entries. Confirm amounts and dates with complete confidence—exact math, zero guesswork.
               </p>
             </div>
 
@@ -656,14 +665,14 @@ export default function Home() {
             <div className="flex items-center gap-2.5">
               <div className="relative w-6 h-6">
                 <Image
-                  src="/logo-dark.webp"
+                  src="/logo.webp"
                   alt="Ledgerly Logo"
                   fill
                   sizes="24px"
                   className="object-contain dark:hidden"
                 />
                 <Image
-                  src="/logo.webp"
+                  src="/logo-dark.webp"
                   alt="Ledgerly Logo"
                   fill
                   sizes="24px"
@@ -687,7 +696,7 @@ export default function Home() {
             </span>
             <ul className="space-y-1.5 text-xs text-landing-text-muted">
               <li>
-                <a href="#what-we-do" className="hover:text-landing-teal transition-colors">
+                <a href="#overview" className="hover:text-landing-teal transition-colors">
                   Overview
                 </a>
               </li>
@@ -697,13 +706,13 @@ export default function Home() {
                 </a>
               </li>
               <li>
-                <a href="#how-it-works" className="hover:text-landing-teal transition-colors">
-                  How It Works
+                <a href="#benefits" className="hover:text-landing-teal transition-colors">
+                  Benefits
                 </a>
               </li>
               <li>
-                <a href="#benefits" className="hover:text-landing-teal transition-colors">
-                  Benefits
+                <a href="#how-it-works" className="hover:text-landing-teal transition-colors">
+                  How It Works
                 </a>
               </li>
             </ul>

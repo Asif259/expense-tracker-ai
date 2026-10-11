@@ -5,8 +5,8 @@ import { ThemeProvider } from '@/context/theme-context';
 import { Toaster } from '@/components/toast';
 
 export const metadata: Metadata = {
-  title: 'Ledgerly — AI-Powered Expense Tracker',
-  description: 'Track expenses effortlessly with natural language AI parsing',
+  title: 'Ledgerly — Personal Finance & Expense Tracker',
+  description: 'Track daily expenses, split personal loans, and manage your budget with clarity and precision.',
 };
 
 const themeInitScript = `
@@ -38,7 +38,10 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body className="min-h-full flex flex-col bg-[var(--color-bg)] text-[var(--color-text)] transition-colors duration-150 font-sans">
+      <body
+        suppressHydrationWarning
+        className="min-h-full flex flex-col bg-[var(--color-bg)] text-[var(--color-text)] transition-colors duration-150 font-sans"
+      >
         <ThemeProvider>
           <AuthProvider>
             {children}

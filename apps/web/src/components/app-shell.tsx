@@ -108,8 +108,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
         <div className="h-16 flex items-center justify-between px-6 border-b border-[var(--color-border)]">
           <Link href="/dashboard" className="flex items-center gap-2.5 group">
             <div className="relative w-8 h-8 shrink-0">
-              <Image src="/logo-dark.webp" alt="Ledgerly Logo" fill sizes="32px" className="object-contain dark:hidden" priority />
-              <Image src="/logo.webp" alt="Ledgerly Logo" fill sizes="32px" className="object-contain hidden dark:block" priority />
+              <Image src="/logo.webp" alt="Ledgerly Logo" fill sizes="32px" className="object-contain" priority />
             </div>
             <div>
               <span className="text-base font-bold text-[var(--color-text)] tracking-tight group-hover:text-[var(--color-primary)] transition-colors">
@@ -210,8 +209,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
       <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-[var(--color-surface-elevated)] border-b border-[var(--color-border)] z-30 flex items-center justify-between px-4">
         <Link href="/dashboard" className="flex items-center gap-2 cursor-pointer">
           <div className="relative w-7 h-7 shrink-0">
-            <Image src="/logo-dark.webp" alt="Ledgerly Logo" fill sizes="28px" className="object-contain dark:hidden" priority />
-            <Image src="/logo.webp" alt="Ledgerly Logo" fill sizes="28px" className="object-contain hidden dark:block" priority />
+            <Image src="/logo.webp" alt="Ledgerly Logo" fill sizes="28px" className="object-contain" priority />
           </div>
           <span className="text-base font-bold text-[var(--color-text)] tracking-tight">
             Ledgerly
