@@ -52,7 +52,7 @@ export function ChartCard({
 
   return (
     <div
-      className={`border border-[var(--color-border)] bg-[var(--color-surface)] rounded-xl p-5 sm:p-6 shadow-[0_1px_2px_0_rgba(0,0,0,0.02)] flex flex-col justify-between transition-colors ${className}`}
+      className={`border border-[var(--color-border)] bg-[var(--color-surface)] rounded-2xl p-5 sm:p-6 shadow-[var(--shadow-card)] flex flex-col justify-between transition-colors ${className}`}
     >
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">

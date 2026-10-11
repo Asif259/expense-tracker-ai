@@ -5,28 +5,28 @@ updated: "2026-10-10"
 
 themes:
   light:
-    bg: "#F9FBFC"                 # Near-white canvas from reference screenshot
+    bg: "#F8FAF9"                 # Soft calm canvas matching homepage
     surface-elevated: "#FFFFFF"   # Sidebar, topbars, elevated panels
     surface: "#FFFFFF"            # Clean white cards, tables
-    surface-hover: "#F3F4F7"      # Subtle hover surface
-    border: "#EDEFF3"             # Thin, subtle gray borders
-    border-hover: "#DDE0E6"       # Focused/hovered borders
-    text: "#111111"               # Primary text & neutral financial numbers
-    text-muted: "#6E7179"         # Muted gray supporting text & subtitles
+    surface-hover: "#F2F7F5"      # Subtle sage/mint-tinted hover
+    border: "#E8EEEB"             # Soft warm sage border matching homepage
+    border-hover: "#D5DFDC"       # Focused/hovered borders
+    text: "#171A1C"               # Deep charcoal text & neutral financial numbers
+    text-muted: "#747B80"         # Muted supporting text & subtitles
     text-dim: "#9CA3AF"           # Tertiary text - timestamps, hints
-    primary: "#6DD0A1"            # Mint green accent/primary CTA
-    primary-hover: "#5BBF90"      # Mint green hover
-    primary-contrast: "#111111"   # High-contrast text on mint CTA
+    primary: "#3CA995"            # Signature Ledgerly SaaS teal accent/CTA
+    primary-hover: "#329683"      # Deep teal hover
+    primary-contrast: "#FFFFFF"   # Crisp white text on teal CTA
     secondary: "#5452CF"          # Indigo secondary accent
     secondary-hover: "#4543B5"    # Indigo hover
-    secondary-bg: "rgba(84, 82, 207, 0.08)"
+    secondary-bg: "rgba(60, 169, 149, 0.08)"
     accent-blue: "#6CB3F9"        # Soft blue
     accent-amber: "#F5C258"       # Amber
-    pale-mint: "#CEF1E4"          # Lightly tinted mint badge
-    pale-cyan: "#D3FDFE"          # Lightly tinted cyan badge
-    pale-yellow: "#FDF1B2"        # Lightly tinted yellow badge
-    income: "#6DD0A1"             # Indicator direction only (icons/charts)
-    income-bg: "#CEF1E4"          # Mint badge background
+    pale-mint: "#E6F7F1"          # Tinted mint badge
+    pale-cyan: "#D7F4EC"          # Tinted aqua badge
+    pale-yellow: "#FDF1B2"        # Tinted yellow badge
+    income: "#3CA995"             # Indicator direction only (icons/charts)
+    income-bg: "#E6F7F1"          # Mint badge background
     expense: "#E11D48"            # Outgoing indicator direction only
     expense-bg: "rgba(225, 29, 72, 0.08)"
     warning: "#F5C258"            # Amber alerts
@@ -36,28 +36,28 @@ themes:
     card-shadow: "0 1px 2px 0 rgba(0, 0, 0, 0.02)" # Modest/near-flat shadow
 
   dark:
-    bg: "#0B0B0B"                 # Dark canvas
-    surface-elevated: "#161618"   # Dark sidebar & panels
-    surface: "#1C1C1F"            # Dark cards & panels
-    surface-hover: "#242428"      # Interactive hover
-    border: "#2E2E32"             # Subtle dark borders
-    border-hover: "#3E3E44"
-    text: "#F4F4F4"               # Primary text & neutral financial numbers
-    text-muted: "#9E9EA4"         # Muted supporting text
-    text-dim: "#68686E"
-    primary: "#6DD0A1"            # Mint green accent
-    primary-hover: "#5BBF90"
-    primary-contrast: "#0B0B0B"   # Deep dark text on mint
+    bg: "#0B0F17"                 # Midnight slate canvas matching homepage
+    surface-elevated: "#111726"   # Deep slate elevated sidebar & panels
+    surface: "#151D30"            # Deep slate cards & panels
+    surface-hover: "#1E293B"      # Interactive hover surface
+    border: "#1E293B"             # Subtle slate borders matching homepage
+    border-hover: "#2E3E57"
+    text: "#F1F5F9"               # Slate 100 primary text & neutral financial numbers
+    text-muted: "#94A3B8"         # Slate 400 supporting text
+    text-dim: "#64748B"           # Slate 500 tertiary hints
+    primary: "#3CA995"            # Signature Ledgerly teal accent
+    primary-hover: "#45B8A3"      # Luminous teal hover
+    primary-contrast: "#FFFFFF"   # High contrast text on teal
     secondary: "#7A78E0"          # Indigo / violet accent
     secondary-hover: "#6A68D5"
-    secondary-bg: "rgba(122, 120, 224, 0.12)"
+    secondary-bg: "rgba(60, 169, 149, 0.12)"
     accent-blue: "#6CB3F9"
     accent-amber: "#F5C258"
-    pale-mint: "rgba(109, 208, 161, 0.15)"
-    pale-cyan: "rgba(108, 179, 249, 0.15)"
+    pale-mint: "rgba(60, 169, 149, 0.15)"
+    pale-cyan: "rgba(84, 199, 178, 0.12)"
     pale-yellow: "rgba(245, 194, 88, 0.15)"
-    income: "#6DD0A1"
-    income-bg: "rgba(109, 208, 161, 0.15)"
+    income: "#45B8A3"
+    income-bg: "rgba(60, 169, 149, 0.15)"
     expense: "#F43F5E"
     expense-bg: "rgba(244, 63, 94, 0.15)"
     warning: "#F5C258"

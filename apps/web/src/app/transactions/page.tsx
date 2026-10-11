@@ -169,7 +169,7 @@ export default function TransactionsPage() {
         </div>
 
         {/* Filter controls */}
-        <div className="p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]">
+        <div className="p-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {/* Type filter */}
             <div>
@@ -277,7 +277,7 @@ export default function TransactionsPage() {
         </div>
 
         {/* Transactions Table / List */}
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] overflow-hidden">
+        <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] overflow-hidden">
           {loading ? (
             <div className="p-8 space-y-3">
               {[1, 2, 3, 4, 5].map((i) => (

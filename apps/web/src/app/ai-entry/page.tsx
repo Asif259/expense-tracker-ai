@@ -172,14 +172,14 @@ function AiEntryInner() {
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">AI Natural Language Entry</h1>
-          <p className="text-xs text-[var(--color-text-muted)] mt-1">
+          <h1 className="text-page-title">AI Natural Language Entry</h1>
+          <p className="text-secondary mt-1">
             State your expenses or income naturally. Groq Llama 3 parses the amounts and creates review drafts with zero direct database mutation.
           </p>
         </div>
 
         {/* Input box */}
-        <div className="p-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-lg space-y-4">
+        <div className="p-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-lg space-y-4">
           <form onSubmit={handleParse} className="space-y-4">
             <div>
               <div className="flex items-center justify-between mb-2">

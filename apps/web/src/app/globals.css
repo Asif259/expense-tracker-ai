@@ -5,28 +5,28 @@
 :root,
 [data-theme="light"],
 .light {
-  --color-bg: #F9FBFC;
+  --color-bg: #F8FAF9;
   --color-surface-elevated: #FFFFFF;
   --color-surface: #FFFFFF;
-  --color-surface-hover: #F3F4F7;
-  --color-border: #EDEFF3;
-  --color-border-hover: #DDE0E6;
-  --color-text: #111111;
-  --color-text-muted: #6E7179;
+  --color-surface-hover: #F2F7F5;
+  --color-border: #E8EEEB;
+  --color-border-hover: #D5DFDC;
+  --color-text: #171A1C;
+  --color-text-muted: #747B80;
   --color-text-dim: #9CA3AF;
-  --color-primary: #6DD0A1;
-  --color-primary-hover: #5BBF90;
-  --color-primary-contrast: #111111;
+  --color-primary: #3CA995;
+  --color-primary-hover: #329683;
+  --color-primary-contrast: #FFFFFF;
   --color-secondary: #5452CF;
   --color-secondary-hover: #4543B5;
-  --color-secondary-bg: rgba(84, 82, 207, 0.08);
+  --color-secondary-bg: rgba(60, 169, 149, 0.08);
   --color-accent-blue: #6CB3F9;
   --color-accent-amber: #F5C258;
-  --color-pale-mint: #CEF1E4;
-  --color-pale-cyan: #D3FDFE;
+  --color-pale-mint: #E6F7F1;
+  --color-pale-cyan: #D7F4EC;
   --color-pale-yellow: #FDF1B2;
-  --color-income: #6DD0A1;
-  --color-income-bg: #CEF1E4;
+  --color-income: #3CA995;
+  --color-income-bg: #E6F7F1;
   --color-expense: #E11D48;
   --color-expense-bg: rgba(225, 29, 72, 0.08);
   --color-warning: #F5C258;
@@ -51,46 +51,46 @@
 
 [data-theme="dark"],
 .dark {
-  --color-bg: #0B0B0B;
-  --color-surface-elevated: #161618;
-  --color-surface: #1C1C1F;
-  --color-surface-hover: #242428;
-  --color-border: #2E2E32;
-  --color-border-hover: #3E3E44;
-  --color-text: #F4F4F4;
-  --color-text-muted: #9E9EA4;
-  --color-text-dim: #68686E;
-  --color-primary: #6DD0A1;
-  --color-primary-hover: #5BBF90;
-  --color-primary-contrast: #0B0B0B;
+  --color-bg: #0B0F17;
+  --color-surface-elevated: #111726;
+  --color-surface: #151D30;
+  --color-surface-hover: #1E293B;
+  --color-border: #1E293B;
+  --color-border-hover: #2E3E57;
+  --color-text: #F1F5F9;
+  --color-text-muted: #94A3B8;
+  --color-text-dim: #64748B;
+  --color-primary: #3CA995;
+  --color-primary-hover: #45B8A3;
+  --color-primary-contrast: #FFFFFF;
   --color-secondary: #7A78E0;
   --color-secondary-hover: #6A68D5;
-  --color-secondary-bg: rgba(122, 120, 224, 0.12);
+  --color-secondary-bg: rgba(60, 169, 149, 0.12);
   --color-accent-blue: #6CB3F9;
   --color-accent-amber: #F5C258;
-  --color-pale-mint: rgba(109, 208, 161, 0.15);
-  --color-pale-cyan: rgba(108, 179, 249, 0.15);
+  --color-pale-mint: rgba(60, 169, 149, 0.15);
+  --color-pale-cyan: rgba(84, 199, 178, 0.12);
   --color-pale-yellow: rgba(245, 194, 88, 0.15);
-  --color-income: #6DD0A1;
-  --color-income-bg: rgba(109, 208, 161, 0.15);
+  --color-income: #45B8A3;
+  --color-income-bg: rgba(60, 169, 149, 0.15);
   --color-expense: #F43F5E;
   --color-expense-bg: rgba(244, 63, 94, 0.15);
   --color-warning: #F5C258;
   --color-warning-bg: rgba(245, 194, 88, 0.15);
   --color-danger: #EF4444;
   --color-danger-hover: #DC2626;
-  --color-landing-bg: #0B0B0B;
-  --color-landing-surface: #161618;
-  --color-landing-surface-card: #1C1C1F;
-  --color-landing-alt: #111315;
-  --color-landing-mint: rgba(60, 169, 149, 0.12);
-  --color-landing-aqua: rgba(60, 169, 149, 0.18);
-  --color-landing-teal: #3CA995;
-  --color-landing-teal-hover: #48BEA8;
-  --color-landing-teal-dark: #2FA88F;
-  --color-landing-text: #F4F5F6;
-  --color-landing-text-muted: #949CA1;
-  --color-landing-border: #222628;
+  --color-landing-bg: #0B0F17;
+  --color-landing-surface: #111726;
+  --color-landing-surface-card: #151D30;
+  --color-landing-alt: #0E1422;
+  --color-landing-mint: rgba(60, 169, 149, 0.15);
+  --color-landing-aqua: rgba(84, 199, 178, 0.12);
+  --color-landing-teal: #45B8A3;
+  --color-landing-teal-hover: #52C7B2;
+  --color-landing-teal-dark: #A5E8DC;
+  --color-landing-text: #F1F5F9;
+  --color-landing-text-muted: #94A3B8;
+  --color-landing-border: #1E293B;
   --shadow-card: none;
   color-scheme: dark;
 }
@@ -128,7 +128,7 @@ body {
 /* Scrollbar styling */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 9999px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--color-border-hover); }
 
 /* Focus ring */
@@ -150,10 +150,11 @@ body {
 
 /* Centralized Semantic Typography Hierarchy */
 .text-page-title {
+  font-family: var(--font-serif);
   font-size: clamp(1.5rem, 2.5vw, 1.875rem); /* 24px - 30px */
-  font-weight: 700;
+  font-weight: 500;
   line-height: 1.2;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.02em;
   color: var(--color-text);
 }
 

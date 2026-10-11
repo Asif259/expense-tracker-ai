@@ -267,10 +267,10 @@ export default function DashboardPage() {
             ========================================================================= */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-page-title">
+            <h1 className="font-serif text-2xl sm:text-3xl text-[var(--color-text)] font-normal tracking-tight">
               Good Day, {userName}
             </h1>
-            <p className="text-secondary mt-1">
+            <p className="text-xs sm:text-sm text-[var(--color-text-muted)] mt-1">
               {currentDateFormatted} • Verified financial intelligence ledger
             </p>
           </div>
@@ -278,7 +278,7 @@ export default function DashboardPage() {
           <div className="flex flex-wrap items-center gap-2.5">
             {/* Currency Selector */}
             {allCurrencies.length > 1 && (
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-xs">
+              <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-xs">
                 <Wallet className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
                 <span className="text-[11px] font-semibold text-[var(--color-text-muted)]">Currency:</span>
                 <select
@@ -298,7 +298,7 @@ export default function DashboardPage() {
 
             <Link
               href="/ai-entry"
-              className="px-3.5 py-2 rounded-xl bg-[var(--color-pale-mint)] text-[var(--color-text)] text-xs font-semibold hover:opacity-90 transition-all flex items-center gap-1.5 border border-[var(--color-border)]"
+              className="px-3.5 py-2 rounded-xl bg-[var(--color-pale-mint)] text-[var(--color-primary)] text-xs font-semibold hover:opacity-90 transition-all flex items-center gap-1.5 border border-[var(--color-primary)]/20"
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span>AI Quick Entry</span>
@@ -306,14 +306,14 @@ export default function DashboardPage() {
 
             <Link
               href="/loans/new"
-              className="px-3.5 py-2 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] hover:bg-[var(--color-surface-hover)] text-[var(--color-text)] text-xs font-semibold transition-all flex items-center gap-1.5"
+              className="px-3.5 py-2 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] hover:bg-[var(--color-surface-hover)] text-[var(--color-text)] text-xs font-semibold transition-all flex items-center gap-1.5 shadow-xs"
             >
               <span>+ Record Loan</span>
             </Link>
 
             <Link
               href="/transactions/new"
-              className="px-4 py-2 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm active:scale-[0.98]"
+              className="px-4 py-2 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm hover:shadow-md active:scale-[0.98]"
             >
               <span>+ Add Transaction</span>
             </Link>
@@ -363,7 +363,7 @@ export default function DashboardPage() {
             ========================================================================= */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Net Cash Flow */}
-          <div className="p-5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] flex flex-col justify-between shadow-[0_1px_2px_0_rgba(0,0,0,0.02)]">
+          <div className="p-5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] flex flex-col justify-between shadow-[var(--shadow-card)] hover:border-[var(--color-border-hover)] transition-all">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-[var(--color-text-muted)]">
                 Net Cash Flow
@@ -371,15 +371,14 @@ export default function DashboardPage() {
               <span
                 className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                   netBalanceNum >= 0
-                    ? 'bg-[var(--color-pale-mint)] text-[var(--color-text)]'
-                    : 'bg-[var(--color-pale-yellow)] text-[var(--color-text)]'
+                    ? 'bg-[var(--color-pale-mint)] text-[var(--color-primary)] border border-[var(--color-primary)]/20'
+                    : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
                 }`}
               >
                 {netBalanceNum >= 0 ? '+ Positive' : '- Deficit'}
               </span>
             </div>
             <div className="mt-3">
-              {/* Financial Number Rule: Always rendered in neutral text #111111 / #F4F4F4 */}
               <div className="text-metric">
                 {loading ? (
                   <div className="h-8 w-32 bg-[var(--color-surface-hover)] animate-pulse rounded" />
@@ -394,13 +393,13 @@ export default function DashboardPage() {
           </div>
 
           {/* Total Income */}
-          <div className="p-5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] flex flex-col justify-between shadow-[0_1px_2px_0_rgba(0,0,0,0.02)]">
+          <div className="p-5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] flex flex-col justify-between shadow-[var(--shadow-card)] hover:border-[var(--color-border-hover)] transition-all">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-[var(--color-text-muted)]">
                 Total Inflow
               </span>
-              <span className="w-5 h-5 rounded-md bg-[var(--color-pale-mint)] text-[var(--color-text)] flex items-center justify-center text-xs font-bold">
-                ↓
+              <span className="w-7 h-7 rounded-lg bg-[var(--color-pale-mint)] text-[var(--color-primary)] flex items-center justify-center text-xs font-bold">
+                <ArrowDownLeft className="w-4 h-4" />
               </span>
             </div>
             <div className="mt-3">
@@ -418,13 +417,13 @@ export default function DashboardPage() {
           </div>
 
           {/* Total Expenses */}
-          <div className="p-5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] flex flex-col justify-between shadow-[0_1px_2px_0_rgba(0,0,0,0.02)]">
+          <div className="p-5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] flex flex-col justify-between shadow-[var(--shadow-card)] hover:border-[var(--color-border-hover)] transition-all">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-[var(--color-text-muted)]">
                 Total Outflow
               </span>
-              <span className="w-5 h-5 rounded-md bg-[var(--color-pale-yellow)] text-[var(--color-text)] flex items-center justify-center text-xs font-bold">
-                ↑
+              <span className="w-7 h-7 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center text-xs font-bold">
+                <ArrowUpRight className="w-4 h-4" />
               </span>
             </div>
             <div className="mt-3">
@@ -442,12 +441,12 @@ export default function DashboardPage() {
           </div>
 
           {/* Transactions Count */}
-          <div className="p-5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] flex flex-col justify-between shadow-[0_1px_2px_0_rgba(0,0,0,0.02)]">
+          <div className="p-5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] flex flex-col justify-between shadow-[var(--shadow-card)] hover:border-[var(--color-border-hover)] transition-all">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-[var(--color-text-muted)]">
                 Ledger Records
               </span>
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[var(--color-pale-cyan)] text-[var(--color-text)] tabular-nums">
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[var(--color-pale-cyan)] text-[var(--color-primary)] border border-[var(--color-primary)]/20 tabular-nums">
                 {currentSummary.currency}
               </span>
             </div>
@@ -507,17 +506,17 @@ export default function DashboardPage() {
           {/* LEFT 8 COLUMNS: MAIN CHART & REPORT WORKSPACE */}
           <div className="lg:col-span-8 space-y-6">
             {/* Visual Analytics Tab Navigation */}
-            <div className="border border-[var(--color-border)] bg-[var(--color-surface)] rounded-xl p-4 shadow-[0_1px_2px_0_rgba(0,0,0,0.02)] flex items-center justify-between">
-              <span className="text-[11px] uppercase font-bold tracking-wider text-[var(--color-text-muted)]">
+            <div className="border border-[var(--color-border)] bg-[var(--color-surface)] rounded-2xl p-4 shadow-[var(--shadow-card)] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <span className="text-xs font-bold tracking-tight text-[var(--color-text)]">
                 Analytics Domain
               </span>
-              <div className="flex items-center gap-3 sm:gap-6 text-xs font-semibold">
+              <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[var(--color-surface-hover)] text-xs font-semibold">
                 <button
                   type="button"
                   onClick={() => setActiveReportTab('flow')}
-                  className={`pb-1 transition-colors cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                     activeReportTab === 'flow'
-                      ? 'border-b-2 border-[var(--color-text)] text-[var(--color-text)]'
+                      ? 'bg-[var(--color-surface)] text-[var(--color-text)] shadow-xs'
                       : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
                   }`}
                 >
@@ -526,9 +525,9 @@ export default function DashboardPage() {
                 <button
                   type="button"
                   onClick={() => setActiveReportTab('breakdown')}
-                  className={`pb-1 transition-colors cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                     activeReportTab === 'breakdown'
-                      ? 'border-b-2 border-[var(--color-text)] text-[var(--color-text)]'
+                      ? 'bg-[var(--color-surface)] text-[var(--color-text)] shadow-xs'
                       : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
                   }`}
                 >
@@ -537,9 +536,9 @@ export default function DashboardPage() {
                 <button
                   type="button"
                   onClick={() => setActiveReportTab('loans')}
-                  className={`pb-1 transition-colors cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                     activeReportTab === 'loans'
-                      ? 'border-b-2 border-[var(--color-text)] text-[var(--color-text)]'
+                      ? 'bg-[var(--color-surface)] text-[var(--color-text)] shadow-xs'
                       : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
                   }`}
                 >
@@ -602,7 +601,7 @@ export default function DashboardPage() {
             )}
 
             {/* Recent Ledger Activity Table */}
-            <div className="border border-[var(--color-border)] bg-[var(--color-surface)] rounded-xl p-5 sm:p-6 shadow-[0_1px_2px_0_rgba(0,0,0,0.02)]">
+            <div className="border border-[var(--color-border)] bg-[var(--color-surface)] rounded-2xl p-5 sm:p-6 shadow-[var(--shadow-card)]">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h2 className="text-sm font-bold text-[var(--color-text)] tracking-tight">
@@ -693,7 +692,7 @@ export default function DashboardPage() {
               ========================================================================= */}
           <div className="lg:col-span-4 space-y-5">
             {/* Contextual AI Summary Card */}
-            <div className="border border-[var(--color-border)] bg-[var(--color-surface)] rounded-xl p-5 shadow-[0_1px_2px_0_rgba(0,0,0,0.02)] space-y-4">
+            <div className="border border-[var(--color-border)] bg-[var(--color-surface)] rounded-2xl p-5 shadow-[var(--shadow-card)] space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)] flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5" /> AI Ledger Insights

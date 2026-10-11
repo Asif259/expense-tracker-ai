@@ -121,7 +121,7 @@ export default function Home() {
 
             <Link
               href="/login?mode=signup"
-              className="inline-flex items-center justify-center px-5 py-2.5 rounded-full bg-landing-teal hover:bg-landing-teal-hover text-white text-xs sm:text-sm font-semibold tracking-wide uppercase transition-all shadow-sm hover:shadow-md hover:shadow-teal-900/10 active:scale-95 focus-visible:outline-landing-teal"
+              className="inline-flex items-center justify-center px-5 py-2.5 rounded-full bg-landing-teal hover:bg-landing-teal-hover text-white dark:text-slate-950 text-xs sm:text-sm font-semibold tracking-wide uppercase transition-all shadow-sm hover:shadow-md hover:shadow-teal-900/10 active:scale-95 focus-visible:outline-landing-teal"
             >
               Get Started
             </Link>
@@ -206,7 +206,7 @@ export default function Home() {
               <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
                 <Link
                   href="/login?mode=signup"
-                  className="inline-flex items-center justify-center px-7 py-3.5 rounded-full bg-landing-teal hover:bg-landing-teal-hover text-white text-sm font-semibold tracking-wide uppercase shadow-sm hover:shadow-md transition-all active:scale-98 cursor-pointer focus-visible:outline-landing-teal"
+                  className="inline-flex items-center justify-center px-7 py-3.5 rounded-full bg-landing-teal hover:bg-landing-teal-hover text-white dark:text-slate-950 text-sm font-semibold tracking-wide uppercase shadow-sm hover:shadow-md transition-all active:scale-98 cursor-pointer focus-visible:outline-landing-teal"
                 >
                   <span>Get Started</span>
                   <ArrowRight className="w-4 h-4 ml-2" />
@@ -495,9 +495,9 @@ export default function Home() {
                     <CheckCircle2 className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-semibold text-landing-text mb-1">
+                    <h3 className="text-sm font-semibold text-landing-text mb-1">
                       Clear spending patterns
-                    </h4>
+                    </h3>
                     <p className="text-xs text-landing-text-muted leading-relaxed">
                       See where money flows month over month with intuitive charts.
                     </p>
@@ -510,9 +510,9 @@ export default function Home() {
                     <CheckCircle2 className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-semibold text-landing-text mb-1">
+                    <h3 className="text-sm font-semibold text-landing-text mb-1">
                       Organized transactions
-                    </h4>
+                    </h3>
                     <p className="text-xs text-landing-text-muted leading-relaxed">
                       Filter, sort, and search your finances by category, account, or notes.
                     </p>
@@ -525,9 +525,9 @@ export default function Home() {
                     <CheckCircle2 className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-semibold text-landing-text mb-1">
+                    <h3 className="text-sm font-semibold text-landing-text mb-1">
                       Track debts &amp; commitments
-                    </h4>
+                    </h3>
                     <p className="text-xs text-landing-text-muted leading-relaxed">
                       Monitor money lent or borrowed with friendly settlement tracking.
                     </p>
@@ -540,9 +540,9 @@ export default function Home() {
                     <CheckCircle2 className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-semibold text-landing-text mb-1">
+                    <h3 className="text-sm font-semibold text-landing-text mb-1">
                       Complete data privacy
-                    </h4>
+                    </h3>
                     <p className="text-xs text-landing-text-muted leading-relaxed">
                       Your records are strictly isolated via PostgreSQL RLS. No bank scraping.
                     </p>
@@ -637,7 +637,7 @@ export default function Home() {
           <div className="relative z-10 pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               href="/login?mode=signup"
-              className="w-full sm:w-auto px-8 py-4 rounded-full bg-landing-teal hover:bg-landing-teal-hover text-white text-sm font-semibold tracking-wide uppercase transition-all shadow-sm hover:shadow-md active:scale-98 focus-visible:outline-landing-teal"
+              className="w-full sm:w-auto px-8 py-4 rounded-full bg-landing-teal hover:bg-landing-teal-hover text-white dark:text-slate-950 text-sm font-semibold tracking-wide uppercase transition-all shadow-sm hover:shadow-md active:scale-98 focus-visible:outline-landing-teal"
             >
               Get Started Free
             </Link>

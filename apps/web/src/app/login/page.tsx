@@ -79,27 +79,29 @@ function LoginForm() {
           <div className="relative h-10 w-10 shrink-0">
             <Image src="/logo.webp" alt="Ledgerly Logo" fill sizes="40px" className="object-contain" priority />
           </div>
-          <span className="text-xl font-bold tracking-tight">Ledgerly</span>
+          <span className="text-xl font-bold tracking-tight text-[var(--color-text)]">
+            Ledgerly<span className="text-[var(--color-primary)]">.</span>
+          </span>
         </Link>
-        <p className="text-xs text-[var(--color-text-muted)]">
+        <p className="text-xs text-[var(--color-text-muted)] mt-1">
           {mode === 'signin'
-            ? 'Sign in to access your ledger and AI drafts'
-            : 'Create an account to start tracking expenses with AI'}
+            ? 'Sign in to access your personal finance ledger'
+            : 'Create an account to start tracking expenses with clarity'}
         </p>
       </div>
 
       {/* Mode Toggle */}
-      <div className="flex rounded-lg bg-[var(--color-bg)] p-1 border border-[var(--color-border)] mb-6">
+      <div className="flex rounded-xl bg-[var(--color-surface-hover)] p-1 border border-[var(--color-border)] mb-6">
         <button
           type="button"
           onClick={() => {
             setMode('signin');
             setErrorMsg(null);
           }}
-          className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
+          className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
             mode === 'signin'
-              ? 'bg-[var(--color-surface)] text-[var(--color-text)] shadow-sm'
-              : 'text-[var(--color-text-dim)] hover:text-[var(--color-text)]'
+              ? 'bg-[var(--color-surface)] text-[var(--color-text)] shadow-xs'
+              : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
           }`}
         >
           Sign In
@@ -110,10 +112,10 @@ function LoginForm() {
             setMode('signup');
             setErrorMsg(null);
           }}
-          className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
+          className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
             mode === 'signup'
-              ? 'bg-[var(--color-surface)] text-[var(--color-text)] shadow-sm'
-              : 'text-[var(--color-text-dim)] hover:text-[var(--color-text)]'
+              ? 'bg-[var(--color-surface)] text-[var(--color-text)] shadow-xs'
+              : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
           }`}
         >
           Create Account
@@ -122,7 +124,7 @@ function LoginForm() {
 
       {/* Error notification */}
       {errorMsg && (
-        <div className="mb-6 p-3 rounded-lg border border-[var(--color-danger)]/50 bg-[var(--color-expense-bg)] text-xs text-[var(--color-expense)] flex items-start gap-2">
+        <div className="mb-6 p-3 rounded-xl border border-[var(--color-danger)]/50 bg-[var(--color-expense-bg)] text-xs text-[var(--color-expense)] flex items-start gap-2">
           <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
           <span>{errorMsg}</span>
         </div>
@@ -140,7 +142,7 @@ function LoginForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
-            className="w-full px-3 py-2 text-sm rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] placeholder-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none transition-colors"
+            className="w-full px-3.5 py-2 text-sm rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] placeholder-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none transition-colors"
           />
         </div>
 
@@ -155,7 +157,7 @@ function LoginForm() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
-            className="w-full px-3 py-2 text-sm rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] placeholder-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none transition-colors"
+            className="w-full px-3.5 py-2 text-sm rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] placeholder-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none transition-colors"
           />
           {mode === 'signup' && (
             <span className="text-[10px] text-[var(--color-text-dim)] mt-1 block">
@@ -167,10 +169,10 @@ function LoginForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-2.5 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] text-sm font-semibold transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 mt-2 shadow-md shadow-[var(--color-primary)]/15"
+          className="w-full py-2.5 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-sm font-semibold transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 mt-2 shadow-sm hover:shadow-md active:scale-[0.98]"
         >
           {loading && (
-            <div className="animate-spin h-4 w-4 border-2 border-[var(--color-primary-contrast)] border-t-transparent rounded-full" />
+            <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
           )}
           <span>
             {loading

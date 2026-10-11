@@ -112,10 +112,10 @@ function ShellInner({ children }: { children: React.ReactNode }) {
             </div>
             <div>
               <span className="text-base font-bold text-[var(--color-text)] tracking-tight group-hover:text-[var(--color-primary)] transition-colors">
-                Ledgerly
+                Ledgerly<span className="text-[var(--color-primary)]">.</span>
               </span>
               <span className="block text-[10px] text-[var(--color-text-dim)] font-semibold tracking-wider leading-none">
-                FINANCIAL AI
+                PERSONAL FINANCE
               </span>
             </div>
           </Link>
@@ -125,7 +125,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
         <div className="p-4">
           <Link
             href="/transactions/new"
-            className="w-full h-10 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] font-semibold text-xs flex items-center justify-center gap-2 transition-all shadow-md shadow-[var(--color-primary)]/15 active:scale-[0.98] cursor-pointer"
+            className="w-full h-10 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-semibold text-xs flex items-center justify-center gap-2 transition-all shadow-sm hover:shadow-md active:scale-[0.98] cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>New Transaction</span>
@@ -145,12 +145,12 @@ function ShellInner({ children }: { children: React.ReactNode }) {
                 href={item.href}
                 className={`group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
                   active
-                    ? 'bg-[var(--color-surface)] text-[var(--color-text)] border border-[var(--color-border)] shadow-sm'
+                    ? 'bg-[var(--color-pale-mint)] text-[var(--color-primary)] font-semibold border border-[var(--color-primary)]/20 shadow-xs'
                     : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-hover)]'
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <div className={`transition-transform duration-150 ${active ? 'scale-110' : 'group-hover:scale-105'}`}>
+                  <div className={`transition-transform duration-150 ${active ? 'scale-110 text-[var(--color-primary)]' : 'group-hover:scale-105'}`}>
                     {item.icon(active)}
                   </div>
                   <span className={active ? 'font-semibold text-[var(--color-primary)]' : ''}>
@@ -159,11 +159,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
                 </div>
                 {item.badge && (
                   <span
-                    className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
-                      item.badge === 'AI'
-                        ? 'bg-[var(--color-secondary-bg)] text-[var(--color-secondary)] border border-[var(--color-secondary)]/20'
-                        : 'bg-[var(--color-surface-hover)] text-[var(--color-text-dim)]'
-                    }`}
+                    className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[var(--color-pale-mint)] text-[var(--color-primary)] border border-[var(--color-primary)]/20"
                   >
                     {item.badge}
                   </span>
@@ -212,7 +208,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
             <Image src="/logo.webp" alt="Ledgerly Logo" fill sizes="28px" className="object-contain" priority />
           </div>
           <span className="text-base font-bold text-[var(--color-text)] tracking-tight">
-            Ledgerly
+            Ledgerly<span className="text-[var(--color-primary)]">.</span>
           </span>
         </Link>
 
@@ -220,7 +216,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
           <ThemeToggle variant="compact" />
           <Link
             href="/transactions/new"
-            className="w-9 h-9 rounded-lg bg-[var(--color-primary)] text-[var(--color-primary-contrast)] font-semibold flex items-center justify-center shadow-sm shadow-[var(--color-primary)]/20 active:scale-95 transition-transform cursor-pointer"
+            className="w-9 h-9 rounded-lg bg-[var(--color-primary)] text-white font-semibold flex items-center justify-center shadow-sm shadow-[var(--color-primary)]/20 active:scale-95 transition-transform cursor-pointer"
             aria-label="New transaction"
           >
             <Plus className="w-4 h-4" />
@@ -262,7 +258,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
                 onClick={() => setMobileNavOpen(false)}
                 className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                   active
-                    ? 'bg-[var(--color-primary)]/10 text-[var(--color-primary)] font-semibold border-l-2 border-[var(--color-primary)] pl-3'
+                    ? 'bg-[var(--color-pale-mint)] text-[var(--color-primary)] font-semibold border-l-2 border-[var(--color-primary)] pl-3'
                     : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-hover)]'
                 }`}
               >
@@ -271,7 +267,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
                   <span>{item.label}</span>
                 </div>
                 {item.badge && (
-                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-dim)]">
+                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[var(--color-pale-mint)] text-[var(--color-primary)] border border-[var(--color-primary)]/20">
                     {item.badge}
                   </span>
                 )}
