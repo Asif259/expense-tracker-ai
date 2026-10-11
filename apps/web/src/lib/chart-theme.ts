@@ -70,9 +70,9 @@ export function getChartPalette(theme: 'light' | 'dark'): ChartPalette {
   };
 }
 
-export const CHART_FONT_FAMILY = "var(--font-inter), 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif";
+export const CHART_FONT_FAMILY =
+  '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans Bengali", sans-serif';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getBaseChartOptions(
   theme: 'light' | 'dark',
   currency: string = 'BDT',
@@ -136,7 +136,6 @@ export function getBaseChartOptions(
           size: 12,
           weight: 600,
         },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         callbacks: {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           label: (context: any) => {

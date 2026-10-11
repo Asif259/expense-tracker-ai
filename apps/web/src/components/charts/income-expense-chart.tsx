@@ -58,20 +58,8 @@ export function IncomeExpenseChart({
   }, [data, palette]);
 
   const options = useMemo(() => {
-    return getBaseChartOptions(theme, currency, {
-      plugins: {
-        legend: {
-          display: true,
-          position: 'top',
-          align: 'end',
-          labels: {
-            color: palette.textMuted,
-            font: { family: "'Inter', system-ui, sans-serif", size: 11, weight: 500 },
-          },
-        },
-      },
-    });
-  }, [theme, currency, palette]);
+    return getBaseChartOptions(theme, currency);
+  }, [theme, currency]);
 
   const tableColumns = [
     { key: 'label', label: 'Month' },

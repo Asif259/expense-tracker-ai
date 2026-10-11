@@ -5,7 +5,7 @@ import { Bar } from 'react-chartjs-2';
 import { TooltipItem } from 'chart.js';
 import '@/lib/chart-registry';
 import { useTheme } from '@/context/theme-context';
-import { getChartPalette } from '@/lib/chart-theme';
+import { getChartPalette, CHART_FONT_FAMILY } from '@/lib/chart-theme';
 import { BudgetItemProgress } from '@/lib/chart-aggregation';
 import { formatMoney } from '@/lib/format';
 import { ChartCard } from './chart-card';
@@ -70,7 +70,7 @@ export function BudgetProgressChart({
           align: 'end' as const,
           labels: {
             color: palette.textMuted,
-            font: { family: "'Inter', system-ui, sans-serif", size: 11, weight: 500 },
+            font: { family: CHART_FONT_FAMILY, size: 11, weight: 500 },
           },
         },
         tooltip: {
@@ -80,6 +80,8 @@ export function BudgetProgressChart({
           borderColor: palette.borderColor,
           borderWidth: 1,
           padding: 10,
+          titleFont: { family: CHART_FONT_FAMILY, size: 12, weight: 600 },
+          bodyFont: { family: CHART_FONT_FAMILY, size: 12, weight: 600 },
           callbacks: {
             label: (context: TooltipItem<'bar'>) => {
               const val = Number(context.parsed.x) || 0;
@@ -94,7 +96,7 @@ export function BudgetProgressChart({
           grid: { color: palette.gridColor },
           ticks: {
             color: palette.textMuted,
-            font: { family: "'JetBrains Mono', monospace", size: 10 },
+            font: { family: CHART_FONT_FAMILY, size: 10, weight: 500 },
             callback: (val: string | number) => {
               const num = Number(val);
               return num >= 1000 ? `${(num / 1000).toFixed(0)}k` : num;
@@ -106,7 +108,7 @@ export function BudgetProgressChart({
           grid: { display: false },
           ticks: {
             color: palette.textMuted,
-            font: { family: "'Inter', system-ui, sans-serif", size: 11 },
+            font: { family: CHART_FONT_FAMILY, size: 11 },
           },
           border: { color: palette.borderColor },
         },

@@ -480,7 +480,7 @@ export default function LoansPage() {
                         />
                       </div>
                       <div className="flex justify-between text-[11px] text-[var(--color-text-muted)]">
-                        <span>{loan.progress_pct}% repaid</span>
+                        <span className="tabular-nums">{loan.progress_pct}% repaid</span>
                         {loan.due_date && (
                           <span className={isOverdue ? 'text-[var(--color-warning)] font-semibold' : ''}>
                             Due: {loan.due_date}

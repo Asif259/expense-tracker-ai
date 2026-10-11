@@ -39,23 +39,27 @@ export function AccessibleChartTable<T extends object>({
         <caption className="sr-only">{caption}</caption>
         <thead>
           <tr className="border-b border-[var(--color-border)] bg-[var(--color-bg)]">
-            {columns.map((col) => (
-              <th
-                key={col.key}
-                scope="col"
-                className={`py-2 px-3 font-semibold text-[var(--color-text-muted)] ${
-                  col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'
-                }`}
-              >
-                {col.label}
-              </th>
-            ))}
+            {columns.map((col) => {
+              const align = col.align ?? (col.isCurrency ? 'right' : 'left');
+              return (
+                <th
+                  key={col.key}
+                  scope="col"
+                  className={`py-2 px-3 font-semibold text-[var(--color-text-muted)] ${
+                    align === 'right' ? 'text-right' : align === 'center' ? 'text-center' : 'text-left'
+                  }`}
+                >
+                  {col.label}
+                </th>
+              );
+            })}
           </tr>
         </thead>
         <tbody className="divide-y divide-[var(--color-border)]">
           {data.map((row, rowIdx) => (
             <tr key={rowIdx} className="hover:bg-[var(--color-surface-hover)] transition-colors">
               {columns.map((col) => {
+                const align = col.align ?? (col.isCurrency ? 'right' : 'left');
                 const rawVal = (row as Record<string, unknown>)[col.key];
                 const displayVal = col.isCurrency
                   ? formatMoney(Number(rawVal) || 0, currency)
@@ -67,7 +71,7 @@ export function AccessibleChartTable<T extends object>({
                   <td
                     key={col.key}
                     className={`py-2.5 px-3 ${col.isCurrency ? 'tabular-nums font-medium text-[var(--color-text)]' : 'text-[var(--color-text)]'} ${
-                      col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'
+                      align === 'right' ? 'text-right' : align === 'center' ? 'text-center' : 'text-left'
                     }`}
                   >
                     {displayVal}

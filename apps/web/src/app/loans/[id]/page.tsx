@@ -253,21 +253,21 @@ function LoanDetailContent() {
               <div className="text-xs text-[var(--color-text-muted)]">
                 {isLent ? 'Remaining to Collect' : 'Remaining to Pay'}
               </div>
-              <div className="text-2xl sm:text-3xl font-extrabold text-[var(--color-text)] mt-1 tracking-tight">
+              <div className="text-2xl sm:text-3xl font-extrabold tabular-nums text-[var(--color-text)] mt-1 tracking-tight">
                 {formatMoney(loan.outstanding_balance, loan.currency)}
               </div>
             </div>
 
             <div>
               <div className="text-xs text-[var(--color-text-muted)]">Original Principal</div>
-              <div className="text-xl font-bold text-[var(--color-text)] mt-1">
+              <div className="text-xl font-bold tabular-nums text-[var(--color-text)] mt-1">
                 {formatMoney(loan.principal_amount, loan.currency)}
               </div>
             </div>
 
             <div>
               <div className="text-xs text-[var(--color-text-muted)]">Total Repaid</div>
-              <div className="text-xl font-bold text-[var(--color-text)] mt-1">
+              <div className="text-xl font-bold tabular-nums text-[var(--color-text)] mt-1">
                 {formatMoney(loan.total_repaid, loan.currency)}
               </div>
             </div>
@@ -288,8 +288,8 @@ function LoanDetailContent() {
               />
             </div>
             <div className="flex justify-between text-xs text-[var(--color-text-muted)] font-medium">
-              <span>{loan.progress_pct}% settled</span>
-              <span>{formatMoney(loan.total_repaid, loan.currency)} / {formatMoney(loan.principal_amount, loan.currency)}</span>
+              <span className="tabular-nums">{loan.progress_pct}% settled</span>
+              <span className="tabular-nums">{formatMoney(loan.total_repaid, loan.currency)} / {formatMoney(loan.principal_amount, loan.currency)}</span>
             </div>
           </div>
 
@@ -349,20 +349,20 @@ function LoanDetailContent() {
                 <thead className="bg-[var(--color-bg)] text-[var(--color-text-dim)] uppercase text-[11px] tracking-wider border-b border-[var(--color-border)]">
                   <tr>
                     <th className="py-3 px-4">Date</th>
-                    <th className="py-3 px-4">Amount</th>
+                    <th className="py-3 px-4 text-right">Amount</th>
                     <th className="py-3 px-4">Method</th>
                     <th className="py-3 px-4">Reference</th>
                     <th className="py-3 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[var(--color-border)]">
+                <tbody className="divide-y border-[var(--color-border)]">
                   {loan.repayments.map((rep) => (
                     <tr key={rep.id} className="hover:bg-[var(--color-surface-hover)] transition-colors">
                       <td className="py-3.5 px-4 font-medium text-[var(--color-text)]">
                         {rep.payment_date}
                       </td>
-                      <td className="py-3.5 px-4 font-semibold text-[var(--color-text)]">
-                        <span className="inline-flex items-center gap-1.5">
+                      <td className="py-3.5 px-4 text-right font-semibold text-[var(--color-text)] tabular-nums">
+                        <span className="inline-flex items-center justify-end gap-1.5">
                           <ArrowDownLeft className="w-3.5 h-3.5 text-[var(--color-mint)]" />
                           <span>{formatMoney(rep.amount, loan.currency)}</span>
                         </span>

@@ -60,20 +60,8 @@ export function LoanBalanceChart({
   }, [summary, palette]);
 
   const options = useMemo(() => {
-    return getBaseChartOptions(theme, currency, {
-      plugins: {
-        legend: {
-          display: true,
-          position: 'top' as const,
-          align: 'end' as const,
-          labels: {
-            color: palette.textMuted,
-            font: { family: "'Inter', system-ui, sans-serif", size: 11, weight: 500 },
-          },
-        },
-      },
-    });
-  }, [theme, currency, palette]);
+    return getBaseChartOptions(theme, currency);
+  }, [theme, currency]);
 
   const tableData = useMemo(() => {
     if (!summary) return [];

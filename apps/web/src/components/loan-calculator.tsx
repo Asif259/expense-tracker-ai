@@ -153,18 +153,18 @@ export function LoanCalculator({ onSaveAsNewLoan }: LoanCalculatorProps) {
           <div className="text-xs sm:text-sm text-[var(--color-text-muted)] font-medium">
             {headerText}
           </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-[var(--color-text)] tracking-tight">
+          <div className="text-2xl sm:text-3xl font-extrabold tabular-nums text-[var(--color-text)] tracking-tight">
             {formatMoney(outstanding, currency)}
           </div>
 
           <div className="space-y-2 pt-2 text-xs sm:text-sm">
             <div className="flex justify-between items-center text-[var(--color-text-muted)]">
               <span>Original amount</span>
-              <span className="font-medium text-[var(--color-text)]">{formatMoney(principal, currency)}</span>
+              <span className="font-medium tabular-nums text-[var(--color-text)]">{formatMoney(principal, currency)}</span>
             </div>
             <div className="flex justify-between items-center text-[var(--color-text-muted)]">
               <span>Already repaid</span>
-              <span className="font-medium text-[var(--color-text)]">{formatMoney(clampedRepaid, currency)}</span>
+              <span className="font-medium tabular-nums text-[var(--color-text)]">{formatMoney(clampedRepaid, currency)}</span>
             </div>
             <div className="flex justify-between items-center text-[var(--color-text-muted)]">
               <span>Method</span>
@@ -188,7 +188,7 @@ export function LoanCalculator({ onSaveAsNewLoan }: LoanCalculatorProps) {
                 style={{ width: `${progressPct}%` }}
               />
             </div>
-            <div className="text-[11px] text-[var(--color-text-muted)] mt-1.5 font-medium">
+            <div className="text-[11px] text-[var(--color-text-muted)] mt-1.5 font-medium tabular-nums">
               {progressPct.toFixed(1)}% repaid
             </div>
           </div>
