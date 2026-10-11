@@ -11,12 +11,12 @@ export function HeroIllustration() {
       role="img"
     >
       {/* Organic Background Blob Shapes */}
-      <div className="absolute -inset-6 -z-10 pointer-events-none opacity-80 overflow-visible">
+      <div className="absolute inset-0 sm:-inset-6 -z-10 pointer-events-none opacity-80 overflow-hidden sm:overflow-visible">
         <svg
           viewBox="0 0 600 560"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
-          className="w-full h-full transform scale-105"
+          className="w-full h-full transform scale-100 sm:scale-105"
         >
           <path
             d="M480 230C520 330 470 450 360 500C250 550 130 510 70 410C10 310 20 170 110 90C200 10 340 30 420 90C470 128 450 170 480 230Z"
@@ -159,14 +159,14 @@ export function HeroIllustration() {
       </div>
 
       {/* Floating Settlement & Security Badges (Clean financial indicators) */}
-      <div className="absolute -bottom-3 -left-2 sm:-left-4 z-20 flex items-center gap-2 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-landing-surface-card border border-landing-border shadow-md text-xs font-semibold text-landing-text">
+      <div className="absolute -bottom-3 left-2 sm:-left-4 z-20 flex items-center gap-1.5 sm:gap-2 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-landing-surface-card border border-landing-border shadow-md text-[11px] sm:text-xs font-semibold text-landing-text max-w-[calc(100%-1rem)]">
         <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-500 shrink-0" />
-        <span>Loan to Tanvir: ৳2,500 settled</span>
+        <span className="truncate">Loan to Tanvir: ৳2,500 settled</span>
       </div>
 
-      <div className="absolute -top-3 right-1 sm:-right-3 z-20 flex items-center gap-2 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-landing-surface-card border border-landing-border shadow-md text-xs font-semibold text-landing-text">
+      <div className="absolute -top-3 right-2 sm:-right-3 z-20 flex items-center gap-1.5 sm:gap-2 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-landing-surface-card border border-landing-border shadow-md text-[11px] sm:text-xs font-semibold text-landing-text max-w-[calc(100%-1rem)]">
         <Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-landing-teal shrink-0" />
-        <span>PostgreSQL RLS Protected</span>
+        <span className="truncate">PostgreSQL RLS Protected</span>
       </div>
     </div>
   );

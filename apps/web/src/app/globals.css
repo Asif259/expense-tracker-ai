@@ -117,7 +117,10 @@
   box-sizing: border-box;
 }
 
+html,
 body {
+  max-width: 100%;
+  overflow-x: clip;
   background: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-sans);

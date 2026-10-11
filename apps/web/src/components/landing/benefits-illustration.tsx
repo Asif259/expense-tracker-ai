@@ -11,12 +11,12 @@ export function BenefitsIllustration() {
       role="img"
     >
       {/* Background Soft Organic Glow */}
-      <div className="absolute -inset-6 -z-10 pointer-events-none opacity-80">
+      <div className="absolute inset-0 sm:-inset-6 -z-10 pointer-events-none opacity-80 overflow-hidden sm:overflow-visible">
         <svg
           viewBox="0 0 500 500"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
-          className="w-full h-full transform scale-105"
+          className="w-full h-full transform scale-100 sm:scale-105"
         >
           <path
             d="M380 140C440 210 420 340 350 410C280 480 160 460 90 390C20 320 30 200 100 130C170 60 320 70 380 140Z"

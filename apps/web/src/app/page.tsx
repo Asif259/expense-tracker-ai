@@ -34,9 +34,9 @@ export default function Home() {
   }, [user, loading, router]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-landing-bg text-landing-text selection:bg-landing-mint selection:text-landing-teal-dark overflow-x-hidden transition-colors duration-200">
+    <div className="min-h-screen flex flex-col bg-landing-bg text-landing-text selection:bg-landing-mint selection:text-landing-teal-dark overflow-x-clip max-w-full transition-colors duration-200">
       {/* Decorative Top-Left Organic Shape */}
-      <div className="absolute top-0 left-0 w-[420px] sm:w-[580px] h-[360px] sm:h-[480px] -z-10 pointer-events-none opacity-80 overflow-hidden">
+      <div className="absolute top-0 left-0 w-full max-w-[420px] sm:max-w-[580px] h-[320px] sm:h-[480px] -z-10 pointer-events-none opacity-80 overflow-hidden">
         <svg
           viewBox="0 0 600 500"
           fill="none"
@@ -59,13 +59,13 @@ export default function Home() {
           1. HEADER & NAVIGATION
           ========================================================================= */}
       <header className="sticky top-0 z-50 bg-landing-bg/90 backdrop-blur-md border-b border-landing-border transition-colors">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 sm:h-20 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between">
           {/* Logo & Brand */}
           <Link
             href="/"
-            className="flex items-center gap-3 group focus-visible:outline-2 focus-visible:outline-landing-teal rounded-lg p-1"
+            className="flex items-center gap-2 sm:gap-3 group focus-visible:outline-2 focus-visible:outline-landing-teal rounded-lg p-1 shrink-0"
           >
-            <div className="relative w-8 h-8 shrink-0 transition-transform group-hover:scale-105">
+            <div className="relative w-7 h-7 sm:w-8 sm:h-8 shrink-0 transition-transform group-hover:scale-105">
               <Image
                 src="/logo.webp"
                 alt="Ledgerly Logo"
@@ -75,7 +75,7 @@ export default function Home() {
                 priority
               />
             </div>
-            <span className="font-bold text-xl tracking-tight text-landing-text group-hover:text-landing-teal transition-colors">
+            <span className="font-bold text-lg sm:text-xl tracking-tight text-landing-text group-hover:text-landing-teal transition-colors">
               Ledgerly<span className="text-landing-teal">.</span>
             </span>
           </Link>
@@ -109,19 +109,19 @@ export default function Home() {
           </nav>
 
           {/* Header Controls & Actions */}
-          <div className="flex items-center gap-2.5 sm:gap-4">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             <ThemeToggle variant="compact" />
 
             <Link
               href="/login"
-              className="hidden sm:inline-flex px-4 py-2 text-sm font-medium text-landing-text hover:text-landing-teal transition-colors focus-visible:outline-landing-teal rounded-lg"
+              className="hidden md:inline-flex px-3.5 py-2 text-sm font-medium text-landing-text hover:text-landing-teal transition-colors focus-visible:outline-landing-teal rounded-lg"
             >
               Sign In
             </Link>
 
             <Link
               href="/login?mode=signup"
-              className="inline-flex items-center justify-center px-5 py-2.5 rounded-full bg-landing-teal hover:bg-landing-teal-hover text-white dark:text-slate-950 text-xs sm:text-sm font-semibold tracking-wide uppercase transition-all shadow-sm hover:shadow-md hover:shadow-teal-900/10 active:scale-95 focus-visible:outline-landing-teal"
+              className="hidden sm:inline-flex items-center justify-center px-4 sm:px-5 py-2 sm:py-2.5 rounded-full bg-landing-teal hover:bg-landing-teal-hover text-white dark:text-slate-950 text-xs sm:text-sm font-semibold tracking-wide uppercase whitespace-nowrap transition-all shadow-sm hover:shadow-md hover:shadow-teal-900/10 active:scale-95 focus-visible:outline-landing-teal"
             >
               Get Started
             </Link>
@@ -130,7 +130,7 @@ export default function Home() {
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 md:hidden text-landing-text-muted hover:text-landing-text focus-visible:outline-landing-teal rounded-lg"
+              className="p-2 md:hidden text-landing-text-muted hover:text-landing-text focus-visible:outline-landing-teal rounded-lg touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
               aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={mobileMenuOpen}
             >
@@ -170,11 +170,18 @@ export default function Home() {
             >
               How It Works
             </a>
-            <div className="pt-3 border-t border-landing-border flex flex-col gap-2">
+            <div className="pt-3 border-t border-landing-border flex flex-col gap-2.5">
+              <Link
+                href="/login?mode=signup"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full text-center py-3 px-4 rounded-xl bg-landing-teal hover:bg-landing-teal-hover text-white dark:text-slate-950 text-sm font-semibold tracking-wide uppercase transition-all shadow-sm focus-visible:outline-landing-teal"
+              >
+                Get Started Free
+              </Link>
               <Link
                 href="/login"
                 onClick={() => setMobileMenuOpen(false)}
-                className="w-full text-center py-2.5 text-sm font-medium border border-landing-border rounded-xl text-landing-text hover:bg-landing-alt"
+                className="w-full text-center py-2.5 px-4 text-sm font-medium border border-landing-border rounded-xl text-landing-text hover:bg-landing-alt transition-colors focus-visible:outline-landing-teal"
               >
                 Sign In to Account
               </Link>
@@ -238,15 +245,15 @@ export default function Home() {
             </div>
 
             {/* Hero Right Column: High-Fidelity Personal Finance Workspace Artwork */}
-            <div className="lg:col-span-6 xl:col-span-6 flex justify-center">
+            <div className="lg:col-span-6 xl:col-span-6 flex justify-center w-full max-w-full overflow-hidden">
               <div className="relative w-full max-w-[560px] mx-auto flex items-center justify-center">
                 {/* Background Soft Organic Glow */}
-                <div className="absolute -inset-4 sm:-inset-8 -z-10 pointer-events-none opacity-80 overflow-visible">
+                <div className="absolute inset-0 sm:-inset-4 -z-10 pointer-events-none opacity-80 overflow-hidden sm:overflow-visible">
                   <svg
                     viewBox="0 0 600 500"
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
-                    className="w-full h-full transform scale-105"
+                    className="w-full h-full transform scale-100 sm:scale-105"
                   >
                     <path
                       d="M480 220C520 320 460 440 360 490C250 540 130 500 70 400C10 300 20 170 110 90C200 10 340 30 420 90C470 125 450 165 480 220Z"
@@ -280,7 +287,7 @@ export default function Home() {
       {/* =========================================================================
           3. "WHAT LEDGERLY DOES" SECTION
           ========================================================================= */}
-      <section id="overview" className="py-20 bg-landing-alt border-y border-landing-border relative">
+      <section id="overview" className="py-16 sm:py-20 bg-landing-alt border-y border-landing-border relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Centered Section Header */}
           <div className="text-center max-w-2xl mx-auto space-y-3 mb-16">
@@ -341,7 +348,7 @@ export default function Home() {
           ========================================================================= */}
       <section id="features" className="py-24 relative overflow-hidden">
         {/* Soft Organic Background Region */}
-        <div className="absolute right-0 top-1/2 w-96 h-96 -translate-y-1/2 -z-10 pointer-events-none opacity-60">
+        <div className="absolute right-0 top-1/2 w-64 sm:w-96 h-64 sm:h-96 max-w-full -translate-y-1/2 -z-10 pointer-events-none opacity-60 overflow-hidden">
           <svg viewBox="0 0 400 400" fill="none" className="w-full h-full">
             <path
               d="M300 120C380 180 390 300 330 360C270 420 160 400 100 340C40 280 60 160 120 100C180 40 220 60 300 120Z"
@@ -468,7 +475,7 @@ export default function Home() {
       {/* =========================================================================
           5. BENEFITS SECTION
           ========================================================================= */}
-      <section id="benefits" className="py-20 sm:py-28 bg-landing-alt border-y border-landing-border relative">
+      <section id="benefits" className="py-16 sm:py-28 bg-landing-alt border-y border-landing-border relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
             {/* Left Column: Financial Clarity & Debt Showcase (Real Ledger UI Preview) */}
