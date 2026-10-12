@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import AppShell from '@/components/app-shell';
 import { useAuth } from '@/context/auth-context';
@@ -15,6 +15,8 @@ import {
 import { formatMoney, formatDate, SUPPORTED_CURRENCIES } from '@/lib/format';
 import { toast } from '@/components/toast';
 import { ConfirmDialog } from '@/components/confirm-dialog';
+import { VoiceInputControl } from '@/components/voice-input-control';
+import { useSpeechRecognition, SupportedSpeechLang } from '@/lib/use-speech-recognition';
 import {
   CheckCircle2,
   AlertTriangle,
@@ -28,23 +30,45 @@ const QUICK_EXAMPLES = [
   'Paid 1,200 BDT for grocery items at Agora yesterday',
   'Received 65000 BDT salary from employer',
   'Uber ride to office 280 taka this morning',
+  'আজ দুপুরে লাঞ্চে ২৫০ টাকা খরচ করেছি',
 ];
 
 function AiEntryInner() {
   const { getToken } = useAuth();
   const searchParams = useSearchParams();
 
-  const [inputQuery, setInputQuery] = useState('');
+  const [inputQuery, setInputQuery] = useState(() => searchParams.get('prompt') || '');
   const [currencyPref, setCurrencyPref] = useState('BDT');
   const [parsing, setParsing] = useState(false);
   const [parseResult, setParseResult] = useState<ParseExpenseResult | null>(null);
+  const [speechLang, setSpeechLang] = useState<SupportedSpeechLang>('en-US');
 
-  useEffect(() => {
-    const prompt = searchParams.get('prompt');
-    if (prompt) {
-      setInputQuery(prompt);
-    }
-  }, [searchParams]);
+  // Baseline text tracker to preserve text before spoken input and support cancel revert
+  const baselineQueryRef = useRef('');
+
+  const speech = useSpeechRecognition({
+    lang: speechLang,
+    onResult: (spokenText) => {
+      const base = baselineQueryRef.current.trim();
+      const combined = base ? `${base} ${spokenText}` : spokenText;
+      setInputQuery(combined);
+    },
+    onError: (friendlyMsg, code) => {
+      if (code !== 'no-speech' && code !== 'aborted') {
+        toast(friendlyMsg, 'error');
+      }
+    },
+  });
+
+  const handleStartVoice = () => {
+    baselineQueryRef.current = inputQuery;
+    speech.start();
+  };
+
+  const handleCancelVoice = () => {
+    speech.cancel();
+    setInputQuery(baselineQueryRef.current);
+  };
 
   // Pending drafts
   const [drafts, setDrafts] = useState<AiDraft[]>([]);
@@ -89,9 +113,14 @@ function AiEntryInner() {
 
   const handleParse = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+
+    if (speech.isListening) {
+      speech.stop();
+    }
+
     const text = inputQuery.trim();
     if (!text) {
-      toast('Please enter an expense or income description.', 'error');
+      toast('Please enter or speak an expense description.', 'error');
       return;
     }
 
@@ -174,7 +203,7 @@ function AiEntryInner() {
         <div>
           <h1 className="text-page-title">AI Natural Language Entry</h1>
           <p className="text-secondary mt-1">
-            State your expenses or income naturally. Groq Llama 3 parses the amounts and creates review drafts with zero direct database mutation.
+            Type or speak your expenses and income naturally in English or Bangla. Groq parses the amounts and creates review drafts with zero direct database mutation.
           </p>
         </div>
 
@@ -183,7 +212,10 @@ function AiEntryInner() {
           <form onSubmit={handleParse} className="space-y-4">
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-dim)]">
+                <label
+                  htmlFor="transaction-description-input"
+                  className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-dim)]"
+                >
                   Describe Transaction
                 </label>
                 <div className="flex items-center gap-2">
@@ -191,6 +223,7 @@ function AiEntryInner() {
                   <select
                     value={currencyPref}
                     onChange={(e) => setCurrencyPref(e.target.value)}
+                    aria-label="Default Currency Preference"
                     className="px-2 py-1 text-xs rounded border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
                   >
                     {SUPPORTED_CURRENCIES.map((c) => (
@@ -203,14 +236,29 @@ function AiEntryInner() {
               </div>
 
               <textarea
+                id="transaction-description-input"
                 rows={3}
                 required
                 value={inputQuery}
                 onChange={(e) => setInputQuery(e.target.value)}
-                placeholder="e.g. Paid 1,200 BDT for grocery items at Agora yesterday evening"
+                placeholder="e.g. Paid 1,200 BDT for grocery items at Agora yesterday evening (or tap Voice Input to speak)"
                 className="w-full px-3.5 py-2.5 text-sm rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] placeholder-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none transition-colors"
               />
             </div>
+
+            {/* Voice Control Component */}
+            <VoiceInputControl
+              isSupported={speech.isSupported}
+              isListening={speech.isListening}
+              selectedLang={speechLang}
+              onLanguageChange={setSpeechLang}
+              onStart={handleStartVoice}
+              onStop={speech.stop}
+              onCancel={handleCancelVoice}
+              error={speech.error}
+              onClearError={speech.clearError}
+              disabled={parsing}
+            />
 
             {/* Quick example pills */}
             <div>
