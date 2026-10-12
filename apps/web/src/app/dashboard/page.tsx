@@ -267,7 +267,7 @@ export default function DashboardPage() {
             ========================================================================= */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="font-serif text-2xl sm:text-3xl text-[var(--color-text)] font-normal tracking-tight">
+            <h1 className="text-2xl sm:text-3xl text-[var(--color-text)] font-semibold tracking-tight">
               Good Day, {userName}
             </h1>
             <p className="text-xs sm:text-sm text-[var(--color-text-muted)] mt-1">

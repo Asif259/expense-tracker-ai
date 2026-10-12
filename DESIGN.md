@@ -77,11 +77,16 @@ rules:
     alignment: "Right-align monetary columns in tables with consistent currency symbol positioning"
 
 typography:
-  family: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans Bengali', sans-serif"
-  serif: '"New York", Charter, Georgia, Cambria, "Times New Roman", Times, serif'
+  family: "var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
+  serif: "var(--font-dm-serif), 'DM Serif Display', Georgia, Cambria, 'Times New Roman', Times, serif"
+  display: "var(--font-dm-serif), 'DM Serif Display', Georgia, Cambria, 'Times New Roman', Times, serif"
   mono: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace"
   heading-weight: 700
   body-weight: 400
+  stack_strategy:
+    dashboard: "Inter for fintech dashboards, forms, and transaction tables"
+    marketing: "DM Serif Display (.font-display) for homepage hero and editorial headings"
+    financial_figures: "tabular-nums for all currency amounts, metrics, and dates"
   scale:
     page-title:
       size: "clamp(1.5rem, 2.5vw, 1.875rem)" # 24px - 30px

@@ -1,8 +1,22 @@
 import type { Metadata } from 'next';
+import { Inter, DM_Serif_Display } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/context/auth-context';
 import { ThemeProvider } from '@/context/theme-context';
 import { Toaster } from '@/components/toast';
+
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+});
+
+const dmSerif = DM_Serif_Display({
+  subsets: ['latin'],
+  weight: '400',
+  variable: '--font-dm-serif',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'Ledgerly — Personal Finance & Expense Tracker',
@@ -33,14 +47,14 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className="h-full antialiased"
+      className={`h-full antialiased ${inter.variable} ${dmSerif.variable}`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body
         suppressHydrationWarning
-        className="min-h-full flex flex-col bg-[var(--color-bg)] text-[var(--color-text)] transition-colors duration-150 font-sans"
+        className="min-h-full flex flex-col bg-[var(--color-bg)] text-[var(--color-text)] transition-colors duration-150"
       >
         <ThemeProvider>
           <AuthProvider>

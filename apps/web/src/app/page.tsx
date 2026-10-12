@@ -199,7 +199,7 @@ export default function Home() {
             {/* Hero Left Column: Editorial Headline & Actions */}
             <div className="lg:col-span-6 xl:col-span-6 space-y-6 sm:space-y-8 text-left">
               {/* Dominant Editorial Serif Heading (No kicker / eyebrow) */}
-              <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl text-landing-text font-normal tracking-tight leading-[1.08] max-w-xl">
+              <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl text-landing-text font-normal tracking-tight leading-[1.08] max-w-xl">
                 Make sense of your money.
               </h1>
 
@@ -291,7 +291,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Centered Section Header */}
           <div className="text-center max-w-2xl mx-auto space-y-3 mb-16">
-            <h2 className="font-serif text-3xl sm:text-4xl text-landing-text font-normal tracking-tight">
+            <h2 className="font-display text-3xl sm:text-4xl text-landing-text font-normal tracking-tight">
               Everything you need to understand your money.
             </h2>
             <p className="text-sm sm:text-base text-landing-text-muted leading-relaxed">
@@ -361,7 +361,7 @@ export default function Home() {
           {/* Section Header */}
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-14 gap-6">
             <div className="space-y-3 max-w-2xl">
-              <h2 className="font-serif text-3xl sm:text-4xl text-landing-text font-normal tracking-tight">
+              <h2 className="font-display text-3xl sm:text-4xl text-landing-text font-normal tracking-tight">
                 Designed around your financial life.
               </h2>
               <p className="text-sm sm:text-base text-landing-text-muted leading-relaxed">
@@ -486,7 +486,7 @@ export default function Home() {
             {/* Right Column: Benefits Content & 2x2 Checklist */}
             <div className="lg:col-span-6 space-y-6 sm:space-y-8 order-1 lg:order-2">
               <div className="space-y-3">
-                <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl text-landing-text font-normal tracking-tight leading-tight">
+                <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl text-landing-text font-normal tracking-tight leading-tight">
                   Feel more confident about your money.
                 </h2>
                 <p className="text-base text-landing-text-muted leading-relaxed max-w-lg">
@@ -578,7 +578,7 @@ export default function Home() {
       <section id="how-it-works" className="py-20 sm:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto space-y-3 mb-16">
-            <h2 className="font-serif text-3xl sm:text-4xl text-landing-text font-normal tracking-tight">
+            <h2 className="font-display text-3xl sm:text-4xl text-landing-text font-normal tracking-tight">
               Three steps to complete clarity.
             </h2>
             <p className="text-sm sm:text-base text-landing-text-muted leading-relaxed">
@@ -589,7 +589,7 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {/* Step 1 */}
             <div className="p-8 rounded-2xl bg-landing-surface-card border border-landing-border text-center space-y-4 shadow-sm hover:border-landing-teal/40 transition-colors">
-              <span className="font-serif text-4xl font-semibold text-landing-teal/40 block">
+              <span className="font-display text-4xl font-semibold text-landing-teal/40 block">
                 01
               </span>
               <h3 className="font-semibold text-lg text-landing-text">1. Record</h3>
@@ -600,7 +600,7 @@ export default function Home() {
 
             {/* Step 2 */}
             <div className="p-8 rounded-2xl bg-landing-surface-card border border-landing-border text-center space-y-4 shadow-sm hover:border-landing-teal/40 transition-colors">
-              <span className="font-serif text-4xl font-semibold text-landing-teal/40 block">
+              <span className="font-display text-4xl font-semibold text-landing-teal/40 block">
                 02
               </span>
               <h3 className="font-semibold text-lg text-landing-text">2. Analyze</h3>
@@ -611,7 +611,7 @@ export default function Home() {
 
             {/* Step 3 */}
             <div className="p-8 rounded-2xl bg-landing-surface-card border border-landing-border text-center space-y-4 shadow-sm hover:border-landing-teal/40 transition-colors">
-              <span className="font-serif text-4xl font-semibold text-landing-teal/40 block">
+              <span className="font-display text-4xl font-semibold text-landing-teal/40 block">
                 03
               </span>
               <h3 className="font-semibold text-lg text-landing-text">3. Plan</h3>
@@ -633,7 +633,7 @@ export default function Home() {
           <div className="absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-landing-teal/15 blur-2xl pointer-events-none" />
 
           <div className="relative z-10 space-y-4 max-w-2xl mx-auto">
-            <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl text-landing-text font-normal tracking-tight">
+            <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl text-landing-text font-normal tracking-tight">
               Start seeing your finances more clearly.
             </h2>
             <p className="text-sm sm:text-base text-landing-text-muted leading-relaxed">
