@@ -231,3 +231,105 @@ body {
   line-height: 1.35;
   color: var(--color-text-dim);
 }
+
+/* =========================================================================
+   GLOBAL RESPONSIVE TABLE DESIGN PATTERN
+   "The table owns the breakpoint."
+   ========================================================================= */
+
+.responsive-table-container {
+  container-type: inline-size;
+  position: relative;
+  width: 100%;
+}
+
+/* Default state: Desktop table visible, Mobile compact view hidden */
+.responsive-table-container .table-desktop-view {
+  display: block;
+}
+.responsive-table-container .table-mobile-view {
+  display: none;
+}
+
+/* Container query breakpoints */
+/* sm: <= 600px */
+.responsive-table-container[data-breakpoint="sm"] {
+  container-name: table-container-sm;
+}
+@container (max-width: 600px) {
+  .responsive-table-container[data-breakpoint="sm"] .table-desktop-view {
+    display: none !important;
+  }
+  .responsive-table-container[data-breakpoint="sm"] .table-mobile-view {
+    display: block !important;
+  }
+}
+
+/* md: <= 760px (Default) */
+.responsive-table-container[data-breakpoint="md"],
+.responsive-table-container:not([data-breakpoint]) {
+  container-name: table-container-md;
+}
+@container (max-width: 760px) {
+  .responsive-table-container[data-breakpoint="md"] .table-desktop-view,
+  .responsive-table-container:not([data-breakpoint]) .table-desktop-view {
+    display: none !important;
+  }
+  .responsive-table-container[data-breakpoint="md"] .table-mobile-view,
+  .responsive-table-container:not([data-breakpoint]) .table-mobile-view {
+    display: block !important;
+  }
+}
+
+/* lg: <= 900px */
+.responsive-table-container[data-breakpoint="lg"] {
+  container-name: table-container-lg;
+}
+@container (max-width: 900px) {
+  .responsive-table-container[data-breakpoint="lg"] .table-desktop-view {
+    display: none !important;
+  }
+  .responsive-table-container[data-breakpoint="lg"] .table-mobile-view {
+    display: block !important;
+  }
+}
+
+/* xl: <= 1040px */
+.responsive-table-container[data-breakpoint="xl"] {
+  container-name: table-container-xl;
+}
+@container (max-width: 1040px) {
+  .responsive-table-container[data-breakpoint="xl"] .table-desktop-view {
+    display: none !important;
+  }
+  .responsive-table-container[data-breakpoint="xl"] .table-mobile-view {
+    display: block !important;
+  }
+}
+
+/* Explicit forced view modes for testing or preview overrides */
+.responsive-table-container[data-view-mode="desktop"] .table-desktop-view {
+  display: block !important;
+}
+.responsive-table-container[data-view-mode="desktop"] .table-mobile-view {
+  display: none !important;
+}
+.responsive-table-container[data-view-mode="mobile"] .table-desktop-view {
+  display: none !important;
+}
+.responsive-table-container[data-view-mode="mobile"] .table-mobile-view {
+  display: block !important;
+}
+
+/* Fallback for environments without CSS container query support */
+@supports not (container-type: inline-size) {
+  @media (max-width: 768px) {
+    .responsive-table-container .table-desktop-view {
+      display: none !important;
+    }
+    .responsive-table-container .table-mobile-view {
+      display: block !important;
+    }
+  }
+}
+

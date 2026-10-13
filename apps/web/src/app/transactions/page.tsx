@@ -18,10 +18,20 @@ import {
   Plus,
   X,
   ReceiptText,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import {
+  ResponsiveDataTable,
+  ResponsiveColumn,
+  RowAction,
+  MobileTableConfig,
+} from '@/components/responsive-table';
 
 export default function TransactionsPage() {
+  const router = useRouter();
   const { getToken } = useAuth();
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -138,6 +148,167 @@ export default function TransactionsPage() {
     if (!filterType) return categories;
     return categories.filter((c) => c.type === filterType);
   }, [categories, filterType]);
+
+  const columns: ResponsiveColumn<Transaction>[] = useMemo(
+    () => [
+      {
+        id: 'category',
+        header: 'Category',
+        role: 'identity',
+        priority: 1,
+        label: 'Category',
+        sortable: true,
+        sortValue: (tx) => categoryMap.get(tx.category_id)?.name || 'Uncategorized',
+        cell: (tx) => {
+          const cat = categoryMap.get(tx.category_id);
+          return (
+            <span className="font-semibold text-[var(--color-text)]">
+              {cat ? cat.name : 'Uncategorized'}
+            </span>
+          );
+        },
+      },
+      {
+        id: 'amount',
+        header: 'Amount',
+        role: 'value',
+        priority: 2,
+        align: 'right',
+        isNumeric: true,
+        label: 'Amount',
+        sortable: true,
+        sortValue: (tx) => parseFloat(tx.amount),
+        cell: (tx) => {
+          const isIncome = tx.type === 'income';
+          return (
+            <span className="font-bold tabular-nums text-[var(--color-text)]">
+              {isIncome ? '+' : '-'} {formatMoney(tx.amount, tx.currency)}
+            </span>
+          );
+        },
+      },
+      {
+        id: 'type',
+        header: 'Type',
+        role: 'state',
+        priority: 3,
+        label: 'Status & Type',
+        cell: (tx) => {
+          const isIncome = tx.type === 'income';
+          return (
+            <div className="flex items-center gap-1.5">
+              <span
+                className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase inline-flex items-center gap-1 ${
+                  isIncome
+                    ? 'bg-[var(--color-pale-mint)] text-[var(--color-text)]'
+                    : 'bg-[var(--color-pale-yellow)] text-[var(--color-text)]'
+                }`}
+              >
+                <span
+                  className={`h-1.5 w-1.5 rounded-full ${
+                    isIncome ? 'bg-[var(--color-income)]' : 'bg-[var(--color-warning)]'
+                  }`}
+                />
+                {tx.type}
+              </span>
+              {tx.is_ai_generated && (
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[var(--color-primary)]/20 text-[var(--color-primary)]">
+                  AI
+                </span>
+              )}
+            </div>
+          );
+        },
+      },
+      {
+        id: 'transaction_date',
+        header: 'Date',
+        role: 'detail',
+        priority: 4,
+        label: 'Date',
+        sortable: true,
+        sortValue: (tx) => tx.transaction_date,
+        cell: (tx) => (
+          <span className="tabular-nums text-[var(--color-text-muted)]">
+            {formatDate(tx.transaction_date)}
+          </span>
+        ),
+      },
+      {
+        id: 'description',
+        header: 'Description',
+        role: 'detail',
+        priority: 5,
+        label: 'Description',
+        cell: (tx) => (
+          <span className="text-[var(--color-text-muted)] max-w-xs truncate block">
+            {tx.description || '—'}
+          </span>
+        ),
+      },
+      {
+        id: 'actions',
+        header: 'Actions',
+        role: 'action',
+        priority: 6,
+        align: 'right',
+        cell: (tx) => {
+          const cat = categoryMap.get(tx.category_id);
+          const categoryName = cat ? cat.name : 'Uncategorized';
+          return (
+            <div className="space-x-2 text-right">
+              <Link
+                href={`/transactions/${tx.id}/edit`}
+                aria-label={`Edit ${categoryName} transaction of ${formatMoney(tx.amount, tx.currency)}`}
+                className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:underline transition-colors px-1 py-1"
+              >
+                Edit
+              </Link>
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(tx)}
+                aria-label={`Delete ${categoryName} transaction of ${formatMoney(tx.amount, tx.currency)}`}
+                className="text-[var(--color-danger)] hover:underline cursor-pointer px-1 py-1"
+              >
+                Delete
+              </button>
+            </div>
+          );
+        },
+      },
+    ],
+    [categoryMap]
+  );
+
+  const rowActions = useCallback(
+    (_tx: Transaction): RowAction<Transaction>[] => [
+      {
+        id: 'edit',
+        label: 'Edit Transaction',
+        icon: <Pencil className="w-3.5 h-3.5" />,
+        onClick: (t) => router.push(`/transactions/${t.id}/edit`),
+      },
+      {
+        id: 'delete',
+        label: 'Delete Transaction',
+        icon: <Trash2 className="w-3.5 h-3.5" />,
+        variant: 'danger',
+        onClick: (t) => setDeleteTarget(t),
+      },
+    ],
+    [router]
+  );
+
+  const mobileConfig: MobileTableConfig<Transaction> = useMemo(
+    () => ({
+      identityColumnId: 'category',
+      primaryValueColumnId: 'amount',
+      stateColumnId: 'type',
+      secondaryDetailColumnIds: ['transaction_date'],
+      detailMode: 'bottom-sheet',
+    }),
+    []
+  );
 
   return (
     <AppShell>
@@ -276,114 +447,33 @@ export default function TransactionsPage() {
           )}
         </div>
 
-        {/* Transactions Table / List */}
-        <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] overflow-hidden">
-          {loading ? (
-            <div className="p-8 space-y-3">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="h-12 bg-[var(--color-border)]/40 rounded-lg animate-pulse" />
-              ))}
-            </div>
-          ) : transactions.length === 0 ? (
-            <div className="text-center py-16 px-4">
-              <ReceiptText className="w-10 h-10 text-[var(--color-text-muted)] opacity-50 mx-auto mb-3" />
-              <h3 className="text-sm font-semibold mb-1">No transactions found</h3>
-              <p className="text-xs text-[var(--color-text-muted)] mb-4 max-w-sm mx-auto">
-                No ledger entries matched your query criteria or you haven&apos;t added any yet.
-              </p>
+        {/* Transactions Table / List via Global Responsive Table Component */}
+        <div className="space-y-4">
+          <ResponsiveDataTable<Transaction>
+            data={transactions}
+            columns={columns}
+            keyExtractor={(tx) => tx.id}
+            loading={loading}
+            actions={rowActions}
+            mobileConfig={mobileConfig}
+            breakpoint="md"
+            ariaLabel="Transactions ledger"
+            tableTitle="Transactions Ledger"
+            emptyTitle="No transactions found"
+            emptyDescription="No ledger entries matched your query criteria or you haven't added any yet."
+            emptyIcon={<ReceiptText className="w-5 h-5 opacity-70" />}
+            emptyAction={
               <Link
                 href="/transactions/new"
                 className="px-4 py-2 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] text-xs font-semibold transition-colors inline-block shadow-md shadow-[var(--color-primary)]/15 cursor-pointer"
               >
                 Create Transaction
               </Link>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs" aria-label="Transactions ledger">
-                <thead className="border-b border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text-dim)] uppercase tracking-wider">
-                  <tr>
-                    <th scope="col" className="py-3 px-4 font-semibold">Date</th>
-                    <th scope="col" className="py-3 px-4 font-semibold">Category</th>
-                    <th scope="col" className="py-3 px-4 font-semibold">Description</th>
-                    <th scope="col" className="py-3 px-4 font-semibold">Type</th>
-                    <th scope="col" className="py-3 px-4 font-semibold text-right">Amount</th>
-                    <th scope="col" className="py-3 px-4 font-semibold text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--color-border)]">
-                  {transactions.map((tx) => {
-                    const cat = categoryMap.get(tx.category_id);
-                    const isIncome = tx.type === 'income';
-                    const categoryName = cat ? cat.name : 'Uncategorized';
-
-                    return (
-                      <tr
-                        key={tx.id}
-                        className="hover:bg-[var(--color-surface-hover)] transition-colors"
-                      >
-                        <td className="py-3.5 px-4 tabular-nums text-[var(--color-text-muted)]">
-                          {formatDate(tx.transaction_date)}
-                        </td>
-                        <td className="py-3.5 px-4">
-                          <span className="font-medium text-[var(--color-text)]">
-                            {categoryName}
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-4 text-[var(--color-text-muted)] max-w-xs truncate">
-                          {tx.description || '—'}
-                        </td>
-                        <td className="py-3.5 px-4">
-                          <div className="flex items-center gap-1.5">
-                            <span
-                              className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase inline-flex items-center gap-1 ${
-                                isIncome
-                                  ? 'bg-[var(--color-pale-mint)] text-[var(--color-text)]'
-                                  : 'bg-[var(--color-pale-yellow)] text-[var(--color-text)]'
-                              }`}
-                            >
-                              <span className={`h-1 w-1 rounded-full ${isIncome ? 'bg-[var(--color-mint)]' : 'bg-[var(--color-amber)]'}`} />
-                              {tx.type}
-                            </span>
-                            {tx.is_ai_generated && (
-                              <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[var(--color-primary)]/20 text-[var(--color-primary)]">
-                                AI
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="py-3.5 px-4 text-right tabular-nums font-semibold">
-                          <span className="text-[var(--color-text)]">
-                            {isIncome ? '+' : '-'} {formatMoney(tx.amount, tx.currency)}
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-4 text-right space-x-2">
-                          <Link
-                            href={`/transactions/${tx.id}/edit`}
-                            aria-label={`Edit ${categoryName} transaction of ${formatMoney(tx.amount, tx.currency)}`}
-                            className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:underline transition-colors px-1 py-1"
-                          >
-                            Edit
-                          </Link>
-                          <button
-                            type="button"
-                            onClick={() => setDeleteTarget(tx)}
-                            aria-label={`Delete ${categoryName} transaction of ${formatMoney(tx.amount, tx.currency)}`}
-                            className="text-[var(--color-danger)] hover:underline cursor-pointer px-1 py-1"
-                          >
-                            Delete
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
+            }
+          />
 
           {/* Pagination bar */}
-          <div className="p-4 border-t border-[var(--color-border)] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[var(--color-text-muted)]">
+          <div className="p-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[var(--color-text-muted)] shadow-[var(--shadow-card)]">
             <span>
               Showing {transactions.length > 0 ? offset + 1 : 0} to{' '}
               {Math.min(offset + transactions.length, total)} of {total} records

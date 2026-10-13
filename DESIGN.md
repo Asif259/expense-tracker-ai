@@ -193,3 +193,34 @@ Following sleek financial management dark dashboards:
 - Synchronized client-side state via `ThemeContext`, persistent in `localStorage`.
 - Zero-FOUC (Flash of Unstyled Content) inline `<head>` script reading stored preference or OS `prefers-color-scheme`.
 - Accessible Sun/Moon toggle with tooltip and `aria-label` in persistent sidebar footer and mobile drawer.
+
+---
+
+# Global Responsive Table Design Pattern: System Specification
+
+All data tables across Ledgerly adhere to the **"Rank by use, not position"** responsive table architecture.
+
+## 1. Column Semantic Classification
+Every column is classified into one of 5 distinct semantic roles:
+- **IDENTITY** (Priority 1): Who or what is this row? (e.g. Category, Tenant, Person). Left-aligned.
+- **VALUE** (Priority 2): Primary numeric/currency information (e.g. Transaction Amount, Rent, Due). Reserved right-aligned slot in tabular-nums; **never truncated**.
+- **STATE** (Priority 3): Current lifecycle condition (e.g. ● Expense, ● Income, ● Overdue, ● Paid). Compact dot indicator placed near identity on Line 2.
+- **DETAIL** (Priority 4–7): Supporting metadata (e.g. Dates, References, Descriptions). Ambiguous values must be labeled ("Due Sep 10", "Ref: #1234").
+- **ACTION** (Priority 8): Operations (Edit, Delete, Pay). Grouped in accessible 44×44px touch targets behind kebab `⋮` or primary CTA.
+
+## 2. Desktop vs Mobile Dual-View Hierarchy
+- **Desktop (Breadth)**: Standard semantic `<table>` showing all columns horizontally when viewport/container space permits.
+- **Mobile (Priority & Density)**: Two clear visual lines per row:
+  - **Line 1**: `[Primary Identity]` (Left, truncate if long) ------------ `[Primary Value]` (Right, tabular-nums, never truncated)
+  - **Line 2**: `● [State] · [Supporting Detail]` (Left) ---------------- `[⋮ Menu / Primary CTA]` (Right, min 44×44px)
+- **Expanded Drawer (Completeness)**: "Hidden isn't deleted." Tapping any row opens an accessible bottom sheet drawer or accordion revealing 100% of the underlying record details with explicit semantic labels and full action buttons.
+
+## 3. Container-Aware Breakpoints ("The Table Owns the Breakpoint")
+- Tables use CSS Container Queries (`container-type: inline-size`) with `.responsive-table-container`.
+- Layout switches based on container width rather than arbitrary window viewport widths, ensuring seamless responsiveness when placed in side drawers, dashboards, split layouts, or dialogs:
+  - `sm`: <= 600px
+  - `md`: <= 760px (Standard Default)
+  - `lg`: <= 900px
+  - `xl`: <= 1040px
+- Preserves sorting on mobile via a dedicated `[Sort: Date ↓]` trigger button when table headers are compressed.
+

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, Suspense } from 'react';
+import { useEffect, useState, useCallback, useMemo, Suspense } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import AppShell from '@/components/app-shell';
 import { useAuth } from '@/context/auth-context';
@@ -10,12 +10,19 @@ import {
   recordLoanRepayment,
   deleteLoanRepayment,
   Loan,
+  LoanRepayment,
 } from '@/lib/api';
 import { formatMoney, formatDate } from '@/lib/format';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { toast } from '@/components/toast';
 import Link from 'next/link';
 import { ArrowLeft, Plus, ArrowDownLeft, Trash2, X } from 'lucide-react';
+import {
+  ResponsiveDataTable,
+  ResponsiveColumn,
+  RowAction,
+  MobileTableConfig,
+} from '@/components/responsive-table';
 
 export default function LoanDetailPage() {
   return (
@@ -75,8 +82,142 @@ function LoanDetailContent() {
   }, [getToken, id]);
 
   useEffect(() => {
-    loadLoan();
-  }, [loadLoan]);
+    let mounted = true;
+    (async () => {
+      try {
+        const token = await getToken();
+        if (!token || !mounted) return;
+        const res = await getLoan(token, id);
+        if (mounted) {
+          setLoan(res);
+          setLoading(false);
+        }
+      } catch (err: unknown) {
+        if (mounted) {
+          setLoading(false);
+          toast(err instanceof Error ? err.message : 'Failed to load loan details', 'error');
+        }
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [getToken, id]);
+
+  const repaymentColumns: ResponsiveColumn<LoanRepayment>[] = useMemo(
+    () => [
+      {
+        id: 'payment_date',
+        header: 'Date',
+        role: 'identity',
+        priority: 1,
+        label: 'Payment Date',
+        sortable: true,
+        sortValue: (rep: LoanRepayment) => rep.payment_date,
+        cell: (rep: LoanRepayment) => (
+          <span className="font-semibold text-[var(--color-text)] tabular-nums">
+            {formatDate(rep.payment_date)}
+          </span>
+        ),
+      },
+      {
+        id: 'amount',
+        header: 'Amount',
+        role: 'value',
+        priority: 2,
+        align: 'right',
+        isNumeric: true,
+        label: 'Repayment Amount',
+        sortable: true,
+        sortValue: (rep: LoanRepayment) =>
+          typeof rep.amount === 'string' ? parseFloat(rep.amount) : rep.amount,
+        cell: (rep: LoanRepayment) => (
+          <span className="inline-flex items-center justify-end gap-1.5 font-bold tabular-nums text-[var(--color-text)]">
+            <ArrowDownLeft className="w-3.5 h-3.5 text-[var(--color-mint)]" />
+            <span>{formatMoney(rep.amount, loan?.currency || 'BDT')}</span>
+          </span>
+        ),
+      },
+      {
+        id: 'payment_method',
+        header: 'Method',
+        role: 'state',
+        priority: 3,
+        label: 'Payment Method',
+        cell: (rep: LoanRepayment) => (
+          <span className="px-2 py-0.5 rounded text-[10px] font-semibold uppercase bg-[var(--color-surface-hover)] border border-[var(--color-border)] text-[var(--color-text)] inline-flex items-center gap-1">
+            <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-primary)]" />
+            {rep.payment_method}
+          </span>
+        ),
+      },
+      {
+        id: 'reference',
+        header: 'Reference',
+        role: 'detail',
+        priority: 4,
+        label: 'Reference Code',
+        cell: (rep: LoanRepayment) => (
+          <span className="text-[var(--color-text-dim)]">{rep.reference || '—'}</span>
+        ),
+      },
+      {
+        id: 'notes',
+        header: 'Notes',
+        role: 'detail',
+        priority: 5,
+        label: 'Notes',
+        cell: (rep: LoanRepayment) => (
+          <span className="text-[var(--color-text-muted)] max-w-xs truncate block">
+            {rep.notes || '—'}
+          </span>
+        ),
+      },
+      {
+        id: 'actions',
+        header: 'Actions',
+        role: 'action',
+        priority: 6,
+        align: 'right',
+        cell: (rep: LoanRepayment) => (
+          <button
+            type="button"
+            onClick={() => setDeleteRepaymentTarget(rep.id)}
+            className="text-[var(--color-text-dim)] hover:text-[var(--color-danger)] transition-colors cursor-pointer p-1"
+            title="Delete Repayment Record"
+            aria-label={`Delete repayment of ${formatMoney(rep.amount, loan?.currency || 'BDT')}`}
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        ),
+      },
+    ],
+    [loan?.currency]
+  );
+
+  const repaymentRowActions = useCallback(
+    (_rep: LoanRepayment): RowAction<LoanRepayment>[] => [
+      {
+        id: 'delete',
+        label: 'Delete Repayment',
+        icon: <Trash2 className="w-3.5 h-3.5" />,
+        variant: 'danger',
+        onClick: (r) => setDeleteRepaymentTarget(r.id),
+      },
+    ],
+    []
+  );
+
+  const repaymentMobileConfig: MobileTableConfig<LoanRepayment> = useMemo(
+    () => ({
+      identityColumnId: 'payment_date',
+      primaryValueColumnId: 'amount',
+      stateColumnId: 'payment_method',
+      secondaryDetailColumnIds: ['reference'],
+      detailMode: 'bottom-sheet',
+    }),
+    []
+  );
 
   const handleRecordRepayment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -339,55 +480,18 @@ function LoanDetailContent() {
             )}
           </div>
 
-          {!loan.repayments || loan.repayments.length === 0 ? (
-            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-8 text-center text-sm text-[var(--color-text-muted)]">
-              No repayments recorded yet. Use the &quot;+ Record Repayment&quot; button to log partial or full payments.
-            </div>
-          ) : (
-            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl overflow-hidden shadow-sm">
-              <table className="w-full text-left text-xs sm:text-sm">
-                <thead className="bg-[var(--color-bg)] text-[var(--color-text-dim)] uppercase text-[11px] tracking-wider border-b border-[var(--color-border)]">
-                  <tr>
-                    <th className="py-3 px-4">Date</th>
-                    <th className="py-3 px-4 text-right">Amount</th>
-                    <th className="py-3 px-4">Method</th>
-                    <th className="py-3 px-4">Reference</th>
-                    <th className="py-3 px-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y border-[var(--color-border)]">
-                  {loan.repayments.map((rep) => (
-                    <tr key={rep.id} className="hover:bg-[var(--color-surface-hover)] transition-colors">
-                      <td className="py-3.5 px-4 font-medium text-[var(--color-text)]">
-                        {rep.payment_date}
-                      </td>
-                      <td className="py-3.5 px-4 text-right font-semibold text-[var(--color-text)] tabular-nums">
-                        <span className="inline-flex items-center justify-end gap-1.5">
-                          <ArrowDownLeft className="w-3.5 h-3.5 text-[var(--color-mint)]" />
-                          <span>{formatMoney(rep.amount, loan.currency)}</span>
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 capitalize text-[var(--color-text-muted)]">
-                        {rep.payment_method}
-                      </td>
-                      <td className="py-3.5 px-4 text-[var(--color-text-dim)]">
-                        {rep.reference || '—'}
-                      </td>
-                      <td className="py-3.5 px-4 text-right">
-                        <button
-                          onClick={() => setDeleteRepaymentTarget(rep.id)}
-                          className="text-[var(--color-text-dim)] hover:text-[var(--color-danger)] transition-colors cursor-pointer"
-                          title="Delete Repayment Record"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <ResponsiveDataTable<LoanRepayment>
+            data={loan.repayments || []}
+            columns={repaymentColumns}
+            keyExtractor={(rep) => rep.id}
+            actions={repaymentRowActions}
+            mobileConfig={repaymentMobileConfig}
+            breakpoint="sm"
+            ariaLabel="Loan repayment history ledger"
+            tableTitle="Repayment Ledger"
+            emptyTitle="No repayments recorded yet"
+            emptyDescription="Use the '+ Add Partial Payment' button above to log repayments."
+          />
         </div>
 
         {/* Record Repayment Modal */}
@@ -454,7 +558,7 @@ function LoanDetailContent() {
                     <select
                       id="repay-method"
                       value={paymentMethod}
-                      onChange={(e) => setPaymentMethod(e.target.value as any)}
+                      onChange={(e) => setPaymentMethod(e.target.value as 'cash' | 'bkash' | 'nagad' | 'bank' | 'other')}
                       className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl px-3 py-2 text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] capitalize cursor-pointer"
                     >
                       <option value="bkash">bKash</option>
