@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter, DM_Serif_Display } from 'next/font/google';
+import { Inter, DM_Serif_Display, Noto_Sans_Bengali } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/context/auth-context';
 import { ThemeProvider } from '@/context/theme-context';
@@ -18,7 +18,20 @@ const dmSerif = DM_Serif_Display({
   display: 'swap',
 });
 
+// Bengali UI strings (voice input examples, category names) fall back to this
+// instead of a random system font. Preload is off: Latin pages never fetch it.
+const bengali = Noto_Sans_Bengali({
+  subsets: ['bengali'],
+  weight: ['400', '500', '600'],
+  variable: '--font-bengali',
+  display: 'swap',
+  preload: false,
+});
+
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000',
+  ),
   title: {
     default: 'Ledgerly — Expense tracker',
     template: '%s · Ledgerly',
@@ -60,7 +73,8 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`h-full antialiased ${inter.variable} ${dmSerif.variable}`}
+      data-scroll-behavior="smooth"
+      className={`h-full antialiased ${inter.variable} ${dmSerif.variable} ${bengali.variable}`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />

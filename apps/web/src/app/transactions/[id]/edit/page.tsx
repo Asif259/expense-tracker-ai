@@ -112,12 +112,14 @@ function EditTransactionForm() {
 
         if (mounted) {
           setCategories(cats);
-          setType(tx.type);
-          setAmount(tx.amount);
-          setCurrency(tx.currency);
-          setCategoryId(tx.category_id);
-          setTransactionDate(tx.transaction_date);
-          setDescription(tx.description || '');
+          setType(tx.type === 'income' ? 'income' : 'expense');
+          // The API serialises Postgres `numeric` values as JSON numbers in some
+          // responses, so normalise every field to a string for the form state.
+          setAmount(tx.amount == null ? '' : String(tx.amount));
+          setCurrency(tx.currency ?? 'BDT');
+          setCategoryId(tx.category_id ?? '');
+          setTransactionDate(tx.transaction_date ?? '');
+          setDescription(tx.description ?? '');
         }
       } catch (err: unknown) {
         if (mounted) {
@@ -151,7 +153,7 @@ function EditTransactionForm() {
     setAmountError(null);
 
     // Validation — same rules and messages, now shown next to the field
-    const cleanAmount = amount.trim();
+    const cleanAmount = String(amount ?? '').trim();
     if (!cleanAmount) {
       setAmountError('Amount is required.');
       return;
@@ -188,7 +190,7 @@ function EditTransactionForm() {
         currency,
         category_id: categoryId,
         transaction_date: transactionDate,
-        description: description.trim() || null,
+        description: String(description ?? '').trim() || null,
       });
 
       toast('Transaction updated', 'success');

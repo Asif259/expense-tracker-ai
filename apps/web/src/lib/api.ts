@@ -63,6 +63,18 @@ export interface Transaction {
   updated_at: string;
 }
 
+/**
+ * PostgREST serialises Postgres `numeric` columns as JSON numbers, while the
+ * rest of the app treats amounts as decimal strings. Normalise once here so
+ * every consumer (forms, tables, charts) receives the shape it expects.
+ */
+function normalizeTransaction(row: Transaction): Transaction {
+  const amount = row.amount as unknown;
+  return typeof amount === 'number'
+    ? { ...row, amount: amount.toFixed(2) }
+    : row;
+}
+
 export interface TransactionListResponse {
   data: Transaction[];
   total: number;
@@ -97,7 +109,7 @@ export interface UpdateTransactionPayload {
   transaction_date?: string;
 }
 
-export function listTransactions(token: string, query: TransactionQuery = {}) {
+export async function listTransactions(token: string, query: TransactionQuery = {}) {
   const params = new URLSearchParams();
   if (query.type) params.set('type', query.type);
   if (query.category_id) params.set('category_id', query.category_id);
@@ -106,28 +118,32 @@ export function listTransactions(token: string, query: TransactionQuery = {}) {
   if (query.limit) params.set('limit', String(query.limit));
   if (query.offset !== undefined) params.set('offset', String(query.offset));
   const qs = params.toString();
-  return request<TransactionListResponse>(
+  const response = await request<TransactionListResponse>(
     `/transactions${qs ? `?${qs}` : ''}`,
     token,
   );
+  return { ...response, data: (response.data ?? []).map(normalizeTransaction) };
 }
 
-export function getTransaction(token: string, id: string) {
-  return request<Transaction>(`/transactions/${id}`, token);
+export async function getTransaction(token: string, id: string) {
+  const transaction = await request<Transaction>(`/transactions/${id}`, token);
+  return normalizeTransaction(transaction);
 }
 
-export function createTransaction(token: string, payload: CreateTransactionPayload) {
-  return request<Transaction>('/transactions', token, {
+export async function createTransaction(token: string, payload: CreateTransactionPayload) {
+  const transaction = await request<Transaction>('/transactions', token, {
     method: 'POST',
     body: JSON.stringify(payload),
   });
+  return normalizeTransaction(transaction);
 }
 
-export function updateTransaction(token: string, id: string, payload: UpdateTransactionPayload) {
-  return request<Transaction>(`/transactions/${id}`, token, {
+export async function updateTransaction(token: string, id: string, payload: UpdateTransactionPayload) {
+  const transaction = await request<Transaction>(`/transactions/${id}`, token, {
     method: 'PATCH',
     body: JSON.stringify(payload),
   });
+  return normalizeTransaction(transaction);
 }
 
 export function deleteTransaction(token: string, id: string) {
