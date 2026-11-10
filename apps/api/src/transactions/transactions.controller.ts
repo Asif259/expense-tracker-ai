@@ -22,12 +22,16 @@ import {
   updateTransactionSchema,
   transactionQuerySchema,
   transactionParamSchema,
+  transactionSummaryQuerySchema,
+  transactionAnalysisSchema,
 } from './dto/transaction.schema.js';
 import type {
   CreateTransactionDto,
   UpdateTransactionDto,
   TransactionQueryDto,
   TransactionParamDto,
+  TransactionSummaryQueryDto,
+  TransactionAnalysisDto,
 } from './dto/transaction.schema.js';
 import type { User } from '@supabase/supabase-js';
 
@@ -53,6 +57,25 @@ export class TransactionsController {
     @Query(new ZodValidationPipe(transactionQuerySchema)) query: TransactionQueryDto,
   ) {
     return this.transactionsService.findAll(token, user.id, query);
+  }
+
+  @Get('summary')
+  getMonthlySummary(
+    @AuthToken() token: string,
+    @CurrentUser() user: User,
+    @Query(new ZodValidationPipe(transactionSummaryQuerySchema)) query: TransactionSummaryQueryDto,
+  ) {
+    return this.transactionsService.getMonthlySummary(token, user.id, query);
+  }
+
+  @Post('analysis')
+  @HttpCode(HttpStatus.OK)
+  analyzeTransactions(
+    @AuthToken() token: string,
+    @CurrentUser() user: User,
+    @Body(new ZodValidationPipe(transactionAnalysisSchema)) dto: TransactionAnalysisDto,
+  ) {
+    return this.transactionsService.analyzeTransactions(token, user.id, dto);
   }
 
   @Get(':id')

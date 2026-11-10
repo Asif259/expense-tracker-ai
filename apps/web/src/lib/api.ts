@@ -136,6 +136,61 @@ export function deleteTransaction(token: string, id: string) {
   });
 }
 
+// ── Monthly Summary ──
+
+export interface CurrencySummaryItem {
+  income: string;
+  expenses: string;
+  net: string;
+}
+
+export interface MonthlySummary {
+  period: {
+    month: number;
+    year: number;
+    startDate: string;
+    endDate: string;
+  };
+  currencies: Record<string, CurrencySummaryItem>;
+  transactionCount: number;
+}
+
+export function getMonthlySummary(token: string, month: number, year: number) {
+  const params = new URLSearchParams({ month: String(month), year: String(year) });
+  return request<MonthlySummary>(`/transactions/summary?${params}`, token);
+}
+
+// ── AI Transaction Analysis ──
+
+export interface ConversationMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export interface AnalysisRequest {
+  question: string;
+  period: { month: number; year: number };
+  conversationHistory?: ConversationMessage[];
+}
+
+export interface AnalysisResult {
+  answer: string;
+  dataUsed: {
+    intent: string;
+    period: string;
+    queriedAt: string;
+  };
+  insights: string[];
+  suggestedQuestions: string[];
+}
+
+export function analyzeTransactions(token: string, payload: AnalysisRequest) {
+  return request<AnalysisResult>('/transactions/analysis', token, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
 // ── AI Parsing ──
 
 export interface ParseExpensePayload {

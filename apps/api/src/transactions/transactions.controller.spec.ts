@@ -23,6 +23,8 @@ describe('TransactionsController', () => {
       findOne: vi.fn(),
       update: vi.fn(),
       remove: vi.fn(),
+      getMonthlySummary: vi.fn(),
+      analyzeTransactions: vi.fn(),
     } as unknown as TransactionsService;
 
     controller = new TransactionsController(service);
@@ -85,5 +87,41 @@ describe('TransactionsController', () => {
 
     expect(service.remove).toHaveBeenCalledWith(mockToken, mockUser.id, txId);
     expect(result.id).toBe(txId);
+  });
+
+  it('delegates getMonthlySummary to service with month and year', async () => {
+    const mockSummary = {
+      period: { month: 11, year: 2026, startDate: '2026-11-01', endDate: '2026-11-30' },
+      currencies: { BDT: { income: '45000.00', expenses: '28500.00', net: '16500.00' } },
+      transactionCount: 42,
+    };
+    vi.spyOn(service, 'getMonthlySummary').mockResolvedValue(mockSummary);
+
+    const result = await controller.getMonthlySummary(mockToken, mockUser, { month: 11, year: 2026 });
+
+    expect(service.getMonthlySummary).toHaveBeenCalledWith(mockToken, mockUser.id, { month: 11, year: 2026 });
+    expect(result.transactionCount).toBe(42);
+    expect(result.currencies['BDT'].income).toBe('45000.00');
+  });
+
+  it('delegates analyzeTransactions to service', async () => {
+    const mockResult = {
+      answer: 'Your top category was Food.',
+      dataUsed: { intent: 'top_category', period: 'November 2026', queriedAt: new Date().toISOString() },
+      insights: ['Food & Dining is your largest expense.'],
+      suggestedQuestions: ['Compare with last month.'],
+    };
+    vi.spyOn(service, 'analyzeTransactions').mockResolvedValue(mockResult);
+
+    const dto = {
+      question: 'What cost me the most?',
+      period: { month: 11, year: 2026 },
+      conversationHistory: [],
+    };
+
+    const result = await controller.analyzeTransactions(mockToken, mockUser, dto);
+
+    expect(service.analyzeTransactions).toHaveBeenCalledWith(mockToken, mockUser.id, dto);
+    expect(result.dataUsed.intent).toBe('top_category');
   });
 });
