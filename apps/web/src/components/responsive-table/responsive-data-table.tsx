@@ -8,12 +8,9 @@ import {
   ChevronDown,
   ChevronUp,
   Inbox,
-  AlertCircle,
 } from 'lucide-react';
-import {
-  ResponsiveColumn,
-  ResponsiveDataTableProps,
-} from './types';
+import { EmptyState, ErrorState } from '@/components/ui';
+import { ResponsiveColumn, ResponsiveDataTableProps } from './types';
 import { TableActionsMenu } from './table-actions-menu';
 import { TableBottomSheet, DetailField } from './table-bottom-sheet';
 
@@ -30,8 +27,8 @@ export function ResponsiveDataTable<T>({
   onSortChange,
   loading = false,
   loadingRowCount = 5,
-  emptyTitle = 'No records found',
-  emptyDescription = 'There are currently no items matching your criteria.',
+  emptyTitle = 'Nothing here yet',
+  emptyDescription = 'There are no items to show.',
   emptyAction,
   emptyIcon,
   error = null,
@@ -39,6 +36,7 @@ export function ResponsiveDataTable<T>({
   ariaLabel = 'Data table',
   className = '',
   tableTitle,
+  footer,
 }: ResponsiveDataTableProps<T>) {
   // Mobile active detail sheet state
   const [selectedRow, setSelectedRow] = useState<T | null>(null);
@@ -159,438 +157,448 @@ export function ResponsiveDataTable<T>({
 
   // Active sort column header label
   const activeSortCol = sortableColumns.find((c) => c.id === sortColumnId);
+  const activeSortLabel =
+    activeSortCol?.label ||
+    (typeof activeSortCol?.header === 'string' ? activeSortCol.header : 'Default');
 
   return (
-    <div
-      className={`responsive-table-container rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-card)] overflow-hidden ${className}`}
-      data-breakpoint={breakpoint}
-      data-view-mode={viewMode}
-    >
-      {/* =========================================================================
-          ERROR STATE
-          ========================================================================= */}
-      {error && !loading && (
-        <div className="p-8 text-center space-y-3">
-          <AlertCircle className="w-8 h-8 text-[var(--color-danger)] mx-auto opacity-80" />
-          <h3 className="text-sm font-bold text-[var(--color-text)]">Unable to load data</h3>
-          <p className="text-xs text-[var(--color-text-muted)] max-w-sm mx-auto">{error}</p>
-          {onRetry && (
-            <button
-              type="button"
-              onClick={onRetry}
-              className="mt-2 px-3.5 py-2 text-xs font-semibold rounded-xl bg-[var(--color-primary)] text-[var(--color-primary-contrast)] hover:bg-[var(--color-primary-hover)] transition-colors cursor-pointer"
-            >
-              Retry
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* =========================================================================
-          EMPTY STATE
-          ========================================================================= */}
-      {!error && !loading && data.length === 0 && (
-        <div className="text-center py-14 px-4">
-          <div className="w-10 h-10 rounded-2xl bg-[var(--color-surface-hover)] flex items-center justify-center text-[var(--color-text-muted)] mx-auto mb-3">
-            {emptyIcon || <Inbox className="w-5 h-5 opacity-70" />}
+    <>
+      <div
+        className={`responsive-table-container rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] overflow-hidden ${className}`.trim()}
+        data-breakpoint={breakpoint}
+        data-view-mode={viewMode}
+      >
+        {/* =========================================================================
+            ERROR STATE
+            ========================================================================= */}
+        {error && !loading && (
+          <div className="px-4 py-2 sm:px-6">
+            <ErrorState title="Couldn't load this data" description={error} onRetry={onRetry} />
           </div>
-          <h3 className="text-sm font-semibold text-[var(--color-text)] mb-1">{emptyTitle}</h3>
-          <p className="text-xs text-[var(--color-text-muted)] mb-4 max-w-sm mx-auto">
-            {emptyDescription}
-          </p>
-          {emptyAction && <div>{emptyAction}</div>}
-        </div>
-      )}
+        )}
 
-      {/* =========================================================================
-          VIEW 1: DESKTOP TABLE (Shown when container has sufficient breadth)
-          ========================================================================= */}
-      <div className="table-desktop-view">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs" aria-label={ariaLabel}>
-            <thead className="border-b border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text-dim)] uppercase tracking-wider select-none">
-              <tr>
-                {columns.map((col) => {
-                  const isSorted = sortColumnId === col.id;
-                  const isRight = col.align === 'right' || col.isNumeric;
-                  const isCenter = col.align === 'center';
+        {/* =========================================================================
+            EMPTY STATE
+            ========================================================================= */}
+        {!error && !loading && data.length === 0 && (
+          <EmptyState
+            icon={emptyIcon || <Inbox aria-hidden="true" />}
+            title={emptyTitle}
+            description={emptyDescription}
+            action={emptyAction}
+            className="px-4 py-6 sm:px-6"
+          />
+        )}
 
-                  return (
-                    <th
-                      key={col.id}
-                      scope="col"
-                      onClick={() => col.sortable && handleSortToggle(col.id)}
-                      className={`py-3 px-4 font-semibold text-[11px] ${
-                        isRight ? 'text-right' : isCenter ? 'text-center' : 'text-left'
-                      } ${col.sortable ? 'cursor-pointer hover:text-[var(--color-text)] transition-colors' : ''} ${
-                        col.headerClassName || ''
-                      }`}
-                    >
-                      <div
-                        className={`inline-flex items-center gap-1.5 ${
-                          isRight ? 'justify-end w-full' : isCenter ? 'justify-center w-full' : ''
-                        }`}
-                      >
-                        <span>{col.header}</span>
-                        {col.sortable && (
-                          <span className="shrink-0 text-[var(--color-text-muted)]">
-                            {isSorted ? (
-                              sortDirection === 'asc' ? (
-                                <ArrowUp className="w-3.5 h-3.5 text-[var(--color-primary)]" />
-                              ) : (
-                                <ArrowDown className="w-3.5 h-3.5 text-[var(--color-primary)]" />
-                              )
-                            ) : (
-                              <ArrowUpDown className="w-3 h-3 opacity-40 hover:opacity-100" />
-                            )}
-                          </span>
-                        )}
-                      </div>
-                    </th>
-                  );
-                })}
-              </tr>
-            </thead>
-
-            <tbody className="divide-y divide-[var(--color-border)]">
-              {loading ? (
-                Array.from({ length: loadingRowCount }).map((_, rIdx) => (
-                  <tr
-                    key={`desktop-skel-${rIdx}`}
-                    data-testid={`desktop-skel-${rIdx}`}
-                    className="animate-pulse"
-                  >
-                    {columns.map((col, cIdx) => (
-                      <td key={`desktop-skel-cell-${cIdx}`} className="py-3.5 px-4">
-                        <div
-                          className={`h-4 bg-[var(--color-border)]/40 rounded ${
-                            col.isNumeric || col.align === 'right' ? 'ml-auto w-16' : 'w-24'
-                          }`}
-                        />
-                      </td>
-                    ))}
-                  </tr>
-                ))
-              ) : (
-                data.map((row, index) => {
-                  const key = keyExtractor(row, index);
-                  const rowActionList = actions ? actions(row) : [];
-
-                  return (
-                    <tr
-                      key={key}
-                      className="hover:bg-[var(--color-surface-hover)] transition-colors group"
-                    >
-                      {columns.map((col) => {
-                        const isRight = col.align === 'right' || col.isNumeric;
-                        const isCenter = col.align === 'center';
-
-                        return (
-                          <td
-                            key={col.id}
-                            className={`py-3.5 px-4 ${
-                              col.isNumeric ? 'tabular-nums' : ''
-                            } ${isRight ? 'text-right' : isCenter ? 'text-center' : 'text-left'} ${
-                              col.className || ''
-                            }`}
-                          >
-                            {col.role === 'action' && actions ? (
-                              <div className="inline-flex items-center justify-end gap-1.5">
-                                {rowActionList.map((act) => {
-                                  const isDanger = act.variant === 'danger';
-                                  const isPrimary = act.variant === 'primary';
-
-                                  return (
-                                    <button
-                                      key={act.id}
-                                      type="button"
-                                      onClick={() => act.onClick(row)}
-                                      aria-label={
-                                        act.ariaLabel
-                                          ? act.ariaLabel(row)
-                                          : `${act.label} for ${getIdentityText(row, index)}`
-                                      }
-                                      title={act.label}
-                                      className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer ${
-                                        isDanger
-                                          ? 'text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10'
-                                          : isPrimary
-                                          ? 'bg-[var(--color-primary)] text-[var(--color-primary-contrast)] hover:bg-[var(--color-primary-hover)]'
-                                          : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-hover)]'
-                                      }`}
-                                    >
-                                      {act.icon && <span className="w-3.5 h-3.5">{act.icon}</span>}
-                                      <span>{act.label}</span>
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            ) : (
-                              renderCellContent(col, row, index)
-                            )}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* =========================================================================
-          VIEW 2: MOBILE COMPACT TABLE (Two visual lines per row, rank by use)
-          ========================================================================= */}
-      <div className="table-mobile-view">
-        {/* Mobile Header Bar (Preserves Sort functionality even when headers are hidden) */}
-        {sortableColumns.length > 0 && !loading && data.length > 0 && (
-          <div className="px-4 py-2.5 border-b border-[var(--color-border)] bg-[var(--color-bg)]/60 flex items-center justify-between text-xs">
-            <span className="text-[var(--color-text-dim)] font-medium text-[11px] uppercase tracking-wider">
-              {tableTitle || `${data.length} records`}
-            </span>
-
-            {/* Mobile Sort Control */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setMobileSortOpen(!mobileSortOpen)}
-                aria-expanded={mobileSortOpen}
-                aria-label="Sort table rows"
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] font-semibold text-xs hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer"
-              >
-                <span>
-                  Sort: {activeSortCol?.label || (typeof activeSortCol?.header === 'string' ? activeSortCol.header : 'Default')}{' '}
-                  {sortDirection === 'asc' ? '↑' : '↓'}
-                </span>
-                <ChevronDown className="w-3.5 h-3.5 opacity-70" />
-              </button>
-
-              {mobileSortOpen && (
-                <div
-                  className="absolute right-0 mt-1 z-30 min-w-[160px] rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-elevated)] p-1.5 shadow-xl animate-in fade-in-50 zoom-in-95"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {sortableColumns.map((col) => {
-                    const isSelected = sortColumnId === col.id;
-                    const colLabel =
-                      col.label || (typeof col.header === 'string' ? col.header : col.id);
+        {/* =========================================================================
+            VIEW 1: DESKTOP TABLE (Shown when container has sufficient breadth)
+            ========================================================================= */}
+        <div className="table-desktop-view">
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-left text-[13px]" aria-label={ariaLabel}>
+              <thead className="select-none border-b border-[var(--color-border)]">
+                <tr>
+                  {columns.map((col) => {
+                    const isSorted = sortColumnId === col.id;
+                    const isRight = col.align === 'right' || col.isNumeric;
+                    const isCenter = col.align === 'center';
 
                     return (
-                      <button
+                      <th
                         key={col.id}
-                        type="button"
-                        onClick={() => {
-                          setMobileSortOpen(false);
-                          handleSortToggle(col.id);
-                        }}
-                        className={`w-full text-left px-3 py-2 text-xs font-semibold rounded-lg flex items-center justify-between transition-colors cursor-pointer ${
-                          isSelected
-                            ? 'bg-[var(--color-primary)]/10 text-[var(--color-primary)]'
-                            : 'text-[var(--color-text)] hover:bg-[var(--color-surface-hover)]'
-                        }`}
+                        scope="col"
+                        aria-sort={
+                          isSorted
+                            ? sortDirection === 'asc'
+                              ? 'ascending'
+                              : 'descending'
+                            : col.sortable
+                              ? 'none'
+                              : undefined
+                        }
+                        className={`px-4 py-2.5 text-[12px] font-medium text-[var(--color-text-muted)] ${
+                          isRight ? 'text-right' : isCenter ? 'text-center' : 'text-left'
+                        } ${col.headerClassName || ''}`}
                       >
-                        <span>{colLabel}</span>
-                        {isSelected && (
-                          <span className="text-xs">
-                            {sortDirection === 'asc' ? 'Asc ↑' : 'Desc ↓'}
+                        {col.sortable && onSortChange ? (
+                          <button
+                            type="button"
+                            onClick={() => handleSortToggle(col.id)}
+                            className={`inline-flex items-center gap-1.5 rounded-[var(--radius-sm)] transition-colors duration-[var(--duration-fast)] hover:text-[var(--color-text)] ${
+                              isRight ? 'w-full justify-end' : isCenter ? 'w-full justify-center' : ''
+                            }`}
+                          >
+                            <span>{col.header}</span>
+                            <span className="shrink-0" aria-hidden="true">
+                              {isSorted ? (
+                                sortDirection === 'asc' ? (
+                                  <ArrowUp className="h-3.5 w-3.5 text-[var(--color-primary-text)]" />
+                                ) : (
+                                  <ArrowDown className="h-3.5 w-3.5 text-[var(--color-primary-text)]" />
+                                )
+                              ) : (
+                                <ArrowUpDown className="h-3 w-3 text-[var(--color-text-subtle)]" />
+                              )}
+                            </span>
+                          </button>
+                        ) : (
+                          <span
+                            className={`inline-flex items-center gap-1.5 ${
+                              isRight ? 'w-full justify-end' : isCenter ? 'w-full justify-center' : ''
+                            }`}
+                          >
+                            {col.header}
                           </span>
                         )}
-                      </button>
+                      </th>
                     );
                   })}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+                </tr>
+              </thead>
 
-        {/* Mobile Skeleton Loading: Exact two visual lines per row */}
-        {loading ? (
-          <div className="divide-y divide-[var(--color-border)]">
-            {Array.from({ length: loadingRowCount }).map((_, idx) => (
-              <div
-                key={`mob-skel-${idx}`}
-                data-testid={`mob-skel-${idx}`}
-                className="p-4 space-y-2.5 animate-pulse"
-              >
-                {/* Line 1 Skeleton */}
-                <div className="flex items-center justify-between">
-                  <div className="h-4 w-32 bg-[var(--color-border)]/50 rounded" />
-                  <div className="h-4 w-20 bg-[var(--color-border)]/50 rounded" />
-                </div>
-                {/* Line 2 Skeleton */}
-                <div className="flex items-center justify-between pt-0.5">
-                  <div className="h-3 w-40 bg-[var(--color-border)]/30 rounded" />
-                  <div className="h-6 w-6 bg-[var(--color-border)]/30 rounded-lg" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="divide-y divide-[var(--color-border)]" role="list">
-            {data.map((row, index) => {
-              const key = keyExtractor(row, index);
-              const identityContent = mobileConfig?.renderIdentity
-                ? mobileConfig.renderIdentity(row)
-                : identityColumn
-                ? renderCellContent(identityColumn, row, index)
-                : `Record ${index + 1}`;
-
-              const primaryValueContent = mobileConfig?.renderPrimaryValue
-                ? mobileConfig.renderPrimaryValue(row)
-                : primaryValueColumn
-                ? renderCellContent(primaryValueColumn, row, index)
-                : null;
-
-              const stateContent = mobileConfig?.renderState
-                ? mobileConfig.renderState(row)
-                : stateColumn
-                ? renderCellContent(stateColumn, row, index)
-                : null;
-
-              const secondaryContent = mobileConfig?.renderSecondaryDetails
-                ? mobileConfig.renderSecondaryDetails(row)
-                : secondaryDetailColumns.length > 0
-                ? secondaryDetailColumns.map((col, cIdx) => (
-                    <span key={col.id} className="inline-flex items-center">
-                      {cIdx > 0 && <span className="mx-1 text-[var(--color-text-dim)]">·</span>}
-                      {col.label && (
-                        <span className="text-[var(--color-text-dim)] mr-1">{col.label}:</span>
-                      )}
-                      <span>{renderCellContent(col, row, index)}</span>
-                    </span>
-                  ))
-                : null;
-
-              const rowActions = actions ? actions(row) : [];
-              const primaryAction = rowActions.find((a) => a.isPrimary);
-              const secondaryActions = rowActions.filter((a) => !a.isPrimary);
-              const isAccordionExpanded = expandedRowKeys.has(key);
-
-              return (
-                <div key={key} className="group" role="listitem">
-                  <div
-                    onClick={() => handleRowClick(row, key)}
-                    className="w-full text-left py-3.5 px-4 flex flex-col gap-1.5 hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer select-none"
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        handleRowClick(row, key);
-                      }
-                    }}
-                    aria-label={`View details for ${getIdentityText(row, index)}`}
-                  >
-                    {/* =========================================================================
-                        LINE 1: Primary Identity (LEFT) ---------- Primary Value (RIGHT)
-                        ========================================================================= */}
-                    <div className="flex items-baseline justify-between gap-3 min-w-0">
-                      {/* Primary Identity on LEFT (single line ellipsis if long) */}
-                      <div className="font-bold text-xs sm:text-sm text-[var(--color-text)] truncate flex-1 min-w-0">
-                        {identityContent}
-                      </div>
-
-                      {/* Primary Value on RIGHT (tabular nums, right-aligned, NEVER truncated) */}
-                      {primaryValueContent && (
-                        <div className="text-xs sm:text-sm font-extrabold tabular-nums text-[var(--color-text)] text-right shrink-0">
-                          {primaryValueContent}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* =========================================================================
-                        LINE 2: State + Supporting Detail (LEFT) ---- Secondary Actions (RIGHT)
-                        ========================================================================= */}
-                    <div className="flex items-center justify-between gap-2 min-w-0">
-                      {/* State indicator & Supporting detail on LEFT */}
-                      <div className="flex items-center flex-wrap gap-1.5 text-[11px] text-[var(--color-text-muted)] truncate min-w-0">
-                        {stateContent && (
-                          <span className="shrink-0 inline-flex items-center">
-                            {stateContent}
-                          </span>
-                        )}
-                        {stateContent && secondaryContent && (
-                          <span className="text-[var(--color-text-dim)] shrink-0">·</span>
-                        )}
-                        {secondaryContent && (
-                          <span className="truncate">{secondaryContent}</span>
-                        )}
-                      </div>
-
-                      {/* Right side slot: Primary CTA or ⋮ Menu */}
-                      <div
-                        className="shrink-0 flex items-center gap-1 -mr-2"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {primaryAction && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              primaryAction.onClick(row);
-                            }}
-                            className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-[var(--color-primary)] text-[var(--color-primary-contrast)] hover:bg-[var(--color-primary-hover)] transition-colors cursor-pointer"
-                          >
-                            {primaryAction.label}
-                          </button>
-                        )}
-
-                        {secondaryActions.length > 0 && (
-                          <TableActionsMenu
-                            row={row}
-                            actions={secondaryActions}
-                            identityText={getIdentityText(row, index)}
+              <tbody className="divide-y divide-[var(--color-border)]">
+                {loading ? (
+                  Array.from({ length: loadingRowCount }).map((_, rIdx) => (
+                    <tr key={`desktop-skel-${rIdx}`} data-testid={`desktop-skel-${rIdx}`}>
+                      {columns.map((col, cIdx) => (
+                        <td key={`desktop-skel-cell-${cIdx}`} className="px-4 py-3.5">
+                          <div
+                            className={`skeleton h-4 ${
+                              col.isNumeric || col.align === 'right' ? 'ml-auto w-16' : 'w-24'
+                            }`}
+                            aria-hidden="true"
                           />
-                        )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))
+                ) : (
+                  data.map((row, index) => {
+                    const key = keyExtractor(row, index);
+                    const rowActionList = actions ? actions(row) : [];
 
-                        {mobileConfig?.detailMode === 'accordion' && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleRowClick(row, key);
-                            }}
-                            aria-label={`${isAccordionExpanded ? 'Collapse' : 'Expand'} row details`}
-                            className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors cursor-pointer"
-                          >
-                            {isAccordionExpanded ? (
-                              <ChevronUp className="w-4 h-4" />
-                            ) : (
-                              <ChevronDown className="w-4 h-4" />
-                            )}
-                          </button>
+                    return (
+                      <tr
+                        key={key}
+                        className="transition-colors duration-[var(--duration-fast)] hover:bg-[var(--color-surface-hover)]"
+                      >
+                        {columns.map((col) => {
+                          const isRight = col.align === 'right' || col.isNumeric;
+                          const isCenter = col.align === 'center';
+
+                          return (
+                            <td
+                              key={col.id}
+                              className={`px-4 py-3 align-middle ${
+                                col.isNumeric ? 'tabular-nums' : ''
+                              } ${isRight ? 'text-right' : isCenter ? 'text-center' : 'text-left'} ${
+                                col.className || ''
+                              }`}
+                            >
+                              {col.role === 'action' && actions ? (
+                                <div className="inline-flex items-center justify-end gap-1">
+                                  {rowActionList.map((act) => {
+                                    const isDanger = act.variant === 'danger';
+
+                                    return (
+                                      <button
+                                        key={act.id}
+                                        type="button"
+                                        onClick={() => act.onClick(row)}
+                                        aria-label={
+                                          act.ariaLabel
+                                            ? act.ariaLabel(row)
+                                            : `${act.label} for ${getIdentityText(row, index)}`
+                                        }
+                                        className={`inline-flex min-h-[36px] items-center gap-1.5 rounded-[var(--radius-md)] px-2 text-[13px] font-medium transition-colors duration-[var(--duration-fast)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)] ${
+                                          isDanger
+                                            ? 'text-[var(--color-danger)] hover:bg-[var(--color-danger-subtle)]'
+                                            : 'text-[var(--color-text-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text)]'
+                                        }`}
+                                      >
+                                        {act.icon && (
+                                          <span className="shrink-0" aria-hidden="true">
+                                            {act.icon}
+                                          </span>
+                                        )}
+                                        <span>{act.label}</span>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              ) : (
+                                renderCellContent(col, row, index)
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* =========================================================================
+            VIEW 2: MOBILE COMPACT TABLE (Two visual lines per row, rank by use)
+            ========================================================================= */}
+        <div className="table-mobile-view">
+          {/* Mobile header bar keeps sorting reachable when table headers are hidden */}
+          {sortableColumns.length > 0 && !loading && data.length > 0 && (
+            <div className="flex items-center justify-between gap-2 border-b border-[var(--color-border)] px-4 py-2">
+              <span className="text-caption truncate">
+                {tableTitle ||
+                  `${data.length} ${data.length === 1 ? 'record' : 'records'}`}
+              </span>
+
+              {/* Mobile sort control */}
+              <div className="relative shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setMobileSortOpen(!mobileSortOpen)}
+                  aria-expanded={mobileSortOpen}
+                  aria-label="Sort table rows"
+                  className="inline-flex min-h-[40px] items-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-2.5 text-[12px] font-medium text-[var(--color-text-secondary)] transition-colors duration-[var(--duration-fast)] hover:bg-[var(--color-surface-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)]"
+                >
+                  <span>
+                    Sort: {activeSortLabel}{' '}
+                    {sortDirection === 'asc' ? (
+                      <ArrowUp className="inline h-3 w-3" aria-hidden="true" />
+                    ) : (
+                      <ArrowDown className="inline h-3 w-3" aria-hidden="true" />
+                    )}
+                  </span>
+                  <ChevronDown className="h-3.5 w-3.5 opacity-70" aria-hidden="true" />
+                </button>
+
+                {mobileSortOpen && (
+                  <div className="absolute right-0 z-30 mt-1 min-w-[180px] rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-elevated)] p-1 shadow-[var(--shadow-md)] animate-fade-in">
+                    {sortableColumns.map((col) => {
+                      const isSelected = sortColumnId === col.id;
+                      const colLabel =
+                        col.label || (typeof col.header === 'string' ? col.header : col.id);
+
+                      return (
+                        <button
+                          key={col.id}
+                          type="button"
+                          onClick={() => {
+                            setMobileSortOpen(false);
+                            handleSortToggle(col.id);
+                          }}
+                          className={`flex min-h-[40px] w-full items-center justify-between gap-2 rounded-[var(--radius-sm)] px-2.5 text-left text-[13px] font-medium transition-colors duration-[var(--duration-fast)] ${
+                            isSelected
+                              ? 'bg-[var(--color-primary-subtle)] text-[var(--color-primary-text)]'
+                              : 'text-[var(--color-text)] hover:bg-[var(--color-surface-hover)]'
+                          }`}
+                        >
+                          <span>{colLabel}</span>
+                          {isSelected && (
+                            <span className="text-caption" aria-hidden="true">
+                              {sortDirection === 'asc' ? 'Ascending' : 'Descending'}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Mobile skeleton loading: exact two visual lines per row */}
+          {loading ? (
+            <div className="divide-y divide-[var(--color-border)]">
+              {Array.from({ length: loadingRowCount }).map((_, idx) => (
+                <div
+                  key={`mob-skel-${idx}`}
+                  data-testid={`mob-skel-${idx}`}
+                  className="px-4 py-3.5"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="skeleton h-4 w-32" aria-hidden="true" />
+                    <div className="skeleton h-4 w-20" aria-hidden="true" />
+                  </div>
+                  <div className="mt-2 flex items-center justify-between gap-3">
+                    <div className="skeleton h-3 w-40" aria-hidden="true" />
+                    <div className="skeleton h-4 w-8" aria-hidden="true" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="divide-y divide-[var(--color-border)]" role="list">
+              {data.map((row, index) => {
+                const key = keyExtractor(row, index);
+                const identityContent = mobileConfig?.renderIdentity
+                  ? mobileConfig.renderIdentity(row)
+                  : identityColumn
+                    ? renderCellContent(identityColumn, row, index)
+                    : `Record ${index + 1}`;
+
+                const primaryValueContent = mobileConfig?.renderPrimaryValue
+                  ? mobileConfig.renderPrimaryValue(row)
+                  : primaryValueColumn
+                    ? renderCellContent(primaryValueColumn, row, index)
+                    : null;
+
+                const stateContent = mobileConfig?.renderState
+                  ? mobileConfig.renderState(row)
+                  : stateColumn
+                    ? renderCellContent(stateColumn, row, index)
+                    : null;
+
+                const secondaryContent = mobileConfig?.renderSecondaryDetails
+                  ? mobileConfig.renderSecondaryDetails(row)
+                  : secondaryDetailColumns.length > 0
+                    ? secondaryDetailColumns.map((col, cIdx) => (
+                        <span key={col.id} className="inline-flex items-center">
+                          {cIdx > 0 && (
+                            <span
+                              className="mx-1.5 inline-block h-3 w-px bg-[var(--color-border-strong)]"
+                              aria-hidden="true"
+                            />
+                          )}
+                          {col.label && (
+                            <span className="mr-1 text-[var(--color-text-subtle)]">
+                              {col.label}:
+                            </span>
+                          )}
+                          <span>{renderCellContent(col, row, index)}</span>
+                        </span>
+                      ))
+                    : null;
+
+                const rowActions = actions ? actions(row) : [];
+                const primaryAction = rowActions.find((a) => a.isPrimary);
+                const secondaryActions = rowActions.filter((a) => !a.isPrimary);
+                const isAccordionExpanded = expandedRowKeys.has(key);
+
+                return (
+                  <div key={key} role="listitem">
+                    <div
+                      onClick={() => handleRowClick(row, key)}
+                      className="flex min-h-[56px] w-full cursor-pointer select-none flex-col justify-center gap-1 px-4 py-3 text-left transition-colors duration-[var(--duration-fast)] hover:bg-[var(--color-surface-hover)]"
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleRowClick(row, key);
+                        }
+                      }}
+                      aria-label={`View details for ${getIdentityText(row, index)}`}
+                    >
+                      {/* LINE 1: primary identity (left) — primary value (right) */}
+                      <div className="flex min-w-0 items-baseline justify-between gap-3">
+                        <div className="min-w-0 flex-1 truncate text-[14px] font-medium leading-5 text-[var(--color-text)]">
+                          {identityContent}
+                        </div>
+
+                        {primaryValueContent && (
+                          <div className="shrink-0 text-right text-[14px] font-semibold tabular-nums leading-5 text-[var(--color-text)]">
+                            {primaryValueContent}
+                          </div>
                         )}
                       </div>
-                    </div>
-                  </div>
 
-                  {/* Accordion inline detail expansion if enabled */}
-                  {mobileConfig?.detailMode === 'accordion' && isAccordionExpanded && (
-                    <div className="px-4 py-3 bg-[var(--color-bg)]/80 border-t border-[var(--color-border)] text-xs space-y-2 animate-in slide-in-from-top-2 duration-150">
-                      {getDetailFieldsForRow(row, index).map((field, fIdx) => (
-                        <div key={fIdx} className="flex justify-between py-1 border-b border-[var(--color-border)]/40 last:border-0">
-                          <span className="text-[var(--color-text-muted)] font-medium">
-                            {field.label}:
-                          </span>
-                          <span className="text-[var(--color-text)] font-semibold text-right">
-                            {field.value}
-                          </span>
+                      {/* LINE 2: state + supporting detail (left) — actions (right) */}
+                      <div className="flex min-w-0 items-center justify-between gap-2">
+                        <div className="flex min-w-0 items-center gap-1.5 truncate text-[12px] text-[var(--color-text-muted)]">
+                          {stateContent && <span className="shrink-0">{stateContent}</span>}
+                          {stateContent && secondaryContent && (
+                            <span
+                              className="inline-block h-3 w-px shrink-0 bg-[var(--color-border-strong)]"
+                              aria-hidden="true"
+                            />
+                          )}
+                          {secondaryContent && (
+                            <span className="truncate">{secondaryContent}</span>
+                          )}
                         </div>
-                      ))}
+
+                        <div
+                          className="-mr-2 flex shrink-0 items-center gap-1"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {primaryAction && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                primaryAction.onClick(row);
+                              }}
+                              className="inline-flex min-h-[40px] items-center rounded-[var(--radius-md)] bg-[var(--color-primary)] px-3 text-[12px] font-medium text-[var(--color-primary-contrast)] transition-colors duration-[var(--duration-fast)] hover:bg-[var(--color-primary-hover)]"
+                            >
+                              {primaryAction.label}
+                            </button>
+                          )}
+
+                          {secondaryActions.length > 0 && (
+                            <TableActionsMenu
+                              row={row}
+                              actions={secondaryActions}
+                              identityText={getIdentityText(row, index)}
+                            />
+                          )}
+
+                          {mobileConfig?.detailMode === 'accordion' && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRowClick(row, key);
+                              }}
+                              aria-label={`${isAccordionExpanded ? 'Collapse' : 'Expand'} row details`}
+                              aria-expanded={isAccordionExpanded}
+                              className="flex h-11 min-h-[44px] w-11 min-w-[44px] items-center justify-center rounded-[var(--radius-md)] text-[var(--color-text-muted)] transition-colors duration-[var(--duration-fast)] hover:text-[var(--color-text)]"
+                            >
+                              {isAccordionExpanded ? (
+                                <ChevronUp className="h-4 w-4" aria-hidden="true" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4" aria-hidden="true" />
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
+
+                    {/* Accordion inline detail expansion */}
+                    {mobileConfig?.detailMode === 'accordion' && isAccordionExpanded && (
+                      <div className="animate-slide-down border-t border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-4 py-3 text-[13px]">
+                        {getDetailFieldsForRow(row, index).map((field, fIdx) => (
+                          <div
+                            key={fIdx}
+                            className="flex items-baseline justify-between gap-4 border-b border-[var(--color-border)] py-1.5 last:border-0"
+                          >
+                            <span className="text-[var(--color-text-muted)]">{field.label}</span>
+                            <span className="text-right font-medium text-[var(--color-text)]">
+                              {field.value}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* =========================================================================
+            FOOTER (pagination, counts) — inside the same surface as the table
+            ========================================================================= */}
+        {footer && <div className="border-t border-[var(--color-border)]">{footer}</div>}
       </div>
 
       {/* =========================================================================
           MOBILE BOTTOM SHEET (Full row details reveal on tap)
+          Rendered outside the bordered container so it is not clipped.
           ========================================================================= */}
       {selectedRow && (
         <TableBottomSheet
@@ -600,22 +608,22 @@ export function ResponsiveDataTable<T>({
             mobileConfig?.renderIdentity
               ? mobileConfig.renderIdentity(selectedRow)
               : identityColumn
-              ? renderCellContent(identityColumn, selectedRow, 0)
-              : 'Record Details'
+                ? renderCellContent(identityColumn, selectedRow, 0)
+                : 'Record details'
           }
           subtitle={
             mobileConfig?.renderState
               ? mobileConfig.renderState(selectedRow)
               : stateColumn
-              ? renderCellContent(stateColumn, selectedRow, 0)
-              : undefined
+                ? renderCellContent(stateColumn, selectedRow, 0)
+                : undefined
           }
           primaryValue={
             mobileConfig?.renderPrimaryValue
               ? mobileConfig.renderPrimaryValue(selectedRow)
               : primaryValueColumn
-              ? renderCellContent(primaryValueColumn, selectedRow, 0)
-              : undefined
+                ? renderCellContent(primaryValueColumn, selectedRow, 0)
+                : undefined
           }
           primaryValueLabel={
             primaryValueColumn?.label ||
@@ -626,7 +634,7 @@ export function ResponsiveDataTable<T>({
           fields={getDetailFieldsForRow(selectedRow, 0)}
           actions={
             actions && (
-              <div className="flex items-center gap-2 w-full justify-end">
+              <div className="flex w-full items-center justify-end gap-2">
                 {actions(selectedRow).map((act) => {
                   const isDanger = act.variant === 'danger';
                   const isPrimary = act.variant === 'primary';
@@ -639,15 +647,19 @@ export function ResponsiveDataTable<T>({
                         setSelectedRow(null);
                         act.onClick(selectedRow);
                       }}
-                      className={`min-h-[44px] px-4 py-2 text-xs font-semibold rounded-xl flex items-center gap-2 transition-colors cursor-pointer ${
+                      className={`inline-flex min-h-[44px] items-center gap-2 rounded-[var(--radius-md)] px-4 text-[13px] font-medium transition-colors duration-[var(--duration-fast)] ${
                         isDanger
-                          ? 'bg-[var(--color-danger)]/10 text-[var(--color-danger)] hover:bg-[var(--color-danger)]/20'
+                          ? 'bg-[var(--color-danger-subtle)] text-[var(--color-danger)] hover:bg-[var(--color-danger-subtle)]'
                           : isPrimary
-                          ? 'bg-[var(--color-primary)] text-[var(--color-primary-contrast)] hover:bg-[var(--color-primary-hover)]'
-                          : 'border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] hover:bg-[var(--color-surface-hover)]'
+                            ? 'bg-[var(--color-primary)] text-[var(--color-primary-contrast)] hover:bg-[var(--color-primary-hover)]'
+                            : 'border border-[var(--color-border-strong)] bg-[var(--color-surface)] text-[var(--color-text)] hover:bg-[var(--color-surface-hover)]'
                       }`}
                     >
-                      {act.icon && <span className="w-3.5 h-3.5">{act.icon}</span>}
+                      {act.icon && (
+                        <span className="shrink-0" aria-hidden="true">
+                          {act.icon}
+                        </span>
+                      )}
                       <span>{act.label}</span>
                     </button>
                   );
@@ -660,6 +672,6 @@ export function ResponsiveDataTable<T>({
             mobileConfig.renderCustomDetails(selectedRow, () => setSelectedRow(null))}
         </TableBottomSheet>
       )}
-    </div>
+    </>
   );
 }

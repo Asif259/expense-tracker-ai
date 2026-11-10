@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useTheme } from '@/context/theme-context';
-import { Sun, Moon } from 'lucide-react';
+import { Moon, Sun } from 'lucide-react';
 
 interface ThemeToggleProps {
   variant?: 'compact' | 'full';
@@ -12,39 +12,40 @@ interface ThemeToggleProps {
 export function ThemeToggle({ variant = 'compact', className = '' }: ThemeToggleProps) {
   const { theme, toggleTheme, mounted } = useTheme();
 
-  // Until mounted, render a neutral placeholder to avoid hydration layout shift
+  // Until mounted, render a neutral placeholder to avoid a hydration layout shift.
   if (!mounted) {
     return (
       <div
-        className={`inline-flex items-center justify-center p-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-dim)] ${className}`}
+        className={`inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] ${className}`.trim()}
         aria-hidden="true"
       >
-        <div className="w-4 h-4 rounded-full bg-[var(--color-border)]" />
+        <div className="h-4 w-4 rounded-full bg-[var(--color-surface-sunken)]" />
       </div>
     );
   }
 
   const isDark = theme === 'dark';
+  const nextLabel = `Switch to ${isDark ? 'light' : 'dark'} theme`;
 
   if (variant === 'full') {
     return (
       <button
-        onClick={toggleTheme}
         type="button"
-        aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
-        title={`Switch to ${isDark ? 'light' : 'dark'} mode`}
-        className={`flex items-center justify-between w-full px-3 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] text-[var(--color-text)] transition-colors cursor-pointer text-xs font-medium focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] ${className}`}
+        onClick={toggleTheme}
+        aria-label={nextLabel}
+        title={nextLabel}
+        className={`flex h-9 w-full cursor-pointer items-center justify-between gap-2 rounded-[var(--radius-md)] px-2.5 text-[13px] font-medium text-[var(--color-text-muted)] transition-colors duration-[var(--duration-fast)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)] ${className}`.trim()}
       >
-        <span className="flex items-center gap-2">
+        <span className="flex items-center gap-2.5">
           {isDark ? (
-            <Sun className="w-4 h-4 text-amber-400" />
+            <Moon className="h-[18px] w-[18px]" aria-hidden="true" />
           ) : (
-            <Moon className="w-4 h-4 text-indigo-400" />
+            <Sun className="h-[18px] w-[18px]" aria-hidden="true" />
           )}
-          <span>{isDark ? 'Dark Mode' : 'Light Mode'}</span>
+          <span>{isDark ? 'Dark theme' : 'Light theme'}</span>
         </span>
-        <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-[var(--color-surface-hover)] text-[var(--color-text-dim)] border border-[var(--color-border)]">
-          {isDark ? 'Dark' : 'Light'}
+        <span className="text-[11px] font-medium text-[var(--color-text-subtle)]">
+          {isDark ? 'On' : 'Off'}
         </span>
       </button>
     );
@@ -52,16 +53,16 @@ export function ThemeToggle({ variant = 'compact', className = '' }: ThemeToggle
 
   return (
     <button
-      onClick={toggleTheme}
       type="button"
-      aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
-      title={`Switch to ${isDark ? 'light' : 'dark'} mode`}
-      className={`p-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] text-[var(--color-text)] transition-colors cursor-pointer flex items-center justify-center focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] ${className}`}
+      onClick={toggleTheme}
+      aria-label={nextLabel}
+      title={nextLabel}
+      className={`flex h-9 w-9 cursor-pointer items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] transition-colors duration-[var(--duration-fast)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)] ${className}`.trim()}
     >
       {isDark ? (
-        <Sun className="w-4 h-4 text-amber-400" />
+        <Moon className="h-4 w-4" aria-hidden="true" />
       ) : (
-        <Moon className="w-4 h-4 text-indigo-400" />
+        <Sun className="h-4 w-4" aria-hidden="true" />
       )}
     </button>
   );

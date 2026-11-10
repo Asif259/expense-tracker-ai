@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Table, BarChart3, AlertCircle, RefreshCw } from 'lucide-react';
+import { BarChart3, RefreshCw, Table } from 'lucide-react';
 import Link from 'next/link';
 import { DateRangePreset } from '@/lib/chart-aggregation';
+import { ButtonLink, IconButton, SegmentedControl, Skeleton } from '@/components/ui';
 
 interface ChartCardProps {
   title: string;
@@ -39,8 +40,8 @@ export function ChartCard({
   error = null,
   onRetry,
   isEmpty = false,
-  emptyTitle = 'No data available',
-  emptyDescription = 'Record transactions to generate financial charts.',
+  emptyTitle = 'No data for this period',
+  emptyDescription = 'Add a transaction and this chart will start filling in.',
   emptyActionHref,
   emptyActionLabel,
   children,
@@ -51,131 +52,105 @@ export function ChartCard({
   const [showTable, setShowTable] = useState(false);
 
   return (
-    <div
-      className={`border border-[var(--color-border)] bg-[var(--color-surface)] rounded-2xl p-5 sm:p-6 shadow-[var(--shadow-card)] flex flex-col justify-between transition-colors ${className}`}
+    <section
+      className={`surface-card flex flex-col p-4 sm:p-5 ${className}`.trim()}
+      aria-label={title}
     >
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h3 className="text-card-title tracking-tight">
-              {title}
-            </h3>
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-card-title">{title}</h3>
             {currency && (
-              <span className="text-[10px] tabular-nums font-semibold px-2 py-0.5 rounded-full bg-[var(--color-pale-cyan)] text-[var(--color-text)] border border-[var(--color-border)]">
+              <span className="rounded-[var(--radius-xs)] bg-[var(--color-surface-sunken)] px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-[var(--color-text-muted)]">
                 {currency}
               </span>
             )}
             {badge && (
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[var(--color-pale-mint)] text-[var(--color-text)]">
+              <span className="rounded-[var(--radius-xs)] bg-[var(--color-primary-subtle)] px-1.5 py-0.5 text-[11px] font-medium text-[var(--color-primary-text)]">
                 {badge}
               </span>
             )}
           </div>
-          {subtitle && (
-            <p className="text-xs text-[var(--color-text-muted)] mt-0.5">{subtitle}</p>
-          )}
+          {subtitle && <p className="text-caption mt-0.5">{subtitle}</p>}
         </div>
 
-        {/* Controls: Date range & Table Toggle */}
         <div className="flex flex-wrap items-center gap-2">
-          {availableRanges && onRangeChange && (
-            <div className="flex items-center rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] p-0.5 text-[11px] font-medium">
-              {availableRanges.map((range) => {
-                const isActive = selectedRange === range.id;
-                return (
-                  <button
-                    key={range.id}
-                    type="button"
-                    onClick={() => onRangeChange(range.id)}
-                    className={`px-2 py-1 rounded-md transition-colors cursor-pointer ${
-                      isActive
-                        ? 'bg-[var(--color-surface)] text-[var(--color-text)] font-semibold shadow-xs'
-                        : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
-                    }`}
-                  >
-                    {range.label}
-                  </button>
-                );
-              })}
-            </div>
+          {availableRanges && onRangeChange && selectedRange && (
+            <SegmentedControl
+              size="sm"
+              label={`Range for ${title}`}
+              value={selectedRange}
+              onChange={onRangeChange}
+              options={availableRanges.map((range) => ({
+                value: range.id,
+                label: range.label,
+              }))}
+            />
           )}
 
           {accessibleTableView && (
-            <button
-              type="button"
-              onClick={() => setShowTable(!showTable)}
-              aria-label={showTable ? 'Switch to chart view' : 'Switch to accessible data table'}
-              title={showTable ? 'Show Chart' : 'Show Accessible Data Table'}
-              className="p-1.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors cursor-pointer"
+            <IconButton
+              size="sm"
+              variant="secondary"
+              label={showTable ? 'Show chart' : 'Show data table'}
+              onClick={() => setShowTable((value) => !value)}
             >
               {showTable ? (
-                <BarChart3 className="w-4 h-4" />
+                <BarChart3 className="h-4 w-4" aria-hidden="true" />
               ) : (
-                <Table className="w-4 h-4" />
+                <Table className="h-4 w-4" aria-hidden="true" />
               )}
-            </button>
+            </IconButton>
           )}
         </div>
       </div>
 
-      {/* Body / Chart Canvas */}
-      <div className={`w-full ${heightClass} relative flex items-center justify-center`}>
+      <div className={`relative flex w-full items-center justify-center ${heightClass}`}>
         {loading ? (
-          <div className="w-full h-full flex flex-col justify-end gap-3 p-4 animate-pulse bg-[var(--color-bg)] rounded-lg border border-[var(--color-border)]">
-            <div className="h-4 w-1/4 bg-[var(--color-surface-hover)] rounded" />
-            <div className="flex items-end justify-between gap-3 h-3/4 w-full">
-              <div className="w-12 h-1/2 bg-[var(--color-surface-hover)] rounded-t" />
-              <div className="w-12 h-3/4 bg-[var(--color-surface-hover)] rounded-t" />
-              <div className="w-12 h-2/3 bg-[var(--color-surface-hover)] rounded-t" />
-              <div className="w-12 h-4/5 bg-[var(--color-surface-hover)] rounded-t" />
-              <div className="w-12 h-1/3 bg-[var(--color-surface-hover)] rounded-t" />
-            </div>
+          <div className="flex h-full w-full items-end gap-3 px-2" aria-hidden="true">
+            <Skeleton className="h-1/3 flex-1" />
+            <Skeleton className="h-2/3 flex-1" />
+            <Skeleton className="h-1/2 flex-1" />
+            <Skeleton className="h-3/4 flex-1" />
+            <Skeleton className="h-2/5 flex-1" />
+            <Skeleton className="h-4/5 flex-1" />
           </div>
         ) : error ? (
-          <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-[var(--color-bg)] rounded-lg border border-[var(--color-border)]">
-            <AlertCircle className="w-8 h-8 text-[var(--color-text-muted)] mb-2" />
-            <h4 className="text-xs font-bold text-[var(--color-text)]">Unable to load chart</h4>
-            <p className="text-[11px] text-[var(--color-text-muted)] max-w-xs mt-1 mb-3">
-              {error}
-            </p>
+          <div className="flex h-full w-full flex-col items-start justify-center gap-2.5 text-left">
+            <p className="text-card-title">Chart unavailable</p>
+            <p className="text-secondary max-w-sm">{error}</p>
             {onRetry && (
               <button
                 type="button"
                 onClick={onRetry}
-                className="px-3 py-1.5 rounded-lg bg-[var(--color-surface)] border border-[var(--color-border)] text-xs font-medium text-[var(--color-text)] hover:bg-[var(--color-surface-hover)] flex items-center gap-1.5 transition-colors cursor-pointer"
+                className="mt-1 inline-flex cursor-pointer items-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-3 py-1.5 text-xs font-medium text-[var(--color-text)] transition-colors hover:bg-[var(--color-surface-hover)]"
               >
-                <RefreshCw className="w-3.5 h-3.5" />
-                <span>Retry</span>
+                <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+                Retry
               </button>
             )}
           </div>
         ) : isEmpty ? (
-          <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-[var(--color-bg)] rounded-lg border border-[var(--color-border)]">
-            <div className="w-10 h-10 rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] flex items-center justify-center text-sm font-semibold text-[var(--color-text-muted)] mb-2.5">
-              📊
-            </div>
-            <h4 className="text-xs font-bold text-[var(--color-text)]">{emptyTitle}</h4>
-            <p className="text-[11px] text-[var(--color-text-muted)] max-w-sm mt-1 mb-3">
-              {emptyDescription}
-            </p>
+          <div className="flex h-full w-full flex-col items-start justify-center gap-2.5 text-left">
+            <p className="text-card-title">{emptyTitle}</p>
+            <p className="text-secondary max-w-sm">{emptyDescription}</p>
             {emptyActionHref && emptyActionLabel && (
-              <Link
+              <ButtonLink
                 href={emptyActionHref}
-                className="px-3 py-1.5 rounded-lg bg-[var(--color-primary)] text-[var(--color-primary-contrast)] text-xs font-semibold hover:bg-[var(--color-primary-hover)] transition-colors"
+                size="sm"
+                variant="secondary"
+                className="mt-1"
               >
                 {emptyActionLabel}
-              </Link>
+              </ButtonLink>
             )}
           </div>
         ) : showTable && accessibleTableView ? (
-          <div className="w-full h-full overflow-y-auto">
-            {accessibleTableView}
-          </div>
+          <div className="h-full w-full overflow-y-auto">{accessibleTableView}</div>
         ) : (
-          <div className="w-full h-full">{children}</div>
+          <div className="h-full w-full">{children}</div>
         )}
       </div>
-    </div>
+    </section>
   );
 }

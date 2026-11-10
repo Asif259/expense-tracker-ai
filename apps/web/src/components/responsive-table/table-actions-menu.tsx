@@ -22,8 +22,15 @@ export function TableActionsMenu<T>({
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
-  // Close on outside click
+  // Focus the first item when the menu opens so keyboard users land in it.
+  useEffect(() => {
+    if (!isOpen) return;
+    panelRef.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
+  }, [isOpen]);
+
+  // Close on outside click or Escape
   useEffect(() => {
     if (!isOpen) return;
 
@@ -58,7 +65,6 @@ export function TableActionsMenu<T>({
     return null;
   }
 
-  // Filter out any primary action if it's already shown outside, or show all in the menu
   const menuActions = actions.filter((action) => {
     if (typeof action.disabled === 'function') {
       return !action.disabled(row);
@@ -71,8 +77,8 @@ export function TableActionsMenu<T>({
   }
 
   return (
-    <div className={`relative inline-block text-left ${className}`} ref={menuRef}>
-      {/* 44x44px Minimum Touch Area */}
+    <div className={`relative inline-block text-left ${className}`.trim()} ref={menuRef}>
+      {/* 44x44px minimum touch area */}
       <button
         ref={buttonRef}
         type="button"
@@ -83,17 +89,18 @@ export function TableActionsMenu<T>({
         aria-label={`Open actions menu for ${identityText}`}
         aria-haspopup="menu"
         aria-expanded={isOpen}
-        className="w-11 h-11 min-w-[44px] min-h-[44px] inline-flex items-center justify-center rounded-xl text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-hover)] focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] transition-colors cursor-pointer"
+        className="inline-flex h-11 min-h-[44px] w-11 min-w-[44px] cursor-pointer items-center justify-center rounded-[var(--radius-md)] text-[var(--color-text-muted)] transition-colors duration-[var(--duration-fast)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)]"
       >
-        <MoreVertical className="w-4 h-4" />
+        <MoreVertical className="h-4 w-4" aria-hidden="true" />
       </button>
 
       {isOpen && (
         <div
+          ref={panelRef}
           role="menu"
           aria-orientation="vertical"
-          aria-labelledby={`actions-btn-${identityText}`}
-          className={`absolute z-30 mt-1 min-w-[170px] rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-elevated)] p-1.5 shadow-xl transition-all duration-150 animate-in fade-in-50 zoom-in-95 ${
+          aria-label={`Actions for ${identityText}`}
+          className={`absolute z-40 mt-1 min-w-[180px] rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-elevated)] p-1 shadow-[var(--shadow-md)] animate-fade-in ${
             align === 'right' ? 'right-0' : 'left-0'
           }`}
           onClick={(e) => e.stopPropagation()}
@@ -112,16 +119,18 @@ export function TableActionsMenu<T>({
                   setIsOpen(false);
                   action.onClick(row);
                 }}
-                className={`w-full text-left px-3 py-2.5 min-h-[40px] text-xs font-semibold rounded-lg flex items-center gap-2.5 transition-colors cursor-pointer ${
+                className={`flex min-h-[40px] w-full cursor-pointer items-center gap-2.5 rounded-[var(--radius-sm)] px-2.5 text-left text-[13px] font-medium transition-colors duration-[var(--duration-fast)] ${
                   isDanger
-                    ? 'text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10'
+                    ? 'text-[var(--color-danger)] hover:bg-[var(--color-danger-subtle)]'
                     : isPrimary
-                    ? 'text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10'
-                    : 'text-[var(--color-text)] hover:bg-[var(--color-surface-hover)]'
+                      ? 'text-[var(--color-primary-text)] hover:bg-[var(--color-primary-subtle)]'
+                      : 'text-[var(--color-text)] hover:bg-[var(--color-surface-hover)]'
                 }`}
               >
                 {action.icon && (
-                  <span className="shrink-0 text-current">{action.icon as ReactNode}</span>
+                  <span className="shrink-0 text-current" aria-hidden="true">
+                    {action.icon as ReactNode}
+                  </span>
                 )}
                 <span className="truncate">{action.label}</span>
               </button>

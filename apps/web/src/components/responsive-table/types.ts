@@ -134,4 +134,9 @@ export interface ResponsiveDataTableProps<T> {
   className?: string;
   /** Title displayed above mobile sort header if needed */
   tableTitle?: string;
+  /**
+   * Footer content rendered inside the same surface as the table (pagination,
+   * result counts) so the list reads as one object.
+   */
+  footer?: ReactNode;
 }

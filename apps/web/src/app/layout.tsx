@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter, DM_Serif_Display } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/context/auth-context';
@@ -19,8 +19,21 @@ const dmSerif = DM_Serif_Display({
 });
 
 export const metadata: Metadata = {
-  title: 'Ledgerly — Personal Finance & Expense Tracker',
-  description: 'Track daily expenses, split personal loans, and manage your budget with clarity and precision.',
+  title: {
+    default: 'Ledgerly — Expense tracker',
+    template: '%s · Ledgerly',
+  },
+  description:
+    'Record daily income and expenses, review spending by category, and keep track of money lent or borrowed. Your records stay private to your account.',
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#f7f9f8' },
+    { media: '(prefers-color-scheme: dark)', color: '#0b0f17' },
+  ],
 };
 
 const themeInitScript = `

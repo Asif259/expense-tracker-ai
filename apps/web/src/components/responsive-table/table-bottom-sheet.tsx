@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, ReactNode } from 'react';
+import { useEffect, useId, useRef, ReactNode } from 'react';
 import { X } from 'lucide-react';
 
 export interface DetailField {
@@ -32,6 +32,7 @@ export function TableBottomSheet({
   children,
 }: TableBottomSheetProps) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const titleId = useId();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -40,7 +41,7 @@ export function TableBottomSheet({
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
-    // Focus close button
+    // Focus the first interactive element (the close control)
     closeButtonRef.current?.focus();
 
     function handleKeyDown(event: KeyboardEvent) {
@@ -61,23 +62,26 @@ export function TableBottomSheet({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in-50"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-[var(--color-scrim)] transition-opacity duration-[var(--duration-fast)] sm:items-center"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
-      aria-label="Record Details"
+      aria-labelledby={titleId}
     >
       <div
-        className="w-full sm:max-w-md max-h-[88vh] bg-[var(--color-surface-elevated)] border-t sm:border border-[var(--color-border)] rounded-t-3xl sm:rounded-2xl p-6 shadow-2xl flex flex-col justify-between overflow-hidden animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-200 pb-[max(1.5rem,env(safe-area-inset-bottom,0px))]"
+        className="flex max-h-[88dvh] w-full flex-col overflow-hidden rounded-t-[var(--radius-2xl)] border-t border-[var(--color-border)] bg-[var(--color-surface-elevated)] pb-[max(1rem,env(safe-area-inset-bottom,0px))] shadow-[var(--shadow-lg)] animate-slide-up sm:max-w-md sm:rounded-[var(--radius-xl)] sm:border"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Drag handle pill on mobile */}
-        <div className="w-10 h-1 bg-[var(--color-border-hover)] rounded-full mx-auto -mt-1 mb-4 sm:hidden" />
+        {/* Drag handle on mobile */}
+        <div
+          className="mx-auto mt-2 h-1 w-10 rounded-full bg-[var(--color-border-hover)] sm:hidden"
+          aria-hidden="true"
+        />
 
         {/* Header */}
-        <div className="flex items-start justify-between gap-3 pb-4 border-b border-[var(--color-border)]">
+        <div className="flex items-start justify-between gap-3 border-b border-[var(--color-border)] px-4 py-3 sm:px-5">
           <div className="min-w-0 flex-1">
-            <div className="text-base font-bold text-[var(--color-text)] truncate">
+            <div id={titleId} className="truncate text-section-title">
               {title}
             </div>
             {subtitle && <div className="mt-1 flex items-center gap-2">{subtitle}</div>}
@@ -86,38 +90,30 @@ export function TableBottomSheet({
             ref={closeButtonRef}
             type="button"
             onClick={onClose}
-            aria-label="Close record details"
-            className="w-11 h-11 min-w-[44px] min-h-[44px] -mr-2 -mt-2 flex items-center justify-center rounded-xl text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer"
+            aria-label="Close details"
+            className="-mr-2 inline-flex h-11 min-h-[44px] w-11 min-w-[44px] cursor-pointer items-center justify-center rounded-[var(--radius-md)] text-[var(--color-text-muted)] transition-colors duration-[var(--duration-fast)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)]"
           >
-            <X className="w-5 h-5" />
+            <X className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
 
-        {/* Body content with scroll */}
-        <div className="flex-1 overflow-y-auto py-4 space-y-4">
-          {/* Primary Numeric Slot Banner if provided */}
+        {/* Scrollable body */}
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 sm:px-5">
           {primaryValue && (
-            <div className="bg-[var(--color-bg)] rounded-xl p-4 border border-[var(--color-border)] flex items-center justify-between">
-              <span className="text-xs font-semibold text-[var(--color-text-muted)]">
-                {primaryValueLabel}
-              </span>
-              <span className="text-xl font-extrabold tabular-nums text-[var(--color-text)]">
-                {primaryValue}
-              </span>
+            <div className="flex items-baseline justify-between gap-3 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3.5 py-3">
+              <span className="text-label">{primaryValueLabel}</span>
+              <span className="text-metric tabular-nums text-right">{primaryValue}</span>
             </div>
           )}
 
-          {/* Key-Value Details Grid */}
-          <div className="space-y-3">
+          <div>
             {fields.map((field, idx) => (
               <div
                 key={idx}
-                className="flex items-baseline justify-between gap-4 py-1.5 border-b border-[var(--color-border)]/50 last:border-0"
+                className="flex items-baseline justify-between gap-4 border-b border-[var(--color-border)] py-2 last:border-0"
               >
-                <span className="text-xs font-medium text-[var(--color-text-muted)] shrink-0">
-                  {field.label}
-                </span>
-                <span className="text-xs font-semibold text-[var(--color-text)] text-right break-words max-w-[65%]">
+                <span className="shrink-0 text-secondary">{field.label}</span>
+                <span className="max-w-[65%] break-words text-right text-[13px] font-medium text-[var(--color-text)]">
                   {field.value}
                 </span>
               </div>
@@ -127,9 +123,9 @@ export function TableBottomSheet({
           {children}
         </div>
 
-        {/* Footer Actions */}
+        {/* Footer actions */}
         {actions && (
-          <div className="pt-4 border-t border-[var(--color-border)] flex items-center justify-end gap-3">
+          <div className="flex items-center justify-end gap-2 border-t border-[var(--color-border)] px-4 py-3 sm:px-5">
             {actions}
           </div>
         )}

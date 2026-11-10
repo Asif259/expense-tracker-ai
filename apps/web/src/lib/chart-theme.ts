@@ -19,53 +19,53 @@ export interface ChartPalette {
 export function getChartPalette(theme: 'light' | 'dark'): ChartPalette {
   if (theme === 'dark') {
     return {
-      canvasBg: '#0B0B0B',
-      cardBg: '#1C1C1F',
-      textPrimary: '#F4F4F4', // Neutral financial text
-      textMuted: '#9E9EA4',
-      borderColor: '#2E2E32',
-      gridColor: 'rgba(46, 46, 50, 0.6)',
-      income: '#6DD0A1', // Mint Green
-      incomeBg: 'rgba(109, 208, 161, 0.25)',
-      expense: '#F5C258', // Amber
-      expenseBg: 'rgba(245, 194, 88, 0.25)',
-      receivable: '#6CB3F9', // Soft Blue
-      payable: '#7A78E0', // Indigo/Purple
+      canvasBg: '#0B0F17',
+      cardBg: '#151D30',
+      textPrimary: '#EDF2F7',
+      textMuted: '#A3B1C2',
+      borderColor: '#263449',
+      gridColor: 'rgba(38, 52, 73, 0.55)',
+      income: '#4CC79F',
+      incomeBg: 'rgba(76, 199, 159, 0.22)',
+      expense: '#FF7A93',
+      expenseBg: 'rgba(255, 122, 147, 0.2)',
+      receivable: '#7DB8F0',
+      payable: '#F5C258',
       categories: [
-        '#6DD0A1', // Mint
-        '#6CB3F9', // Soft Blue
-        '#F5C258', // Amber
-        '#7A78E0', // Indigo
-        '#00D6C8', // Teal
-        '#F43F5E', // Rose
-        '#A970F5', // Purple
-        '#9CA3AF', // Dim slate
+        '#45B8A3',
+        '#7DB8F0',
+        '#F5C258',
+        '#FF7A93',
+        '#A3B1C2',
+        '#C9AE8B',
+        '#7FD6C4',
+        '#9CC4E8',
       ],
     };
   }
 
   return {
-    canvasBg: '#F9FBFC',
+    canvasBg: '#F7F9F8',
     cardBg: '#FFFFFF',
-    textPrimary: '#111111', // Neutral financial text
-    textMuted: '#6E7179',
-    borderColor: '#EDEFF3',
-    gridColor: 'rgba(237, 239, 243, 0.8)',
-    income: '#6DD0A1', // Mint Green
-    incomeBg: 'rgba(109, 208, 161, 0.3)',
-    expense: '#F5C258', // Amber
-    expenseBg: 'rgba(245, 194, 88, 0.3)',
-    receivable: '#6CB3F9', // Soft Blue
-    payable: '#5452CF', // Indigo
+    textPrimary: '#16201D',
+    textMuted: '#5A6560',
+    borderColor: '#E1E7E4',
+    gridColor: 'rgba(225, 231, 228, 0.9)',
+    income: '#0F7A5C',
+    incomeBg: 'rgba(15, 122, 92, 0.18)',
+    expense: '#C81E4B',
+    expenseBg: 'rgba(200, 30, 75, 0.14)',
+    receivable: '#2C6BA8',
+    payable: '#8A5A00',
     categories: [
-      '#6DD0A1', // Mint
-      '#6CB3F9', // Soft Blue
-      '#F5C258', // Amber
-      '#5452CF', // Indigo
-      '#159EAC', // Deep Teal
-      '#E11D48', // Crimson
-      '#7A78E0', // Violet
-      '#6E7179', // Slate
+      '#1F7F6E',
+      '#2C6BA8',
+      '#B7791F',
+      '#C81E4B',
+      '#626D68',
+      '#A98B6B',
+      '#14695B',
+      '#5E8FC7',
     ],
   };
 }
