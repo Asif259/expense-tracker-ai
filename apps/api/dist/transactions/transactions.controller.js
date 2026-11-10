@@ -16,7 +16,7 @@ import { SupabaseAuthGuard } from '../common/guards/supabase-auth.guard.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { AuthToken } from '../common/decorators/auth-token.decorator.js';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe.js';
-import { createTransactionSchema, updateTransactionSchema, transactionQuerySchema, transactionParamSchema, } from './dto/transaction.schema.js';
+import { createTransactionSchema, updateTransactionSchema, transactionQuerySchema, transactionParamSchema, transactionSummaryQuerySchema, transactionAnalysisSchema, } from './dto/transaction.schema.js';
 let TransactionsController = class TransactionsController {
     transactionsService;
     constructor(transactionsService) {
@@ -27,6 +27,12 @@ let TransactionsController = class TransactionsController {
     }
     findAll(token, user, query) {
         return this.transactionsService.findAll(token, user.id, query);
+    }
+    getMonthlySummary(token, user, query) {
+        return this.transactionsService.getMonthlySummary(token, user.id, query);
+    }
+    analyzeTransactions(token, user, dto) {
+        return this.transactionsService.analyzeTransactions(token, user.id, dto);
     }
     findOne(token, user, params) {
         return this.transactionsService.findOne(token, user.id, params.id);
@@ -57,6 +63,25 @@ __decorate([
     __metadata("design:paramtypes", [String, Object, Object]),
     __metadata("design:returntype", void 0)
 ], TransactionsController.prototype, "findAll", null);
+__decorate([
+    Get('summary'),
+    __param(0, AuthToken()),
+    __param(1, CurrentUser()),
+    __param(2, Query(new ZodValidationPipe(transactionSummaryQuerySchema))),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", void 0)
+], TransactionsController.prototype, "getMonthlySummary", null);
+__decorate([
+    Post('analysis'),
+    HttpCode(HttpStatus.OK),
+    __param(0, AuthToken()),
+    __param(1, CurrentUser()),
+    __param(2, Body(new ZodValidationPipe(transactionAnalysisSchema))),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", void 0)
+], TransactionsController.prototype, "analyzeTransactions", null);
 __decorate([
     Get(':id'),
     __param(0, AuthToken()),

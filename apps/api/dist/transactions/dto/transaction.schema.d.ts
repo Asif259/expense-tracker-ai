@@ -1,4 +1,59 @@
 import { z } from 'zod';
+export declare const transactionSummaryQuerySchema: z.ZodObject<{
+    month: z.ZodNumber;
+    year: z.ZodNumber;
+}, "strip", z.ZodTypeAny, {
+    month: number;
+    year: number;
+}, {
+    month: number;
+    year: number;
+}>;
+export type TransactionSummaryQueryDto = z.infer<typeof transactionSummaryQuerySchema>;
+export declare const transactionAnalysisSchema: z.ZodObject<{
+    question: z.ZodString;
+    period: z.ZodObject<{
+        month: z.ZodNumber;
+        year: z.ZodNumber;
+    }, "strip", z.ZodTypeAny, {
+        month: number;
+        year: number;
+    }, {
+        month: number;
+        year: number;
+    }>;
+    conversationHistory: z.ZodDefault<z.ZodOptional<z.ZodArray<z.ZodObject<{
+        role: z.ZodEnum<["user", "assistant"]>;
+        content: z.ZodString;
+    }, "strip", z.ZodTypeAny, {
+        role: "user" | "assistant";
+        content: string;
+    }, {
+        role: "user" | "assistant";
+        content: string;
+    }>, "many">>>;
+}, "strict", z.ZodTypeAny, {
+    question: string;
+    period: {
+        month: number;
+        year: number;
+    };
+    conversationHistory: {
+        role: "user" | "assistant";
+        content: string;
+    }[];
+}, {
+    question: string;
+    period: {
+        month: number;
+        year: number;
+    };
+    conversationHistory?: {
+        role: "user" | "assistant";
+        content: string;
+    }[] | undefined;
+}>;
+export type TransactionAnalysisDto = z.infer<typeof transactionAnalysisSchema>;
 export declare const createTransactionSchema: z.ZodObject<{
     type: z.ZodEnum<["income", "expense"]>;
     amount: z.ZodEffects<z.ZodEffects<z.ZodUnion<[z.ZodNumber, z.ZodString]>, string | number, string | number>, string, string | number>;

@@ -510,6 +510,24 @@ function TransactionsPageContent() {
 
   const hasActiveFilters = Boolean(filterType || filterCategory || filterSearch);
 
+  /**
+   * Older analysis responses can contain raw category UUIDs. Resolve any known
+   * category id to its name before showing the answer to the user.
+   */
+  const formatAiText = useCallback(
+    (text: string) => {
+      let output = text;
+      for (const [id, category] of categoryMap) {
+        output = output.split(id).join(category.name);
+      }
+      return output.replace(
+        /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi,
+        'uncategorized category',
+      );
+    },
+    [categoryMap],
+  );
+
   // ── Pagination footer (lives inside the table surface) ──
   const paginationFooter = (
     <div className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
@@ -753,14 +771,14 @@ function TransactionsPageContent() {
                         className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-primary-text)]"
                         aria-hidden="true"
                       />
-                      <p className="text-body">{aiResult.answer}</p>
+                      <p className="text-body">{formatAiText(aiResult.answer)}</p>
                     </div>
 
                     {aiResult.insights.length > 0 && (
                       <ul className="mt-3 list-disc space-y-1.5 border-t border-[var(--color-border)] pl-5 pt-3 marker:text-[var(--color-text-subtle)]">
                         {aiResult.insights.map((ins, i) => (
                           <li key={i} className="text-secondary">
-                            {ins}
+                            {formatAiText(ins)}
                           </li>
                         ))}
                       </ul>

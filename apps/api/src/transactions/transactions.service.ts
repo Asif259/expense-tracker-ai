@@ -347,6 +347,10 @@ export class TransactionsService {
     const { startDate, endDate } = monthBounds(dto.period.year, dto.period.month);
     const periodLabel = `${MONTH_NAMES[dto.period.month - 1]} ${dto.period.year}`;
 
+    // Resolve category UUIDs to human-readable names once. The AI should never
+    // see (or repeat) internal database identifiers.
+    const categoryNames = await this.fetchCategoryNames(token);
+
     // Phase 1: Detect intent (question only, no financial data sent to AI yet)
     const intent = await this.detectIntent(dto.question);
 
@@ -358,30 +362,81 @@ export class TransactionsService {
       startDate,
       endDate,
       dto.period,
+      categoryNames,
     );
 
     // Phase 3: AI explanation of verified DB results
+    const scrubbedHistory = dto.conversationHistory.map((message) => ({
+      ...message,
+      content: this.scrubIdentifiers(message.content, categoryNames),
+    }));
     const aiResponse = await this.generateExplanation(
       dto.question,
       intent,
       periodLabel,
       analysisData,
-      dto.conversationHistory,
+      scrubbedHistory,
     );
 
     return {
-      answer: aiResponse.answer,
+      answer: this.scrubIdentifiers(aiResponse.answer, categoryNames),
       dataUsed: {
         intent,
         period: periodLabel,
         queriedAt: new Date().toISOString(),
       },
-      insights: aiResponse.insights,
+      insights: aiResponse.insights.map((insight) =>
+        this.scrubIdentifiers(insight, categoryNames),
+      ),
       suggestedQuestions: aiResponse.suggestedQuestions,
     };
   }
 
   // ── Private helpers ─────────────────────────────────────────────────────────
+
+  /**
+   * Loads the id → name map for categories so analysis responses can refer to
+   * "Groceries" instead of a UUID. Falls back to an empty map on failure.
+   */
+  private async fetchCategoryNames(token: string): Promise<Map<string, string>> {
+    const names = new Map<string, string>();
+    try {
+      const client = this.supabaseService.getClientForToken(token);
+      const { data, error } = await client.from('categories').select('id, name');
+      if (error || !data) return names;
+      for (const row of data as Array<{ id: string; name: string }>) {
+        if (row?.id && row?.name) names.set(row.id, row.name);
+      }
+    } catch (err) {
+      this.logger.warn(`Category name lookup failed, using fallback labels: ${err}`);
+    }
+    return names;
+  }
+
+  /** Replaces a row's category_id with a readable category name. */
+  private withCategoryName(
+    row: Record<string, unknown>,
+    names: Map<string, string>,
+  ): Record<string, unknown> {
+    const { category_id, ...rest } = row;
+    return {
+      ...rest,
+      category:
+        typeof category_id === 'string' ? (names.get(category_id) ?? 'Uncategorized') : 'Uncategorized',
+    };
+  }
+
+  /** Defense in depth: never surface database identifiers to the user. */
+  private scrubIdentifiers(text: string, names: Map<string, string>): string {
+    let output = text;
+    for (const [id, name] of names) {
+      output = output.split(id).join(name);
+    }
+    return output.replace(
+      /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi,
+      'uncategorized category',
+    );
+  }
 
   /** Phase 1: Detect the user's analytical intent from their question text. */
   private async detectIntent(question: string): Promise<AnalysisIntent> {
@@ -428,6 +483,7 @@ Do not explain. Do not add other fields.`;
     startDate: string,
     endDate: string,
     period: { month: number; year: number },
+    categoryNames: Map<string, string>,
   ): Promise<Record<string, unknown>> {
     const client = this.supabaseService.getClientForToken(token);
 
@@ -450,13 +506,15 @@ Do not explain. Do not add other fields.`;
         if (error) throw mapDatabaseError(error);
 
         const rows = (data || []) as Array<{ category_id: string; amount: string; currency: string }>;
+        // Group by readable category name so the model never sees UUID keys.
         const totals: Record<string, Record<string, string>> = {};
 
         for (const row of rows) {
+          const categoryName = categoryNames.get(row.category_id) ?? 'Uncategorized';
           const cur = row.currency.toUpperCase();
-          if (!totals[row.category_id]) totals[row.category_id] = {};
-          if (!totals[row.category_id][cur]) totals[row.category_id][cur] = '0.00';
-          totals[row.category_id][cur] = addDecimals(totals[row.category_id][cur], String(row.amount));
+          if (!totals[categoryName]) totals[categoryName] = {};
+          if (!totals[categoryName][cur]) totals[categoryName][cur] = '0.00';
+          totals[categoryName][cur] = addDecimals(totals[categoryName][cur], String(row.amount));
         }
 
         // Also fetch the largest individual expense
@@ -470,7 +528,12 @@ Do not explain. Do not add other fields.`;
           .order('amount', { ascending: false })
           .limit(5);
 
-        return { categoryTotals: totals, largestExpenses: largest || [] };
+        return {
+          categoryTotals: totals,
+          largestExpenses: (largest || []).map((row) =>
+            this.withCategoryName(row as Record<string, unknown>, categoryNames),
+          ),
+        };
       }
 
       case 'largest_transaction': {
@@ -484,7 +547,11 @@ Do not explain. Do not add other fields.`;
           .limit(10);
 
         if (error) throw mapDatabaseError(error);
-        return { largestTransactions: data || [] };
+        return {
+          largestTransactions: (data || []).map((row) =>
+            this.withCategoryName(row as Record<string, unknown>, categoryNames),
+          ),
+        };
       }
 
       case 'category_spending': {
@@ -499,7 +566,11 @@ Do not explain. Do not add other fields.`;
           .order('amount', { ascending: false });
 
         if (error) throw mapDatabaseError(error);
-        return { expenseTransactions: data || [] };
+        return {
+          expenseTransactions: (data || []).map((row) =>
+            this.withCategoryName(row as Record<string, unknown>, categoryNames),
+          ),
+        };
       }
 
       case 'monthly_comparison': {
@@ -534,7 +605,12 @@ Do not explain. Do not add other fields.`;
           totals[cur] = addDecimals(totals[cur] ?? '0.00', String(row.amount));
         }
 
-        return { incomeTransactions: data || [], incomeTotals: totals };
+        return {
+          incomeTransactions: (data || []).map((row) =>
+            this.withCategoryName(row as Record<string, unknown>, categoryNames),
+          ),
+          incomeTotals: totals,
+        };
       }
 
       case 'transaction_search': {
@@ -549,7 +625,11 @@ Do not explain. Do not add other fields.`;
           .limit(50);
 
         if (error) throw mapDatabaseError(error);
-        return { transactions: data || [] };
+        return {
+          transactions: (data || []).map((row) =>
+            this.withCategoryName(row as Record<string, unknown>, categoryNames),
+          ),
+        };
       }
 
       case 'spending_trends': {
@@ -591,6 +671,7 @@ CRITICAL RULES — you must follow these without exception:
 3. Do not perform arithmetic yourself. All totals in the data context are pre-calculated and accurate.
 4. Keep answers concise, clear, and actionable. Use plain language.
 5. Currency amounts already include their symbol prefix (e.g. 45000.00 in BDT means ৳45,000.00).
+6. Never mention internal identifiers such as UUIDs, category IDs, or transaction IDs. Refer to categories by their human-readable "category" name from the data context.
 
 Respond with a JSON object containing:
 - "answer": string — direct answer to the user's question (200 words max)

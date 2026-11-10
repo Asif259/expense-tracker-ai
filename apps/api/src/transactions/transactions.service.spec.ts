@@ -366,5 +366,60 @@ describe('TransactionsService', () => {
       expect(supabaseService.getClientForToken).toHaveBeenCalledWith(mockToken);
       expect(chain.eq).toHaveBeenCalledWith('user_id', mockUserId);
     });
+
+    it('resolves category UUIDs to names and never sends identifiers to the assistant', async () => {
+      const categoryId = 'ea81b03e-1106-451c-bf5c-4a1bf486ae51';
+
+      // Awaitable query builder: every chained call returns itself, and awaiting
+      // it resolves to the table's rows.
+      const thenableChain = (data: unknown[]) => {
+        const chain: any = {
+          select: () => chain,
+          eq: () => chain,
+          gte: () => chain,
+          lte: () => chain,
+          order: () => chain,
+          limit: () => chain,
+          then: (resolve: (value: unknown) => void) => resolve({ data, error: null }),
+        };
+        return chain;
+      };
+
+      mockClient.from.mockImplementation((table: string) =>
+        table === 'categories'
+          ? thenableChain([{ id: categoryId, name: 'Groceries' }])
+          : thenableChain([
+              { category_id: categoryId, amount: '895.00', currency: 'BDT' },
+            ]),
+      );
+
+      (service as any).groqService.generateStructuredResponse
+        .mockResolvedValueOnce(JSON.stringify({ intent: 'top_category' }))
+        .mockResolvedValueOnce(
+          JSON.stringify({
+            answer: `Your highest spending was in category ${categoryId}.`,
+            insights: [`Category ${categoryId} spent BDT 895.00.`],
+            suggestedQuestions: ['Compare with last month.'],
+          }),
+        );
+
+      const result = await service.analyzeTransactions(mockToken, mockUserId, {
+        question: 'What cost me the most this month?',
+        period: { month: 11, year: 2026 },
+        conversationHistory: [],
+      });
+
+      expect(result.answer).toContain('Groceries');
+      expect(result.answer).not.toContain(categoryId);
+      expect(result.insights[0]).toContain('Groceries');
+      expect(result.insights[0]).not.toContain(categoryId);
+
+      // The prompt the model receives must use names, never UUIDs.
+      const explanationPrompt = JSON.stringify(
+        (service as any).groqService.generateStructuredResponse.mock.calls[1],
+      );
+      expect(explanationPrompt).toContain('Groceries');
+      expect(explanationPrompt).not.toContain(categoryId);
+    });
   });
 });

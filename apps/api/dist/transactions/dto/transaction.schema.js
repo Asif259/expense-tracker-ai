@@ -1,5 +1,40 @@
 import { z } from 'zod';
 import { amountSchema, calendarDateSchema, SUPPORTED_CURRENCIES, } from '@ledgerly/shared-types';
+export const transactionSummaryQuerySchema = z.object({
+    month: z.coerce
+        .number()
+        .int()
+        .min(1, 'month must be between 1 and 12')
+        .max(12, 'month must be between 1 and 12'),
+    year: z.coerce
+        .number()
+        .int()
+        .min(2000, 'year must be 2000 or later')
+        .max(2100, 'year must be 2100 or earlier'),
+});
+const analysisPeriodSchema = z.object({
+    month: z.number().int().min(1).max(12),
+    year: z.number().int().min(2000).max(2100),
+});
+const conversationMessageSchema = z.object({
+    role: z.enum(['user', 'assistant']),
+    content: z.string().max(2000, 'conversation message must not exceed 2000 characters'),
+});
+export const transactionAnalysisSchema = z
+    .object({
+    question: z
+        .string()
+        .min(3, 'question must be at least 3 characters')
+        .max(500, 'question must not exceed 500 characters')
+        .trim(),
+    period: analysisPeriodSchema,
+    conversationHistory: z
+        .array(conversationMessageSchema)
+        .max(6, 'conversation history is limited to 6 messages')
+        .optional()
+        .default([]),
+})
+    .strict('Unexpected fields in analysis request');
 export const createTransactionSchema = z
     .object({
     type: z.enum(['income', 'expense'], {

@@ -107,7 +107,7 @@ describe('TransactionsController', () => {
   it('delegates analyzeTransactions to service', async () => {
     const mockResult = {
       answer: 'Your top category was Food.',
-      dataUsed: { intent: 'top_category', period: 'November 2026', queriedAt: new Date().toISOString() },
+      dataUsed: { intent: 'top_category' as const, period: 'November 2026', queriedAt: new Date().toISOString() },
       insights: ['Food & Dining is your largest expense.'],
       suggestedQuestions: ['Compare with last month.'],
     };
