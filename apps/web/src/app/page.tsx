@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -18,7 +19,9 @@ import {
   Menu,
   MessageSquareText,
   Moon,
+  Plus,
   Receipt,
+  Send,
   ShieldCheck,
   Sparkles,
   Sun,
@@ -30,7 +33,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 
 /* ==========================================================================
-   Content
+   Content & Data
    ========================================================================== */
 
 const PAGE_TITLE = 'Ledgerly | Make Sense of Your Money';
@@ -42,6 +45,7 @@ const NAV_LINKS = [
   { href: '#overview', label: 'Overview' },
   { href: '#features', label: 'Features' },
   { href: '#benefits', label: 'Benefits' },
+  { href: '#ai-assistant', label: 'AI Assistant' },
   { href: '#how-it-works', label: 'How it works' },
 ] as const;
 
@@ -55,22 +59,26 @@ const PILLARS = [
   {
     number: '01',
     icon: Receipt,
-    title: 'Track',
-    copy: 'Organize daily income and expenses in one clear, unified financial record.',
+    title: 'Real-Time Expense Tracking',
+    copy: 'Organize daily income and expenses in one clear, unified financial record with instant updates.',
   },
   {
     number: '02',
     icon: BarChart3,
-    title: 'Understand',
-    copy:
-      'Explore spending breakdowns, cash flow comparisons, and category analytics to understand your financial habits.',
+    title: 'Visual Spending Analytics',
+    copy: 'Explore spending breakdowns, cash flow comparisons, and category analytics to understand your habits.',
   },
   {
     number: '03',
     icon: Target,
-    title: 'Plan',
-    copy:
-      'Set comfortable budgets, monitor savings progress, and manage money lent to or borrowed from friends.',
+    title: 'Smart Budget Alerts',
+    copy: 'Set comfortable monthly budgets, monitor burn rates, and stay ahead of overspending effortlessly.',
+  },
+  {
+    number: '04',
+    icon: HandCoins,
+    title: 'Debt & Loan Tracking',
+    copy: 'Monitor money lent to or borrowed from friends, including partial repayments and clear audit trails.',
   },
 ] as const;
 
@@ -78,43 +86,37 @@ const FEATURES = [
   {
     icon: Wallet,
     title: 'Smart expense tracking',
-    copy:
-      'Record daily transactions with categories, custom dates, notes, and precise financial calculations.',
+    copy: 'Record daily transactions with categories, custom dates, notes, and precise financial calculations.',
     action: 'Learn more',
   },
   {
     icon: Target,
     title: 'Budget management',
-    copy:
-      'Set comfortable monthly limits across categories. Monitor your burn rate and stay ahead of overspending.',
+    copy: 'Set comfortable monthly limits across categories. Monitor your burn rate and stay ahead of overspending.',
     action: 'Manage budgets',
   },
   {
     icon: BarChart3,
     title: 'Spending analytics',
-    copy:
-      'Understand your financial habits through visual cash flow charts, category breakdowns, and monthly trends.',
+    copy: 'Understand your financial habits through visual cash flow charts, category breakdowns, and monthly trends.',
     action: 'View analytics',
   },
   {
     icon: HandCoins,
     title: 'Debt and loans tracker',
-    copy:
-      'Keep track of money lent to friends, borrowed funds, repayments, and outstanding balances with clear audit records.',
+    copy: 'Keep track of money lent to friends, borrowed funds, repayments, and outstanding balances with clear audit records.',
     action: 'Track loans',
   },
   {
     icon: Sparkles,
     title: 'AI financial assistant',
-    copy:
-      'Ask questions about your financial records and get useful answers based on your transaction history.',
+    copy: 'Ask questions about your financial records and get useful answers based on your transaction history.',
     action: 'Explore AI',
   },
   {
     icon: MessageSquareText,
     title: 'AI expense entry',
-    copy:
-      'Record expenses using natural language and review AI-generated transaction details before confirming them.',
+    copy: 'Record expenses using natural language and review AI-generated transaction details before confirming them.',
     action: 'Explore AI entry',
   },
 ] as const;
@@ -122,19 +124,31 @@ const FEATURES = [
 const BENEFITS = [
   {
     title: 'Clear spending patterns',
-    copy: 'Understand where your money goes every month.',
+    copy: 'Understand where your money goes every month with automatic categorization and visual cash-flow breakdowns.',
+    statLabel: 'Monthly Net Surplus',
+    statValue: '+ ৳16,450.00',
+    statTrend: '+14.2%',
   },
   {
     title: 'Organized transactions',
-    copy: 'Filter, sort, and organize your financial records.',
+    copy: 'Filter, sort, and search across your entire financial history in milliseconds with custom tags and notes.',
+    statLabel: 'Tracked This Month',
+    statValue: '৳28,550.00',
+    statTrend: '42 entries',
   },
   {
     title: 'Track debts and commitments',
-    copy: 'Monitor money lent to or borrowed from friends, including partial repayments.',
+    copy: 'Monitor money lent to or borrowed from friends, log partial repayments, and settle balances with zero confusion.',
+    statLabel: 'Pending Collection',
+    statValue: '৳19,500.00',
+    statTrend: '2 active loans',
   },
   {
     title: 'Privacy and data protection',
-    copy: 'Sign-in is handled securely, and database rules keep each account’s records separate.',
+    copy: 'Sign-in is handled securely, and strict database isolation rules keep each account’s records completely private.',
+    statLabel: 'Security Status',
+    statValue: '100% Isolated',
+    statTrend: 'No bank link needed',
   },
 ] as const;
 
@@ -142,22 +156,41 @@ const STEPS = [
   {
     number: '01',
     title: 'Record',
-    copy: 'Add transactions using quick manual forms or AI-assisted expense entry.',
+    badge: 'Effortless Entry',
+    copy: 'Add daily transactions using quick manual forms or natural-language AI-assisted expense entry.',
+    highlights: [
+      'Natural language AI expense parsing',
+      'Custom categories, tags & date pickers',
+      'Instant balance & cash flow recalculation',
+      'Support for income, expenses & transfers',
+    ],
   },
   {
     number: '02',
     title: 'Analyze',
-    copy: 'Inspect categorized entries. Confirm amounts and dates with complete confidence.',
+    badge: 'Most Popular Workflow',
+    featured: true,
+    copy: 'Inspect categorized entries, compare month-over-month burn rates, and ask Ledgerly AI for instant insights.',
+    highlights: [
+      'Visual category & cash-flow breakdowns',
+      'Interactive AI financial Q&A assistant',
+      'Month-over-month spending comparisons',
+      'Real-time budget burn-rate monitoring',
+    ],
   },
   {
     number: '03',
     title: 'Plan',
-    copy:
-      "Monitor monthly budget health, explore visual analytics, and keep track of money you've lent or borrowed.",
+    badge: 'Complete Control',
+    copy: "Monitor monthly budget health, stay ahead of bills, and keep track of money you've lent or borrowed.",
+    highlights: [
+      'Category-level monthly budget thresholds',
+      'Lent & borrowed debt repayment ledger',
+      'Partial repayment & due-date tracking',
+      'Private, isolated per-account cloud sync',
+    ],
   },
 ] as const;
-
-/* Illustrative sample data for the product previews (clearly labelled). */
 
 const HERO_ACTIVITY = [
   { name: 'Agora Superstore', meta: 'Groceries · Nov 8', amount: '− ৳1,200.00', income: false },
@@ -166,10 +199,10 @@ const HERO_ACTIVITY = [
 ] as const;
 
 const HERO_CATEGORIES = [
-  { name: 'Rent', amount: '৳12,000', percent: 42, color: 'var(--color-primary)' },
-  { name: 'Food & dining', amount: '৳8,000', percent: 28, color: 'var(--color-accent-blue)' },
-  { name: 'Savings', amount: '৳5,100', percent: 18, color: 'var(--color-amber)' },
-  { name: 'Utilities', amount: '৳3,450', percent: 12, color: 'var(--color-text-subtle)' },
+  { name: 'Rent', amount: '৳12,000', percent: 42, color: '#1E3A5F' },
+  { name: 'Food & dining', amount: '৳8,000', percent: 28, color: '#3B82F6' },
+  { name: 'Savings', amount: '৳5,100', percent: 18, color: '#F59E0B' },
+  { name: 'Utilities', amount: '৳3,450', percent: 12, color: '#93C5FD' },
 ] as const;
 
 const PREVIEW_BUDGETS = [
@@ -180,6 +213,18 @@ const PREVIEW_BUDGETS = [
 const PREVIEW_ACTIVITY = [
   { name: 'Agora Superstore', meta: 'Groceries · Nov 8', amount: '− ৳1,200.00', income: false },
   { name: 'Electricity bill', meta: 'Utilities · Nov 7', amount: '− ৳2,340.00', income: false },
+  { name: 'Design consulting', meta: 'Income · Nov 5', amount: '+ ৳35,000.00', income: true },
+  { name: 'Broadband internet', meta: 'Utilities · Nov 2', amount: '− ৳1,350.00', income: false },
+] as const;
+
+const WEEKLY_BARS = [
+  { day: 'Sun', value: '৳2.1k', height: '42%' },
+  { day: 'Mon', value: '৳4.8k', height: '84%' },
+  { day: 'Tue', value: '৳3.2k', height: '58%' },
+  { day: 'Wed', value: '৳5.6k', height: '96%' },
+  { day: 'Thu', value: '৳2.9k', height: '52%' },
+  { day: 'Fri', value: '৳4.1k', height: '74%' },
+  { day: 'Sat', value: '৳1.8k', height: '36%' },
 ] as const;
 
 type DemoRow = { label: string; detail: string; amount: string };
@@ -263,23 +308,58 @@ const AI_DEMOS: Demo[] = [
 ];
 
 /* ==========================================================================
-   Shared class strings
+   Scroll Reveal Wrapper (Matches Video's Blur + Slide-Up Entrance)
    ========================================================================== */
 
-const primaryButtonClass =
-  'inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-[var(--radius-md)] bg-[var(--color-primary)] px-5 text-sm font-medium text-[var(--color-primary-contrast)] transition-colors duration-[var(--duration-fast)] hover:bg-[var(--color-primary-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)]';
+function Reveal({
+  children,
+  className = '',
+  delay = 0,
+}: {
+  children: ReactNode;
+  className?: string;
+  delay?: number;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
 
-const secondaryButtonClass =
-  'inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-[var(--radius-md)] border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-5 text-sm font-medium text-[var(--color-text)] transition-colors duration-[var(--duration-fast)] hover:bg-[var(--color-surface-hover)] hover:border-[var(--color-border-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)]';
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (!('IntersectionObserver' in window)) {
+      setVisible(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.14, rootMargin: '0px 0px -40px 0px' },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
-const iconTileClass =
-  'flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-primary-subtle)] text-[var(--color-primary-text)]';
-
-const footerLinkClass =
-  'rounded-[var(--radius-xs)] transition-colors hover:text-[var(--color-text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)]';
+  return (
+    <div
+      ref={ref}
+      style={{ transitionDelay: `${delay}ms` }}
+      className={`transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity,filter] ${
+        visible
+          ? 'translate-y-0 scale-100 opacity-100 blur-0'
+          : 'translate-y-8 scale-[0.98] opacity-0 blur-[10px]'
+      } ${className}`}
+    >
+      {children}
+    </div>
+  );
+}
 
 /* ==========================================================================
-   Page
+   Page Component
    ========================================================================== */
 
 export default function HomePage() {
@@ -290,6 +370,7 @@ export default function HomePage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('');
   const [activeDemoId, setActiveDemoId] = useState(AI_DEMOS[0].id);
+  const [activeBenefitIndex, setActiveBenefitIndex] = useState(0);
   const [year, setYear] = useState<number | null>(null);
 
   // Signed-in visitors go straight to the dashboard.
@@ -338,11 +419,12 @@ export default function HomePage() {
   }, []);
 
   const activeDemo = AI_DEMOS.find((demo) => demo.id === activeDemoId) ?? AI_DEMOS[0];
+  const activeBenefit = BENEFITS[activeBenefitIndex] ?? BENEFITS[0];
   const closeMobileMenu = () => setMobileMenuOpen(false);
 
   return (
     <>
-      {/* Social metadata. The document title/description come from the root layout. */}
+      {/* Social metadata */}
       <meta property="og:type" content="website" />
       <meta property="og:site_name" content="Ledgerly" />
       <meta property="og:title" content={PAGE_TITLE} />
@@ -357,22 +439,47 @@ export default function HomePage() {
       <meta name="twitter:image" content={`${SITE_URL}/Hero-image.webp`} />
       <link rel="canonical" href={`${SITE_URL}/`} />
 
-      <div className="flex min-h-screen flex-col overflow-x-clip bg-[var(--color-bg)] text-[var(--color-text)] selection:bg-[var(--color-primary-subtle)] selection:text-[var(--color-primary-text)]">
+      {/* Keyframe animations inspired by the video */}
+      <style>{`
+        @keyframes ledgerlyFloatSlow {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-8px); }
+        }
+        @keyframes ledgerlyFloatDelayed {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-6px); }
+        }
+        @keyframes ledgerlyPulseOrb {
+          0%, 100% { transform: scale(1); opacity: 0.85; }
+          50% { transform: scale(1.08); opacity: 1; }
+        }
+        .animate-float-slow {
+          animation: ledgerlyFloatSlow 6s ease-in-out infinite;
+        }
+        .animate-float-delayed {
+          animation: ledgerlyFloatDelayed 7.5s ease-in-out 1.5s infinite;
+        }
+        .animate-pulse-orb {
+          animation: ledgerlyPulseOrb 5s ease-in-out infinite;
+        }
+      `}</style>
+
+      <div className="flex min-h-screen flex-col overflow-x-clip bg-[var(--color-bg)] text-[var(--color-text)] selection:bg-[#D8ECFF] selection:text-[#1E3A5F] dark:selection:bg-[#1E3A5F] dark:selection:text-white">
         <a
           href="#main"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:rounded-[var(--radius-md)] focus:border focus:border-[var(--color-border)] focus:bg-[var(--color-surface)] focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-[var(--color-text)] focus:shadow-[var(--shadow-md)]"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:rounded-xl focus:border focus:border-[var(--color-border)] focus:bg-[var(--color-surface)] focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-[var(--color-text)] focus:shadow-lg"
         >
           Skip to content
         </a>
 
         {/* ====================================================================
-            Navigation
+            Floating Glass Pill Navigation (Video 00:00 style)
             ==================================================================== */}
-        <header className="sticky top-0 z-50 border-b border-[var(--color-border)] bg-[var(--color-bg)]/95 backdrop-blur-sm supports-[backdrop-filter]:bg-[var(--color-bg)]/85">
-          <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+        <header className="sticky top-0 z-50 pt-3 sm:pt-4">
+          <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
             <Link
               href="/"
-              className="flex shrink-0 items-center gap-2.5 rounded-[var(--radius-md)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)]"
+              className="flex shrink-0 items-center gap-2.5 rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)]"
             >
               <span className="relative h-7 w-7 shrink-0 sm:h-8 sm:w-8">
                 <Image
@@ -384,12 +491,16 @@ export default function HomePage() {
                   priority
                 />
               </span>
-              <span className="text-[17px] font-semibold tracking-tight text-[var(--color-text)]">
-                Ledgerly<span className="text-[var(--color-primary)]">.</span>
+              <span className="text-[19px] font-semibold tracking-tight text-[var(--color-text)]">
+                Ledgerly<span className="text-[#2B75B6]">.</span>
               </span>
             </Link>
 
-            <nav aria-label="Primary" className="hidden items-center gap-1 md:flex">
+            {/* Center Frosted Pill Nav */}
+            <nav
+              aria-label="Primary"
+              className="hidden items-center gap-1 rounded-full border border-white/70 bg-white/60 px-2 py-1.5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-md dark:border-white/10 dark:bg-slate-900/60 md:flex"
+            >
               {NAV_LINKS.map((link) => {
                 const active = activeSection === link.href;
                 return (
@@ -397,32 +508,27 @@ export default function HomePage() {
                     key={link.href}
                     href={link.href}
                     aria-current={active ? 'true' : undefined}
-                    className={`relative rounded-[var(--radius-sm)] px-3 py-2 text-[13px] transition-colors duration-[var(--duration-fast)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)] ${
+                    className={`relative rounded-full px-4 py-1.5 text-[13px] transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)] ${
                       active
-                        ? 'font-medium text-[var(--color-text)]'
+                        ? 'bg-white font-medium text-[#1E3A5F] shadow-xs dark:bg-slate-800 dark:text-white'
                         : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
                     }`}
                   >
                     {link.label}
-                    <span
-                      aria-hidden="true"
-                      className={`absolute right-3 bottom-1 left-3 h-px rounded-full transition-opacity duration-[var(--duration-fast)] ${
-                        active ? 'bg-[var(--color-primary)] opacity-100' : 'opacity-0'
-                      }`}
-                    />
                   </a>
                 );
               })}
             </nav>
 
-            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+            {/* Right Actions */}
+            <div className="flex shrink-0 items-center gap-2">
               {mounted ? (
                 <button
                   type="button"
                   onClick={toggleTheme}
                   aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
                   title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
-                  className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] transition-colors duration-[var(--duration-fast)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)]"
+                  className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-white/80 bg-white/75 text-[var(--color-text-muted)] shadow-xs backdrop-blur-md transition-colors hover:bg-white hover:text-[var(--color-text)] dark:border-white/10 dark:bg-slate-900/75 dark:hover:bg-slate-800"
                 >
                   {theme === 'dark' ? (
                     <Moon className="h-4 w-4" aria-hidden="true" />
@@ -433,24 +539,23 @@ export default function HomePage() {
               ) : (
                 <span
                   aria-hidden="true"
-                  className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)]"
-                >
-                  <span className="h-4 w-4 rounded-full bg-[var(--color-surface-sunken)]" />
-                </span>
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface)]"
+                />
               )}
 
               <Link
                 href="/login"
-                className="hidden h-9 items-center rounded-[var(--radius-md)] px-3 text-[13px] font-medium text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)] sm:inline-flex"
+                className="hidden h-9 items-center rounded-full px-3.5 text-[13px] font-medium text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text)] sm:inline-flex"
               >
                 Sign in
               </Link>
 
-              <span className="hidden sm:block">
-                <Link href="/login?mode=signup" className={`${primaryButtonClass} h-9 px-4`}>
-                  Get started
-                </Link>
-              </span>
+              <Link
+                href="/login?mode=signup"
+                className="hidden h-9 items-center justify-center rounded-full border border-white/90 bg-white px-4 text-[13px] font-medium text-slate-900 shadow-[0_4px_14px_rgba(30,58,95,0.08)] transition-all hover:-translate-y-0.5 hover:bg-slate-50 sm:inline-flex dark:border-white/15 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700"
+              >
+                Get started
+              </Link>
 
               <button
                 type="button"
@@ -458,7 +563,7 @@ export default function HomePage() {
                 aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
                 aria-expanded={mobileMenuOpen}
                 aria-controls="mobile-menu"
-                className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-[var(--radius-md)] text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)] md:hidden"
+                className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-white/70 bg-white/75 text-[var(--color-text)] backdrop-blur-md md:hidden dark:border-white/10 dark:bg-slate-900/75"
               >
                 {mobileMenuOpen ? (
                   <X className="h-5 w-5" aria-hidden="true" />
@@ -472,37 +577,37 @@ export default function HomePage() {
           {/* Mobile menu */}
           <div
             id="mobile-menu"
-            className={`grid overflow-hidden border-b border-[var(--color-border)] bg-[var(--color-bg)] transition-[grid-template-rows,opacity] duration-[var(--duration-base)] ease-[var(--ease-standard)] md:hidden ${
+            className={`mx-4 mt-2 grid overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]/95 shadow-xl backdrop-blur-xl transition-all duration-300 md:hidden ${
               mobileMenuOpen
                 ? 'grid-rows-[1fr] opacity-100'
                 : 'pointer-events-none grid-rows-[0fr] opacity-0'
             }`}
           >
             <div className="min-h-0" inert={!mobileMenuOpen}>
-              <nav aria-label="Mobile" className="px-4 pt-2 pb-1">
+              <nav aria-label="Mobile" className="px-4 pt-3 pb-2">
                 {NAV_LINKS.map((link) => (
                   <a
                     key={link.href}
                     href={link.href}
                     onClick={closeMobileMenu}
-                    className="block rounded-[var(--radius-md)] px-3 py-2.5 text-[15px] font-medium text-[var(--color-text)] transition-colors hover:bg-[var(--color-surface-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)]"
+                    className="block rounded-xl px-3 py-2.5 text-[15px] font-medium text-[var(--color-text)] transition-colors hover:bg-[var(--color-surface-hover)]"
                   >
                     {link.label}
                   </a>
                 ))}
               </nav>
-              <div className="flex flex-col gap-2 border-t border-[var(--color-border)] px-4 pt-4 pb-5">
+              <div className="flex flex-col gap-2 border-t border-[var(--color-border)] px-4 pt-3 pb-4">
                 <Link
                   href="/login?mode=signup"
                   onClick={closeMobileMenu}
-                  className={`${primaryButtonClass} w-full`}
+                  className="inline-flex h-10 w-full items-center justify-center rounded-full bg-[#1E3A5F] text-sm font-medium text-white"
                 >
                   Get started
                 </Link>
                 <Link
                   href="/login"
                   onClick={closeMobileMenu}
-                  className={`${secondaryButtonClass} w-full`}
+                  className="inline-flex h-10 w-full items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] text-sm font-medium text-[var(--color-text)]"
                 >
                   Sign in
                 </Link>
@@ -513,402 +618,335 @@ export default function HomePage() {
 
         <main id="main" className="flex-1">
           {/* ==================================================================
-              Hero
+              1. HERO SECTION (Video 00:00 - 00:01 Asymmetric Sky + Center Phone)
               ================================================================== */}
-          <section className="relative overflow-hidden pt-10 pb-16 sm:pt-16 sm:pb-24 lg:pt-20 lg:pb-28">
-            <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-14 px-4 sm:px-6 xl:grid-cols-2 xl:gap-16 xl:px-8">
-              <div className="min-w-0">
-                <p className="text-eyebrow text-[var(--color-primary-text)]">
-                  Personal finance, made clear.
-                </p>
+          <section className="relative -mt-18 overflow-hidden pt-26 pb-16 sm:pt-32 sm:pb-24 lg:pt-36 lg:pb-28">
+            {/* Soft Sky Blue & Cloud Atmospheric Backdrop */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-[#BCE1FA]/75 via-[#E4F3FE]/55 to-[var(--color-bg)] dark:from-[#0F253E]/70 dark:via-[#0B1727]/50 dark:to-[var(--color-bg)]"
+            />
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -top-24 left-1/2 -z-10 h-[420px] w-[980px] -translate-x-1/2 rounded-full bg-[#8CCBFF]/35 blur-[110px] dark:bg-[#1E4F8A]/30"
+            />
+            {/* Cloud-like soft bottom mist */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute right-0 bottom-0 left-0 -z-10 h-44 bg-gradient-to-t from-[var(--color-bg)] via-[var(--color-bg)]/80 to-transparent"
+            />
 
-                <h1 className="mt-4 font-display text-[2.75rem] leading-[1.04] font-normal tracking-[-0.02em] text-[var(--color-text)] sm:text-[3.5rem] xl:text-[4.1rem]">
-                  <span className="block">Make sense of</span>
-                  <span className="block">your money.</span>
-                </h1>
-
-                <p className="mt-6 max-w-xl text-[15px] leading-relaxed text-[var(--color-text-muted)] sm:text-base">
-                  Ledgerly helps you track daily expenses, understand spending patterns,
-                  manage monthly budgets, and organize money you owe or are owed, all in one
-                  place.
-                </p>
-
-                <div className="mt-8 flex flex-col gap-2.5 sm:flex-row sm:items-center">
-                  <Link
-                    href="/login?mode=signup"
-                    className={`${primaryButtonClass} w-full sm:w-auto`}
-                  >
-                    Get started free
-                  </Link>
-                  <a href="#features" className={`${secondaryButtonClass} w-full sm:w-auto`}>
-                    Explore features
-                  </a>
-                </div>
-
-                <ul className="mt-8 flex flex-col gap-2.5 text-[13px] text-[var(--color-text-muted)]">
-                  {TRUST_POINTS.map(({ icon: Icon, label }) => (
-                    <li key={label} className="flex items-center gap-2">
-                      <Icon
-                        className="h-4 w-4 shrink-0 text-[var(--color-primary-text)]"
-                        strokeWidth={1.75}
-                        aria-hidden="true"
-                      />
-                      <span>{label}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Hero product preview */}
-              <div className="w-full min-w-0">
-                <div className="relative mx-auto w-full max-w-[560px]">
-                  <div
-                    role="img"
-                    aria-label="Illustrative Ledgerly dashboard preview with sample data: net cash flow ৳6,450.00 for November 2026, 63% of a ৳45,000 monthly budget used, three recent transactions, spending categories, and an AI insight."
-                    className="relative rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-md)] sm:p-5"
-                  >
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="text-caption">Net cash flow · November 2026</p>
-                        <p className="mt-1 text-[26px] font-semibold tracking-[-0.02em] tabular-nums text-[var(--color-text)] sm:text-[28px]">
-                          ৳6,450.00
-                        </p>
-                      </div>
-                      <span className="inline-flex items-center gap-1.5 rounded-[var(--radius-sm)] bg-[var(--color-income-subtle)] px-2 py-1 text-[11px] font-semibold text-[var(--color-income)]">
-                        <TrendingUp className="h-3.5 w-3.5" aria-hidden="true" />
-                        In surplus
-                      </span>
-                    </div>
-
-                    <div className="mt-4 rounded-[var(--radius-lg)] bg-[var(--color-surface-sunken)] p-3.5">
-                      <div className="flex items-baseline justify-between gap-2">
-                        <span className="text-[13px] font-medium text-[var(--color-text)]">
-                          Monthly budget
-                        </span>
-                        <span className="text-[12px] tabular-nums text-[var(--color-text-muted)]">
-                          ৳28,550 of ৳45,000
-                        </span>
-                      </div>
-                      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[var(--color-border)]">
-                        <div
-                          className="h-full rounded-full bg-[var(--color-primary)]"
-                          style={{ width: '63%' }}
-                        />
-                      </div>
-                      <div className="mt-1.5 flex items-center justify-between text-[11px] text-[var(--color-text-subtle)]">
-                        <span>63% used</span>
-                        <span>19 days left</span>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 grid gap-4 sm:grid-cols-[1.2fr_1fr]">
-                      <div className="min-w-0">
-                        <div className="flex items-baseline justify-between">
-                          <p className="text-[13px] font-semibold text-[var(--color-text)]">
-                            Recent activity
-                          </p>
-                          <span className="text-[11px] text-[var(--color-text-subtle)]">
-                            Nov 2026
-                          </span>
-                        </div>
-                        <ul className="mt-1.5 divide-y divide-[var(--color-border)]">
-                          {HERO_ACTIVITY.map((item) => (
-                            <li
-                              key={item.name}
-                              className="flex items-center justify-between gap-2 py-2"
-                            >
-                              <div className="flex min-w-0 items-center gap-2">
-                                <span
-                                  className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-[var(--radius-sm)] ${
-                                    item.income
-                                      ? 'bg-[var(--color-income-subtle)] text-[var(--color-income)]'
-                                      : 'bg-[var(--color-expense-subtle)] text-[var(--color-expense)]'
-                                  }`}
-                                >
-                                  {item.income ? (
-                                    <ArrowDownLeft className="h-3 w-3" aria-hidden="true" />
-                                  ) : (
-                                    <ArrowUpRight className="h-3 w-3" aria-hidden="true" />
-                                  )}
-                                </span>
-                                <div className="min-w-0">
-                                  <p className="truncate text-[12px] font-medium text-[var(--color-text)]">
-                                    {item.name}
-                                  </p>
-                                  <p className="truncate text-[11px] text-[var(--color-text-subtle)]">
-                                    {item.meta}
-                                  </p>
-                                </div>
-                              </div>
-                              <span className="shrink-0 text-[12px] font-medium tabular-nums text-[var(--color-text)]">
-                                {item.amount}
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-
-                      <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface-sunken)] p-3">
-                        <p className="text-[13px] font-semibold text-[var(--color-text)]">
-                          Spending categories
-                        </p>
-                        <div className="mt-2 flex h-1.5 w-full gap-0.5 overflow-hidden rounded-full">
-                          {HERO_CATEGORIES.map((category) => (
-                            <span
-                              key={category.name}
-                              className="h-full rounded-full"
-                              style={{
-                                width: `${category.percent}%`,
-                                backgroundColor: category.color,
-                              }}
-                            />
-                          ))}
-                        </div>
-                        <ul className="mt-2.5 space-y-1.5">
-                          {HERO_CATEGORIES.map((category) => (
-                            <li
-                              key={category.name}
-                              className="flex items-center justify-between gap-2 text-[11px]"
-                            >
-                              <span className="flex min-w-0 items-center gap-1.5 text-[var(--color-text-muted)]">
-                                <span
-                                  className="h-1.5 w-1.5 shrink-0 rounded-full"
-                                  style={{ backgroundColor: category.color }}
-                                  aria-hidden="true"
-                                />
-                                <span className="truncate">{category.name}</span>
-                              </span>
-                              <span className="shrink-0 tabular-nums text-[var(--color-text)]">
-                                {category.amount}
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-
-                    <div className="mt-3.5 flex items-start gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 py-2.5">
-                      <Sparkles
-                        className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--color-primary-text)]"
-                        aria-hidden="true"
-                      />
-                      <p className="text-[12px] leading-relaxed text-[var(--color-text-muted)]">
-                        <span className="font-medium text-[var(--color-text)]">
-                          AI insight ·{' '}
-                        </span>
-                        Rent and food make up 70% of your spending this month.
-                      </p>
-                    </div>
-
-                    <div className="mt-2.5 flex justify-end">
-                      <span className="text-[11px] font-medium text-[var(--color-text-subtle)]">
-                        Sample data
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Floating interface elements, wide screens only */}
-                  <div className="pointer-events-none absolute -top-5 right-3 z-10 hidden items-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-elevated)] px-3 py-2 text-[12px] font-medium text-[var(--color-text)] shadow-[var(--shadow-md)] xl:flex">
-                    <Lock
-                      className="h-3.5 w-3.5 text-[var(--color-primary-text)]"
-                      aria-hidden="true"
-                    />
-                    Private to your account
-                  </div>
-
-                  <div className="pointer-events-none absolute -bottom-5 -left-3 z-10 hidden items-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-elevated)] px-3 py-2 shadow-[var(--shadow-md)] xl:flex">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-[var(--radius-sm)] bg-[var(--color-income-subtle)] text-[var(--color-income)]">
-                      <ArrowDownLeft className="h-3 w-3" aria-hidden="true" />
-                    </span>
-                    <span className="flex flex-col">
-                      <span className="text-[11px] font-medium text-[var(--color-text)]">
-                        Design consulting
-                      </span>
-                      <span className="text-[11px] tabular-nums text-[var(--color-text-subtle)]">
-                        + ৳35,000.00
-                      </span>
-                    </span>
-                  </div>
-
-                  <div className="pointer-events-none absolute -right-4 -bottom-7 z-10 hidden max-w-[190px] items-start gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-elevated)] px-3 py-2.5 shadow-[var(--shadow-md)] xl:flex">
-                    <Sparkles
-                      className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--color-primary-text)]"
-                      aria-hidden="true"
-                    />
-                    <p className="text-[11px] leading-snug text-[var(--color-text-muted)]">
-                      <span className="font-medium text-[var(--color-text)]">AI · </span>
-                      Dining is your fastest-growing category.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* ==================================================================
-              Product overview
-              ================================================================== */}
-          <section
-            id="overview"
-            className="scroll-mt-20 border-y border-[var(--color-border)] bg-[var(--color-primary-subtle)] py-20 sm:py-24"
-          >
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-              <div className="max-w-2xl">
-                <p className="text-eyebrow text-[var(--color-primary-text)]">
-                  What Ledgerly does
-                </p>
-                <h2 className="mt-3 font-display text-[2rem] leading-[1.12] font-normal tracking-[-0.015em] text-[var(--color-text)] sm:text-[2.4rem]">
-                  Everything you need to understand your money.
-                </h2>
-                <p className="mt-4 text-[15px] leading-relaxed text-[var(--color-text-muted)]">
-                  Ledgerly turns daily financial records into clear, dependable insights.
-                  Organize what you spend, understand where your money goes, and plan with
-                  confidence.
-                </p>
-              </div>
+              {/* Top Split Headline & Right CTA Block (Matches Video 00:00) */}
+              <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
+                <Reveal className="lg:col-span-7">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-[#2B75B6]/20 bg-white/70 px-3.5 py-1 text-xs font-medium text-[#1E3A5F] shadow-2xs backdrop-blur-sm dark:border-sky-400/20 dark:bg-slate-900/70 dark:text-sky-300">
+                    <Sparkles className="h-3.5 w-3.5 text-[#2B75B6] dark:text-sky-400" />
+                    Personal finance, made clear
+                  </span>
+                  <h1 className="mt-4 font-display text-[2.75rem] leading-[1.06] font-normal tracking-[-0.025em] text-[var(--color-text)] sm:text-[3.75rem] lg:text-[4.4rem]">
+                    <span className="block">Make Sense of</span>
+                    <span className="block">Your Money.</span>
+                  </h1>
+                </Reveal>
 
-              <div className="relative mt-12">
-                <div
-                  aria-hidden="true"
-                  className="absolute top-[4.25rem] right-[14%] left-[14%] hidden h-px bg-[var(--color-border-strong)] md:block"
-                />
-                <div className="relative grid grid-cols-1 gap-10 sm:grid-cols-3 sm:gap-8">
-                  {PILLARS.map(({ number, icon: Icon, title, copy }) => (
-                    <div key={number} className="flex flex-col items-start">
-                      <span className="text-[11px] font-semibold tracking-[0.08em] tabular-nums text-[var(--color-text-subtle)]">
-                        {number}
-                      </span>
-                      <span className="mt-3 flex h-11 w-11 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-primary-subtle-hover)] bg-[var(--color-surface)] text-[var(--color-primary-text)]">
-                        <Icon
-                          className="h-[18px] w-[18px]"
-                          strokeWidth={1.75}
-                          aria-hidden="true"
-                        />
-                      </span>
-                      <h3 className="mt-4 text-[17px] font-semibold text-[var(--color-text)]">
-                        {title}
-                      </h3>
-                      <p className="mt-1.5 max-w-xs text-[13px] leading-relaxed text-[var(--color-text-muted)]">
-                        {copy}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* ==================================================================
-              Features
-              ================================================================== */}
-          <section id="features" className="scroll-mt-20 bg-[var(--color-surface)] py-20 sm:py-24">
-            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-              <div className="max-w-2xl">
-                <p className="text-eyebrow text-[var(--color-primary-text)]">
-                  Explore Ledgerly
-                </p>
-                <h2 className="mt-3 font-display text-[2rem] leading-[1.12] font-normal tracking-[-0.015em] text-[var(--color-text)] sm:text-[2.4rem]">
-                  Designed around your financial life.
-                </h2>
-                <p className="mt-4 text-[15px] leading-relaxed text-[var(--color-text-muted)]">
-                  Every tool is designed to give you control, confidence, and transparency
-                  without overwhelming complexity.
-                </p>
-              </div>
-
-              <ul className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {FEATURES.map(({ icon: Icon, title, copy, action }) => (
-                  <li key={title} className="min-w-0">
+                <Reveal delay={120} className="lg:col-span-4 lg:col-start-9 lg:pt-6">
+                  <p className="text-[15px] leading-relaxed text-[var(--color-text-muted)]">
+                    Ledgerly helps you track daily expenses, understand spending patterns,
+                    manage monthly budgets, and organize money you owe or are owed, all in one
+                    place.
+                  </p>
+                  <div className="mt-5 flex flex-wrap items-center gap-3">
                     <Link
                       href="/login?mode=signup"
-                      className="group flex h-full flex-col rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 transition-[border-color,background-color] duration-[var(--duration-fast)] hover:border-[var(--color-border-hover)] hover:bg-[var(--color-surface-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)]"
+                      className="inline-flex h-11 items-center justify-center rounded-full border border-[#1E3A5F]/20 bg-white/85 px-6 text-sm font-medium text-[#1E3A5F] shadow-sm backdrop-blur-md transition-all hover:-translate-y-0.5 hover:bg-[#1E3A5F] hover:text-white dark:border-white/20 dark:bg-white/10 dark:text-white dark:hover:bg-white dark:hover:text-slate-900"
                     >
-                      <span className={iconTileClass}>
-                        <Icon
-                          className="h-[18px] w-[18px]"
-                          strokeWidth={1.75}
-                          aria-hidden="true"
-                        />
-                      </span>
-                      <h3 className="mt-4 text-[15px] font-semibold text-[var(--color-text)]">
-                        {title}
-                      </h3>
-                      <p className="mt-1.5 flex-1 text-[13px] leading-relaxed text-[var(--color-text-muted)]">
-                        {copy}
-                      </p>
-                      <span className="mt-5 inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--color-primary-text)]">
-                        {action}
-                        <ArrowRight
-                          className="h-3.5 w-3.5 transition-transform duration-[var(--duration-fast)] group-hover:translate-x-0.5"
-                          aria-hidden="true"
-                        />
-                      </span>
+                      Get started free
                     </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </section>
+                    <a
+                      href="#features"
+                      className="inline-flex h-11 items-center justify-center rounded-full px-4 text-sm font-medium text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text)]"
+                    >
+                      Explore features →
+                    </a>
+                  </div>
+                </Reveal>
+              </div>
 
-          {/* ==================================================================
-              Financial confidence
-              ================================================================== */}
-          <section
-            id="benefits"
-            className="scroll-mt-20 border-y border-[var(--color-border)] bg-[var(--color-surface-sunken)] py-20 sm:py-28"
-          >
-            <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-4 sm:px-6 xl:grid-cols-2 xl:gap-16 xl:px-8">
-              <div className="order-2 min-w-0 xl:order-1">
-                <div
-                  role="img"
-                  aria-label="Illustrative Ledgerly monthly overview with sample data: spending distribution across rent, food, savings and utilities, budget progress, recent activity, and ৳19,500 to collect versus ৳19,500 to repay."
-                  className="mx-auto w-full max-w-[560px] rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-sm)] sm:p-5"
+              {/* Center Interactive Smartphone Showcase + Floating Side Widgets */}
+              <div className="relative mt-10 grid grid-cols-1 items-center gap-8 lg:mt-6 lg:grid-cols-12">
+                {/* Left Floating Analytics Cards (Video 00:01 left side) */}
+                <Reveal
+                  delay={180}
+                  className="order-2 flex flex-col gap-5 lg:order-1 lg:col-span-4"
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-[15px] font-semibold text-[var(--color-text)]">
-                        Monthly overview
-                      </p>
-                      <p className="text-[12px] text-[var(--color-text-subtle)]">
-                        November 2026
-                      </p>
+                  <div className="animate-float-slow rounded-2xl border border-white/80 bg-white/75 p-4 shadow-[0_12px_36px_rgba(30,58,95,0.07)] backdrop-blur-md dark:border-white/10 dark:bg-slate-900/75">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between gap-4">
+                        <svg
+                          viewBox="0 0 120 36"
+                          className="h-9 w-28 shrink-0 overflow-visible"
+                          aria-hidden="true"
+                        >
+                          <path
+                            d="M 4 28 Q 22 12, 38 22 T 72 10 T 116 16"
+                            fill="none"
+                            stroke="#2B75B6"
+                            strokeWidth="2"
+                            strokeDasharray="3 3"
+                          />
+                          <circle cx="72" cy="10" r="3.5" fill="#1E3A5F" />
+                        </svg>
+                        <div className="text-right">
+                          <p className="text-lg font-semibold tabular-nums text-[var(--color-text)]">
+                            63%+
+                          </p>
+                          <p className="text-[11px] text-[var(--color-text-muted)]">
+                            Monthly budget used
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-4 border-t border-[var(--color-border)] pt-3">
+                        <svg
+                          viewBox="0 0 120 36"
+                          className="h-9 w-28 shrink-0 overflow-visible"
+                          aria-hidden="true"
+                        >
+                          <path
+                            d="M 4 26 Q 30 28, 48 16 T 88 18 T 116 8"
+                            fill="none"
+                            stroke="#10B981"
+                            strokeWidth="2"
+                            strokeDasharray="3 3"
+                          />
+                          <circle cx="116" cy="8" r="3.5" fill="#10B981" />
+                        </svg>
+                        <div className="text-right">
+                          <p className="text-lg font-semibold tabular-nums text-[var(--color-text)]">
+                            19 days
+                          </p>
+                          <p className="text-[11px] text-[var(--color-text-muted)]">
+                            Remaining in cycle
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                    <span className="text-[11px] font-medium text-[var(--color-text-subtle)]">
-                      Sample data
-                    </span>
                   </div>
 
-                  <div className="mt-4">
-                    <p className="text-[13px] font-medium text-[var(--color-text)]">
-                      Spending by category
-                    </p>
-                    <div className="mt-2 flex h-2 w-full gap-0.5 overflow-hidden rounded-full">
-                      {HERO_CATEGORIES.map((category) => (
+                  {/* Debt / Loan Avatar Pill (Video 00:01 bottom-left "$15k+ Per Month") */}
+                  <div className="animate-float-delayed flex items-center justify-between gap-4 rounded-2xl border border-white/80 bg-white/75 p-4 shadow-[0_12px_36px_rgba(30,58,95,0.07)] backdrop-blur-md dark:border-white/10 dark:bg-slate-900/75">
+                    <div>
+                      <p className="text-[11px] font-medium text-[var(--color-text-muted)]">
+                        Tracked Loans &amp; Debts
+                      </p>
+                      <p className="mt-0.5 text-2xl font-semibold tracking-tight tabular-nums text-[#1E3A5F] dark:text-sky-300">
+                        ৳19.5k+{' '}
+                        <span className="text-xs font-normal text-[var(--color-text-muted)]">
+                          To Collect
+                        </span>
+                      </p>
+                    </div>
+                    <div className="flex -space-x-2">
+                      {['TA', 'RI', 'NJ'].map((initials, idx) => (
                         <span
-                          key={category.name}
-                          className="h-full rounded-full"
-                          style={{
-                            width: `${category.percent}%`,
-                            backgroundColor: category.color,
-                          }}
-                        />
+                          key={initials}
+                          className={`flex h-9 w-9 items-center justify-center rounded-full border-2 border-white text-xs font-semibold text-white shadow-xs dark:border-slate-900 ${
+                            idx === 0
+                              ? 'bg-[#1E3A5F]'
+                              : idx === 1
+                                ? 'bg-[#2B75B6]'
+                                : 'bg-[#5BA6EA]'
+                          }`}
+                        >
+                          {initials}
+                        </span>
                       ))}
                     </div>
-                    <ul className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2">
+                  </div>
+                </Reveal>
+
+                {/* Center Smartphone Mockup (Video 00:01 Centerpiece) */}
+                <Reveal delay={80} className="order-1 lg:order-2 lg:col-span-4">
+                  <div
+                    role="img"
+                    aria-label="Illustrative Ledgerly mobile dashboard preview: net cash flow ৳6,450.00 for November 2026, quick actions, and recent transactions."
+                    className="mx-auto w-full max-w-[350px] rounded-[2.75rem] border-[7px] border-slate-900 bg-white p-4 shadow-[0_28px_70px_rgba(15,23,42,0.22)] dark:border-slate-800 dark:bg-slate-950"
+                  >
+                    {/* Dynamic Island Notch */}
+                    <div className="mx-auto mb-3 h-5 w-24 rounded-full bg-slate-950 dark:bg-slate-800" />
+
+                    {/* User Greeting Header */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#D8ECFF] text-xs font-semibold text-[#1E3A5F]">
+                          L
+                        </span>
+                        <div>
+                          <p className="flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400">
+                            Welcome back <span aria-hidden="true">👋</span>
+                          </p>
+                          <p className="text-xs font-semibold text-slate-900 dark:text-white">
+                            Ledgerly Personal
+                          </p>
+                        </div>
+                      </div>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                        <TrendingUp className="h-3 w-3" />
+                        Surplus
+                      </span>
+                    </div>
+
+                    {/* Available Balance Card */}
+                    <div className="mt-4 rounded-2xl bg-[#F4F9FF] p-4 dark:bg-slate-900">
+                      <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                        <span>Net cash flow · Nov 2026</span>
+                        <span className="font-medium text-[#2B75B6]">BDT (৳)</span>
+                      </div>
+                      <p className="mt-1.5 text-[28px] font-semibold tracking-tight tabular-nums text-slate-900 dark:text-white">
+                        ৳6,450.00
+                      </p>
+                      <div className="mt-3">
+                        <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                          <span>Monthly budget</span>
+                          <span className="tabular-nums">৳28,550 / ৳45,000</span>
+                        </div>
+                        <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                          <div
+                            className="h-full rounded-full bg-[#1E3A5F] dark:bg-sky-400"
+                            style={{ width: '63%' }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Quick Actions Row */}
+                    <div className="mt-4">
+                      <p className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                        Quick Actions
+                      </p>
+                      <div className="mt-2 grid grid-cols-4 gap-2 text-center">
+                        {[
+                          { icon: Plus, label: 'Record' },
+                          { icon: Target, label: 'Budget' },
+                          { icon: HandCoins, label: 'Loans' },
+                          { icon: Sparkles, label: 'Ask AI' },
+                        ].map(({ icon: Icon, label }) => (
+                          <div
+                            key={label}
+                            className="flex flex-col items-center gap-1 rounded-xl bg-slate-50 py-2.5 dark:bg-slate-900"
+                          >
+                            <Icon className="h-4 w-4 text-[#1E3A5F] dark:text-sky-400" />
+                            <span className="text-[10px] font-medium text-slate-600 dark:text-slate-400">
+                              {label}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Recent Transactions List */}
+                    <div className="mt-4">
+                      <div className="flex items-center justify-between">
+                        <p className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                          Recent Transactions
+                        </p>
+                        <span className="text-[10px] text-slate-400">Sample data</span>
+                      </div>
+                      <ul className="mt-2 divide-y divide-slate-100 dark:divide-slate-800/80">
+                        {HERO_ACTIVITY.map((item) => (
+                          <li
+                            key={item.name}
+                            className="flex items-center justify-between gap-2 py-2"
+                          >
+                            <div className="flex min-w-0 items-center gap-2.5">
+                              <span
+                                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
+                                  item.income
+                                    ? 'bg-emerald-500/10 text-emerald-600'
+                                    : 'bg-rose-500/10 text-rose-600'
+                                }`}
+                              >
+                                {item.income ? (
+                                  <ArrowDownLeft className="h-3.5 w-3.5" />
+                                ) : (
+                                  <ArrowUpRight className="h-3.5 w-3.5" />
+                                )}
+                              </span>
+                              <div className="min-w-0">
+                                <p className="truncate text-[11px] font-semibold text-slate-900 dark:text-white">
+                                  {item.name}
+                                </p>
+                                <p className="truncate text-[10px] text-slate-500">
+                                  {item.meta}
+                                </p>
+                              </div>
+                            </div>
+                            <span
+                              className={`shrink-0 text-[11px] font-semibold tabular-nums ${
+                                item.income
+                                  ? 'text-emerald-600 dark:text-emerald-400'
+                                  : 'text-slate-900 dark:text-white'
+                              }`}
+                            >
+                              {item.amount}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </Reveal>
+
+                {/* Right Floating Donut Chart Card (Video 00:01 bottom-right) */}
+                <Reveal
+                  delay={240}
+                  className="order-3 flex flex-col gap-5 lg:col-span-4"
+                >
+                  <div className="animate-float-slow rounded-2xl border border-white/80 bg-white/80 p-5 shadow-[0_12px_36px_rgba(30,58,95,0.07)] backdrop-blur-md dark:border-white/10 dark:bg-slate-900/80">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-semibold text-[var(--color-text)]">
+                        Spending Categories
+                      </p>
+                      <span className="text-[11px] text-[var(--color-text-muted)]">
+                        Nov 2026
+                      </span>
+                    </div>
+
+                    {/* Conic-gradient Donut Chart */}
+                    <div className="my-4 flex items-center justify-center">
+                      <div
+                        className="relative flex h-28 w-28 items-center justify-center rounded-full"
+                        style={{
+                          background:
+                            'conic-gradient(#1E3A5F 0% 42%, #3B82F6 42% 70%, #F59E0B 70% 88%, #93C5FD 88% 100%)',
+                        }}
+                      >
+                        <div className="flex h-18 w-18 flex-col items-center justify-center rounded-full bg-white dark:bg-slate-900">
+                          <span className="text-[10px] text-[var(--color-text-muted)]">
+                            Total
+                          </span>
+                          <span className="text-xs font-semibold tabular-nums text-[var(--color-text)]">
+                            ৳28.5k
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <ul className="space-y-2">
                       {HERO_CATEGORIES.map((category) => (
                         <li
                           key={category.name}
-                          className="flex items-center justify-between gap-2 text-[11px]"
+                          className="flex items-center justify-between text-xs"
                         >
-                          <span className="flex min-w-0 items-center gap-1.5 text-[var(--color-text-muted)]">
+                          <span className="flex items-center gap-2 text-[var(--color-text-muted)]">
                             <span
-                              className="h-1.5 w-1.5 shrink-0 rounded-full"
+                              className="h-2 w-2 rounded-full"
                               style={{ backgroundColor: category.color }}
-                              aria-hidden="true"
                             />
-                            <span className="truncate">{category.name}</span>
+                            {category.name}
                           </span>
-                          <span className="shrink-0 tabular-nums text-[var(--color-text)]">
+                          <span className="font-semibold tabular-nums text-[var(--color-text)]">
                             {category.amount}
                           </span>
                         </li>
@@ -916,173 +954,661 @@ export default function HomePage() {
                     </ul>
                   </div>
 
-                  <div className="mt-4 grid gap-4 border-t border-[var(--color-border)] pt-4 sm:grid-cols-2">
-                    <div>
-                      <p className="text-[13px] font-medium text-[var(--color-text)]">
-                        Budget progress
-                      </p>
-                      <ul className="mt-2.5 space-y-2.5">
-                        {PREVIEW_BUDGETS.map((budget) => (
-                          <li key={budget.name}>
-                            <div className="flex items-baseline justify-between gap-2 text-[11px]">
-                              <span className="text-[var(--color-text-muted)]">
-                                {budget.name}
-                              </span>
-                              <span className="tabular-nums text-[var(--color-text-subtle)]">
-                                {budget.spent} of {budget.limit}
-                              </span>
-                            </div>
-                            <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-[var(--color-border)]">
-                              <div
-                                className="h-full rounded-full bg-[var(--color-primary)]"
-                                style={{ width: `${budget.percent}%` }}
-                              />
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+                  {/* Trust Badges Strip */}
+                  <ul className="flex flex-wrap gap-2">
+                    {TRUST_POINTS.map(({ icon: Icon, label }) => (
+                      <li
+                        key={label}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-white/70 bg-white/65 px-3 py-1.5 text-[11px] font-medium text-[var(--color-text-muted)] backdrop-blur-sm dark:border-white/10 dark:bg-slate-900/65"
+                      >
+                        <Icon className="h-3.5 w-3.5 text-[#2B75B6]" />
+                        {label}
+                      </li>
+                    ))}
+                  </ul>
+                </Reveal>
+              </div>
+            </div>
+          </section>
 
-                    <div>
-                      <p className="flex items-center gap-1.5 text-[13px] font-medium text-[var(--color-text)]">
-                        <HandCoins
-                          className="h-3.5 w-3.5 text-[var(--color-primary-text)]"
-                          aria-hidden="true"
-                        />
-                        Debts &amp; loans
-                      </p>
-                      <dl className="mt-2.5 space-y-2.5">
-                        <div className="flex items-baseline justify-between gap-2">
-                          <dt className="text-[11px] text-[var(--color-text-muted)]">
-                            To collect
-                          </dt>
-                          <dd className="text-[13px] font-medium tabular-nums text-[var(--color-text)]">
-                            ৳19,500.00
-                          </dd>
-                        </div>
-                        <div className="flex items-baseline justify-between gap-2">
-                          <dt className="text-[11px] text-[var(--color-text-muted)]">
-                            To repay
-                          </dt>
-                          <dd className="text-[13px] font-medium tabular-nums text-[var(--color-text)]">
-                            ৳19,500.00
-                          </dd>
-                        </div>
-                        <div className="flex items-baseline justify-between gap-2">
-                          <dt className="text-[11px] text-[var(--color-text-muted)]">
-                            Partial repayments
-                          </dt>
-                          <dd className="text-[13px] font-medium tabular-nums text-[var(--color-text)]">
-                            ৳27,000.00
-                          </dd>
-                        </div>
-                      </dl>
+          {/* ==================================================================
+              2. EDITORIAL STATEMENT + 2x2 PILLARS (Video 00:02 - 00:07)
+              ================================================================== */}
+          <section id="overview" className="scroll-mt-20 py-20 sm:py-28">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+              {/* Glowing Concentric Blue Arcs + Centered Editorial Statement (Video 00:03) */}
+              <Reveal className="mx-auto max-w-3xl text-center">
+                <div
+                  aria-hidden="true"
+                  className="animate-pulse-orb relative mx-auto mb-8 flex h-28 w-28 items-center justify-center"
+                >
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-b from-[#60A5FA]/50 to-transparent blur-xl" />
+                  <div className="relative h-24 w-24 rounded-full bg-gradient-to-b from-[#3B82F6]/35 to-transparent p-3">
+                    <div className="h-full w-full rounded-full bg-gradient-to-b from-[#2563EB]/45 to-transparent p-3">
+                      <div className="h-full w-full rounded-full bg-gradient-to-b from-[#1D4ED8]/60 to-transparent" />
                     </div>
-                  </div>
-
-                  <div className="mt-4 border-t border-[var(--color-border)] pt-4">
-                    <p className="text-[13px] font-medium text-[var(--color-text)]">
-                      Recent activity
-                    </p>
-                    <ul className="mt-1.5 divide-y divide-[var(--color-border)]">
-                      {PREVIEW_ACTIVITY.map((item) => (
-                        <li
-                          key={item.name}
-                          className="flex items-center justify-between gap-2 py-2"
-                        >
-                          <div className="flex min-w-0 items-center gap-2">
-                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[var(--radius-sm)] bg-[var(--color-expense-subtle)] text-[var(--color-expense)]">
-                              {item.income ? (
-                                <ArrowDownLeft className="h-3 w-3" aria-hidden="true" />
-                              ) : (
-                                <ArrowUpRight className="h-3 w-3" aria-hidden="true" />
-                              )}
-                            </span>
-                            <div className="min-w-0">
-                              <p className="truncate text-[12px] font-medium text-[var(--color-text)]">
-                                {item.name}
-                              </p>
-                              <p className="truncate text-[11px] text-[var(--color-text-subtle)]">
-                                {item.meta}
-                              </p>
-                            </div>
-                          </div>
-                          <span className="shrink-0 text-[12px] font-medium tabular-nums text-[var(--color-text)]">
-                            {item.amount}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
                   </div>
                 </div>
-              </div>
 
-              <div className="order-1 min-w-0 xl:order-2">
-                <p className="text-eyebrow text-[var(--color-primary-text)]">Why Ledgerly</p>
-                <h2 className="mt-3 font-display text-[2rem] leading-[1.12] font-normal tracking-[-0.015em] text-[var(--color-text)] sm:text-[2.4rem]">
-                  Feel more confident about your money.
+                <h2 className="font-display text-[1.85rem] leading-[1.22] font-normal tracking-[-0.02em] text-[var(--color-text)] sm:text-[2.5rem]">
+                  From Daily Expense Tracking to Debt Management — We’ve Got You Covered.
+                  Making Sense of Your <span className="text-[#2B75B6]">Money</span> Has Never
+                  Been This Simple.
                 </h2>
-                <p className="mt-4 max-w-lg text-[15px] leading-relaxed text-[var(--color-text-muted)]">
-                  Ledgerly gives you the structure, insights, and transparency you need to
-                  make informed financial decisions.
-                </p>
+              </Reveal>
 
-                <ul className="mt-8 grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2">
-                  {BENEFITS.map(({ title, copy }) => (
-                    <li key={title} className="flex items-start gap-2.5">
-                      <Check
-                        className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-primary-text)]"
-                        strokeWidth={2}
-                        aria-hidden="true"
-                      />
-                      <div>
-                        <h3 className="text-[14px] font-semibold text-[var(--color-text)]">
-                          {title}
-                        </h3>
-                        <p className="mt-1 text-[13px] leading-relaxed text-[var(--color-text-muted)]">
-                          {copy}
-                        </p>
+              {/* Split Card Showcase: Left Sky-Blue Phone Container + Right 2x2 Grid (Video 00:06) */}
+              <div className="mt-16 grid grid-cols-1 items-center gap-10 lg:mt-24 lg:grid-cols-12 lg:gap-12">
+                {/* Left Rounded Sky-Blue Card with Phone Preview */}
+                <Reveal className="lg:col-span-5">
+                  <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-b from-[#BCE1FA] via-[#D9EEFD] to-[#EBF6FF] p-6 pt-8 pb-0 shadow-inner dark:from-[#122B4A] dark:via-[#0F223C] dark:to-[#0B182B]">
+                    <div className="mx-auto max-w-[300px] rounded-t-[2.25rem] border-[6px] border-b-0 border-slate-900 bg-white p-4 pb-6 shadow-2xl dark:border-slate-800 dark:bg-slate-950">
+                      <div className="mx-auto mb-3 h-4 w-20 rounded-full bg-slate-950 dark:bg-slate-800" />
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-slate-900 dark:text-white">
+                          Loans &amp; Splits
+                        </span>
+                        <span className="text-[10px] font-medium text-[#2B75B6]">
+                          Audit Trail
+                        </span>
                       </div>
-                    </li>
-                  ))}
-                </ul>
 
-                <div className="mt-8">
-                  <Link href="/login?mode=signup" className={primaryButtonClass}>
-                    Create your free account
-                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                  </Link>
+                      {/* Recent People Row */}
+                      <div className="mt-3">
+                        <p className="text-[10px] text-slate-500">Active People</p>
+                        <div className="mt-2 flex items-center justify-between gap-2">
+                          {[
+                            { name: 'Tanvir', amount: '৳4.5k' },
+                            { name: 'Rafiqul', amount: '৳15k' },
+                            { name: 'Nusrat', amount: '৳15k' },
+                            { name: 'Fariha', amount: '৳4.5k' },
+                          ].map((person) => (
+                            <div key={person.name} className="text-center">
+                              <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-full bg-[#E5F2FF] text-[11px] font-semibold text-[#1E3A5F] dark:bg-slate-800 dark:text-sky-300">
+                                {person.name[0]}
+                              </div>
+                              <p className="mt-1 text-[10px] font-medium text-slate-700 dark:text-slate-300">
+                                {person.name}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Repayment Summary Box */}
+                      <div className="mt-4 space-y-2 rounded-xl bg-slate-50 p-3 dark:bg-slate-900">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-slate-500">To Collect</span>
+                          <span className="font-semibold tabular-nums text-emerald-600">
+                            ৳19,500.00
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-slate-500">To Repay</span>
+                          <span className="font-semibold tabular-nums text-rose-600">
+                            ৳19,500.00
+                          </span>
+                        </div>
+                        <div className="border-t border-slate-200/80 pt-2 text-[10px] text-slate-500 dark:border-slate-800">
+                          Partial repayments tracked automatically
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </Reveal>
+
+                {/* Right Headline + 2x2 Feature Cards Grid */}
+                <div className="lg:col-span-7">
+                  <Reveal>
+                    <p className="text-xs font-semibold tracking-wider text-[#2B75B6] uppercase">
+                      What Ledgerly Does
+                    </p>
+                    <h3 className="mt-2 font-display text-[2rem] leading-[1.14] font-normal tracking-[-0.02em] text-[var(--color-text)] sm:text-[2.4rem]">
+                      Built for Simplicity.
+                      <br />
+                      Designed for Clarity.
+                    </h3>
+                    <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-[var(--color-text-muted)]">
+                      Ledgerly turns daily financial records into clear, dependable insights.
+                      Organize what you spend, understand where your money goes, and plan with
+                      confidence.
+                    </p>
+                  </Reveal>
+
+                  <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    {PILLARS.map(({ number, icon: Icon, title, copy }, index) => (
+                      <Reveal key={number} delay={index * 90}>
+                        <div className="group h-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 transition-all duration-300 hover:-translate-y-1 hover:border-[#5BA6EA]/50 hover:shadow-[0_12px_30px_rgba(43,117,182,0.08)]">
+                          <div className="flex items-center justify-between">
+                            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#EBF5FF] text-[#1E3A5F] dark:bg-sky-950/60 dark:text-sky-300">
+                              <Icon className="h-5 w-5" strokeWidth={1.75} />
+                            </span>
+                            <span className="text-xs font-semibold tabular-nums text-[var(--color-text-subtle)]">
+                              {number}
+                            </span>
+                          </div>
+                          <h4 className="mt-5 text-[16px] font-semibold text-[var(--color-text)]">
+                            {title}
+                          </h4>
+                          <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--color-text-muted)]">
+                            {copy}
+                          </p>
+                        </div>
+                      </Reveal>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
           </section>
 
           {/* ==================================================================
-              AI assistant showcase
+              3. BENTO GRID SHOWCASE + FEATURES (Video 00:08 - 00:11)
+              ================================================================== */}
+          <section
+            id="features"
+            className="scroll-mt-20 border-y border-[var(--color-border)] bg-[var(--color-surface)] py-20 sm:py-28"
+          >
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+              <Reveal className="mx-auto max-w-2xl text-center">
+                <p className="text-xs font-semibold tracking-wider text-[#2B75B6] uppercase">
+                  Explore Ledgerly
+                </p>
+                <h2 className="mt-2 font-display text-[2rem] leading-[1.12] font-normal tracking-[-0.02em] text-[var(--color-text)] sm:text-[2.6rem]">
+                  Smart Finance Management
+                  <br />
+                  Made Simple Today
+                </h2>
+                <p className="mt-4 text-[15px] leading-relaxed text-[var(--color-text-muted)]">
+                  Every tool is designed to give you control, confidence, and transparency
+                  without overwhelming complexity.
+                </p>
+              </Reveal>
+
+              {/* 2x2 Interactive UI Bento Showcase (Matches Video 00:09 - 00:11) */}
+              <div className="mt-14 grid grid-cols-1 gap-6 lg:grid-cols-2">
+                {/* Bento Card 1: Weekly Bar Chart */}
+                <Reveal delay={0}>
+                  <div className="flex h-full flex-col justify-between rounded-[1.75rem] border border-[#CFE6FC] bg-gradient-to-b from-[#F2F8FF] to-white p-6 shadow-xs dark:border-sky-900/40 dark:from-slate-900 dark:to-slate-950">
+                    <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+                      <div className="flex items-center justify-between text-xs text-[var(--color-text-muted)]">
+                        <span className="font-semibold text-[var(--color-text)]">
+                          Weekly Cash Flow
+                        </span>
+                        <span className="tabular-nums">Total: ৳24,500</span>
+                      </div>
+                      <div className="mt-5 grid h-36 grid-cols-7 items-end gap-2.5 pt-4">
+                        {WEEKLY_BARS.map((bar, idx) => (
+                          <div
+                            key={bar.day}
+                            className="flex h-full flex-col items-center justify-end gap-1.5"
+                          >
+                            <div
+                              className={`w-full rounded-t-lg transition-all duration-500 ${
+                                idx === 3
+                                  ? 'bg-[#1E3A5F] dark:bg-sky-400'
+                                  : 'bg-gradient-to-t from-[#DCEBFA] to-[#A6D1F7] dark:from-slate-800 dark:to-sky-800/70'
+                              }`}
+                              style={{ height: bar.height }}
+                              title={`${bar.day}: ${bar.value}`}
+                            />
+                            <span className="text-[10px] font-medium text-[var(--color-text-muted)]">
+                              {bar.day}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="mt-5">
+                      <h3 className="text-[17px] font-semibold text-[var(--color-text)]">
+                        Spending Analytics &amp; Trends
+                      </h3>
+                      <p className="mt-1 text-[13px] leading-relaxed text-[var(--color-text-muted)]">
+                        Understand your financial habits through visual cash flow charts,
+                        category breakdowns, and monthly trends.
+                      </p>
+                    </div>
+                  </div>
+                </Reveal>
+
+                {/* Bento Card 2: AI Natural Language Entry */}
+                <Reveal delay={100}>
+                  <div className="flex h-full flex-col justify-between rounded-[1.75rem] border border-[#CFE6FC] bg-gradient-to-b from-[#F2F8FF] to-white p-6 shadow-xs dark:border-sky-900/40 dark:from-slate-900 dark:to-slate-950">
+                    <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+                      <div className="flex items-center justify-between">
+                        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--color-text)]">
+                          <Sparkles className="h-3.5 w-3.5 text-[#2B75B6]" />
+                          AI Expense Entry
+                        </span>
+                        <span className="rounded-full bg-[#EBF5FF] px-2.5 py-0.5 text-[10px] font-semibold text-[#1E3A5F] dark:bg-sky-950 dark:text-sky-300">
+                          Auto-parsed
+                        </span>
+                      </div>
+
+                      <div className="mt-3 rounded-xl bg-[var(--color-surface-sunken)] p-3 text-xs text-[var(--color-text)]">
+                        &ldquo;Spent ৳1,200 at Agora Superstore for weekly groceries&rdquo;
+                      </div>
+
+                      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+                        <span className="rounded-lg border border-[var(--color-border)] px-2.5 py-1 font-medium text-[var(--color-text-muted)]">
+                          Category: Groceries
+                        </span>
+                        <span className="rounded-lg border border-[var(--color-border)] px-2.5 py-1 font-semibold tabular-nums text-[var(--color-text)]">
+                          Amount: ৳1,200.00
+                        </span>
+                      </div>
+
+                      <Link
+                        href="/login?mode=signup"
+                        className="mt-4 flex h-10 w-full items-center justify-center rounded-full bg-[#1E3A5F] text-xs font-medium text-white transition-colors hover:bg-[#162C49]"
+                      >
+                        Confirm Transaction
+                      </Link>
+                    </div>
+
+                    <div className="mt-5">
+                      <h3 className="text-[17px] font-semibold text-[var(--color-text)]">
+                        Natural Language Expense Entry
+                      </h3>
+                      <p className="mt-1 text-[13px] leading-relaxed text-[var(--color-text-muted)]">
+                        Record expenses using plain sentences and review AI-generated
+                        transaction details before confirming them.
+                      </p>
+                    </div>
+                  </div>
+                </Reveal>
+
+                {/* Bento Card 3: Quick Manual & Budget Form (Video 00:10 Bottom-Left) */}
+                <Reveal delay={150}>
+                  <div className="flex h-full flex-col justify-between rounded-[1.75rem] border border-[#CFE6FC] bg-gradient-to-b from-[#F2F8FF] to-white p-6 shadow-xs dark:border-sky-900/40 dark:from-slate-900 dark:to-slate-950">
+                    <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+                      <p className="text-xs font-semibold text-[var(--color-text)]">
+                        Monthly Budget Guardrails
+                      </p>
+                      <div className="mt-3 space-y-3">
+                        {PREVIEW_BUDGETS.map((budget) => (
+                          <div
+                            key={budget.name}
+                            className="rounded-xl bg-[var(--color-surface-sunken)] p-3"
+                          >
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="font-medium text-[var(--color-text)]">
+                                {budget.name}
+                              </span>
+                              <span className="tabular-nums text-[var(--color-text-muted)]">
+                                {budget.spent} / {budget.limit} ({budget.percent}%)
+                              </span>
+                            </div>
+                            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                              <div
+                                className="h-full rounded-full bg-[#1E3A5F] dark:bg-sky-400"
+                                style={{ width: `${budget.percent}%` }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <Link
+                        href="/login?mode=signup"
+                        className="mt-4 flex h-10 w-full items-center justify-center rounded-full bg-[#1E3A5F] text-xs font-medium text-white transition-colors hover:bg-[#162C49]"
+                      >
+                        Manage Monthly Budgets
+                      </Link>
+                    </div>
+
+                    <div className="mt-5">
+                      <h3 className="text-[17px] font-semibold text-[var(--color-text)]">
+                        Proactive Budget Management
+                      </h3>
+                      <p className="mt-1 text-[13px] leading-relaxed text-[var(--color-text-muted)]">
+                        Set comfortable monthly limits across categories. Monitor your burn
+                        rate and stay ahead of overspending.
+                      </p>
+                    </div>
+                  </div>
+                </Reveal>
+
+                {/* Bento Card 4: Recent Activity & Bills (Video 00:10 Bottom-Right) */}
+                <Reveal delay={220}>
+                  <div className="flex h-full flex-col justify-between rounded-[1.75rem] border border-[#CFE6FC] bg-gradient-to-b from-[#F2F8FF] to-white p-6 shadow-xs dark:border-sky-900/40 dark:from-slate-900 dark:to-slate-950">
+                    <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-[var(--color-text)]">
+                          Recent Ledger Activity
+                        </span>
+                        <span className="text-[11px] text-[#2B75B6]">Sample data</span>
+                      </div>
+                      <ul className="mt-3 divide-y divide-[var(--color-border)]">
+                        {PREVIEW_ACTIVITY.map((item) => (
+                          <li
+                            key={item.name}
+                            className="flex items-center justify-between gap-2 py-2.5"
+                          >
+                            <div className="flex min-w-0 items-center gap-2.5">
+                              <span
+                                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
+                                  item.income
+                                    ? 'bg-emerald-500/10 text-emerald-600'
+                                    : 'bg-rose-500/10 text-rose-600'
+                                }`}
+                              >
+                                {item.income ? (
+                                  <ArrowDownLeft className="h-3.5 w-3.5" />
+                                ) : (
+                                  <ArrowUpRight className="h-3.5 w-3.5" />
+                                )}
+                              </span>
+                              <div className="min-w-0">
+                                <p className="truncate text-xs font-medium text-[var(--color-text)]">
+                                  {item.name}
+                                </p>
+                                <p className="truncate text-[11px] text-[var(--color-text-muted)]">
+                                  {item.meta}
+                                </p>
+                              </div>
+                            </div>
+                            <span className="shrink-0 text-xs font-semibold tabular-nums text-[var(--color-text)]">
+                              {item.amount}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div className="mt-5">
+                      <h3 className="text-[17px] font-semibold text-[var(--color-text)]">
+                        Unified Transaction Tracking System
+                      </h3>
+                      <p className="mt-1 text-[13px] leading-relaxed text-[var(--color-text-muted)]">
+                        Keep track of daily expenses, recurring utility bills, and income
+                        streams without missing a single detail.
+                      </p>
+                    </div>
+                  </div>
+                </Reveal>
+              </div>
+
+              {/* All 6 Features Quick-Action Cards */}
+              <ul className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {FEATURES.map(({ icon: Icon, title, copy, action }, idx) => (
+                  <li key={title} className="min-w-0">
+                    <Reveal delay={idx * 60}>
+                      <Link
+                        href="/login?mode=signup"
+                        className="group flex h-full flex-col rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#5BA6EA]/60 hover:bg-[var(--color-surface-hover)]"
+                      >
+                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#EBF5FF] text-[#1E3A5F] dark:bg-sky-950/60 dark:text-sky-300">
+                          <Icon className="h-[18px] w-[18px]" strokeWidth={1.75} />
+                        </span>
+                        <h3 className="mt-4 text-[15px] font-semibold text-[var(--color-text)]">
+                          {title}
+                        </h3>
+                        <p className="mt-1.5 flex-1 text-[13px] leading-relaxed text-[var(--color-text-muted)]">
+                          {copy}
+                        </p>
+                        <span className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-medium text-[#2B75B6] dark:text-sky-400">
+                          {action}
+                          <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                        </span>
+                      </Link>
+                    </Reveal>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
+
+          {/* ==================================================================
+              4. INTERACTIVE ACCORDION + PHONE SHOWCASE (Video 00:12 - 00:13)
+              ================================================================== */}
+          <section id="benefits" className="scroll-mt-20 py-20 sm:py-28">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+              <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-16">
+                {/* Left Accordion Column */}
+                <Reveal className="lg:col-span-6">
+                  <p className="text-xs font-semibold tracking-wider text-[#2B75B6] uppercase">
+                    Why Ledgerly
+                  </p>
+                  <h2 className="mt-2 font-display text-[2rem] leading-[1.12] font-normal tracking-[-0.02em] text-[var(--color-text)] sm:text-[2.6rem]">
+                    Finance Made
+                    <br />
+                    Simple For Everyone
+                  </h2>
+
+                  <div className="mt-8 divide-y divide-[var(--color-border)] border-y border-[var(--color-border)]">
+                    {BENEFITS.map((benefit, index) => {
+                      const isOpen = index === activeBenefitIndex;
+                      return (
+                        <div key={benefit.title} className="py-4">
+                          <button
+                            type="button"
+                            onClick={() => setActiveBenefitIndex(index)}
+                            aria-expanded={isOpen}
+                            className="flex w-full cursor-pointer items-center justify-between gap-4 text-left"
+                          >
+                            <span
+                              className={`text-[16px] font-semibold transition-colors ${
+                                isOpen
+                                  ? 'text-[#1E3A5F] dark:text-sky-300'
+                                  : 'text-[var(--color-text)] hover:text-[#2B75B6]'
+                              }`}
+                            >
+                              {benefit.title}
+                            </span>
+                            <span className="text-xs font-medium tabular-nums text-[var(--color-text-muted)]">
+                              0{index + 1}
+                            </span>
+                          </button>
+                          {isOpen && (
+                            <p className="mt-2.5 pr-6 text-[13.5px] leading-relaxed text-[var(--color-text-muted)]">
+                              {benefit.copy}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="mt-8">
+                    <Link
+                      href="/login?mode=signup"
+                      className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-[#1E3A5F] px-6 text-sm font-medium text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-[#162C49]"
+                    >
+                      Create your free account
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </div>
+                </Reveal>
+
+                {/* Right Rounded Sky-Blue Phone Showcase (Matches Video 00:13 "Earning" Screen) */}
+                <Reveal delay={140} className="lg:col-span-6">
+                  <div className="relative overflow-hidden rounded-[2.25rem] bg-gradient-to-b from-[#BCE1FA] via-[#D9EEFD] to-[#EBF6FF] p-6 pt-10 pb-0 dark:from-[#122B4A] dark:via-[#0F223C] dark:to-[#0B182B]">
+                    <div className="mx-auto max-w-[330px] rounded-t-[2.5rem] border-[6px] border-b-0 border-slate-900 bg-white p-5 pb-8 shadow-2xl dark:border-slate-800 dark:bg-slate-950">
+                      <div className="mx-auto mb-4 h-4 w-20 rounded-full bg-slate-950 dark:bg-slate-800" />
+
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-slate-900 dark:text-white">
+                          Monthly Overview
+                        </span>
+                        <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                          Nov 2026
+                        </span>
+                      </div>
+
+                      <div className="mt-6 text-center">
+                        <p className="text-[11px] text-slate-500">
+                          {activeBenefit.statLabel}
+                        </p>
+                        <p className="mt-1 text-3xl font-semibold tracking-tight tabular-nums text-slate-900 dark:text-white">
+                          {activeBenefit.statValue}{' '}
+                          <span className="text-xs font-semibold text-emerald-600">
+                            {activeBenefit.statTrend}
+                          </span>
+                        </p>
+                        <p className="mt-1 text-[11px] text-slate-400">
+                          Total Income: ৳45,000 · Spent: ৳28,550
+                        </p>
+                      </div>
+
+                      <div className="mt-6 grid grid-cols-2 gap-3">
+                        <div className="rounded-xl bg-[#F4F9FF] p-3 dark:bg-slate-900">
+                          <p className="text-[10px] text-slate-500">To Collect</p>
+                          <p className="mt-1 text-sm font-semibold tabular-nums text-slate-900 dark:text-white">
+                            ৳19,500.00
+                          </p>
+                          <p className="mt-1 text-[10px] text-emerald-600">2 active loans</p>
+                        </div>
+                        <div className="rounded-xl bg-[#F4F9FF] p-3 dark:bg-slate-900">
+                          <p className="text-[10px] text-slate-500">Partial Repaid</p>
+                          <p className="mt-1 text-sm font-semibold tabular-nums text-slate-900 dark:text-white">
+                            ৳27,000.00
+                          </p>
+                          <p className="mt-1 text-[10px] text-[#2B75B6]">Recorded</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </Reveal>
+              </div>
+            </div>
+          </section>
+
+          {/* ==================================================================
+              5. THREE STEPS TIER CARDS (Video 00:15 - 00:16 Center Highlight Style)
+              ================================================================== */}
+          <section
+            id="how-it-works"
+            className="scroll-mt-20 border-t border-[var(--color-border)] bg-[var(--color-surface)] py-20 sm:py-28"
+          >
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+              <Reveal className="mx-auto max-w-2xl text-center">
+                <p className="text-xs font-semibold tracking-wider text-[#2B75B6] uppercase">
+                  How It Works
+                </p>
+                <h2 className="mt-2 font-display text-[2rem] leading-[1.12] font-normal tracking-[-0.02em] text-[var(--color-text)] sm:text-[2.6rem]">
+                  Three Steps to Complete
+                  <br />
+                  Financial Clarity
+                </h2>
+                <p className="mt-3 text-[15px] text-[var(--color-text-muted)]">
+                  Designed to be effortless and reliable, so tracking your finances never
+                  feels like a chore.
+                </p>
+              </Reveal>
+
+              <div className="mt-14 grid grid-cols-1 items-stretch gap-6 lg:grid-cols-3">
+                {STEPS.map((step, idx) => {
+                  const isFeatured = Boolean(step.featured);
+                  return (
+                    <Reveal key={step.number} delay={idx * 100}>
+                      <div
+                        className={`flex h-full flex-col rounded-[2rem] transition-all duration-300 ${
+                          isFeatured
+                            ? 'border-2 border-[#1E3A5F] bg-[#1E3A5F] p-1.5 shadow-[0_20px_50px_rgba(30,58,95,0.2)] lg:-translate-y-2'
+                            : 'border border-[#CFE6FC] bg-gradient-to-b from-[#F4F9FF] to-white p-6 dark:border-slate-800 dark:from-slate-900 dark:to-slate-950'
+                        }`}
+                      >
+                        {isFeatured && (
+                          <div className="py-2 text-center text-xs font-semibold tracking-wide text-white">
+                            {step.badge}
+                          </div>
+                        )}
+
+                        <div
+                          className={`flex flex-1 flex-col justify-between rounded-[1.6rem] ${
+                            isFeatured
+                              ? 'bg-white p-6 dark:bg-slate-950'
+                              : ''
+                          }`}
+                        >
+                          <div>
+                            {!isFeatured && (
+                              <span className="text-xs font-semibold text-[#2B75B6]">
+                                {step.badge}
+                              </span>
+                            )}
+                            <div className="mt-2 flex items-baseline gap-2">
+                              <span className="font-display text-4xl font-semibold text-[var(--color-text)]">
+                                {step.number}
+                              </span>
+                              <span className="text-lg font-semibold text-[var(--color-text)]">
+                                · {step.title}
+                              </span>
+                            </div>
+                            <p className="mt-3 text-[13px] leading-relaxed text-[var(--color-text-muted)]">
+                              {step.copy}
+                            </p>
+
+                            <Link
+                              href="/login?mode=signup"
+                              className={`mt-6 flex h-10 w-full items-center justify-center rounded-full text-xs font-semibold transition-colors ${
+                                isFeatured
+                                  ? 'bg-[#1E3A5F] text-white hover:bg-[#162C49]'
+                                  : 'border border-[var(--color-border-strong)] bg-[var(--color-surface)] text-[var(--color-text)] hover:bg-[var(--color-surface-hover)]'
+                              }`}
+                            >
+                              Get Started Free
+                            </Link>
+
+                            <div className="my-6 flex items-center gap-3 text-[11px] font-semibold tracking-wider text-[var(--color-text-subtle)] uppercase">
+                              <span className="h-px flex-1 bg-[var(--color-border)]" />
+                              Capabilities
+                              <span className="h-px flex-1 bg-[var(--color-border)]" />
+                            </div>
+
+                            <ul className="space-y-2.5">
+                              {step.highlights.map((item) => (
+                                <li
+                                  key={item}
+                                  className="flex items-center gap-2.5 text-[13px] text-[var(--color-text-muted)]"
+                                >
+                                  <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#1E3A5F] text-white dark:bg-sky-400 dark:text-slate-950">
+                                    <Check className="h-2.5 w-2.5" strokeWidth={3} />
+                                  </span>
+                                  <span>{item}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    </Reveal>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+
+          {/* ==================================================================
+              6. AI FINANCIAL ASSISTANT SHOWCASE (Interactive Cards + Live Preview)
               ================================================================== */}
           <section
             id="ai-assistant"
-            className="scroll-mt-20 bg-[var(--color-surface)] py-20 sm:py-24"
+            className="scroll-mt-20 border-t border-[var(--color-border)] bg-[var(--color-bg)] py-20 sm:py-28"
           >
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-              <div className="max-w-2xl">
-                <p className="text-eyebrow text-[var(--color-primary-text)]">
-                  AI financial assistant
+              <Reveal className="mx-auto max-w-2xl text-center">
+                <p className="text-xs font-semibold tracking-wider text-[#2B75B6] uppercase">
+                  AI Financial Assistant
                 </p>
-                <h2 className="mt-3 font-display text-[2rem] leading-[1.12] font-normal tracking-[-0.015em] text-[var(--color-text)] sm:text-[2.4rem]">
-                  Your financial questions, answered.
+                <h2 className="mt-2 font-display text-[2rem] leading-[1.12] font-normal tracking-[-0.02em] text-[var(--color-text)] sm:text-[2.6rem]">
+                  Your Financial Questions,
+                  <br />
+                  Answered Instantly
                 </h2>
-                <p className="mt-4 text-[15px] leading-relaxed text-[var(--color-text-muted)]">
-                  Go beyond recording transactions. Understand your spending by asking
-                  questions about your financial activity.
+                <p className="mt-3 text-[15px] text-[var(--color-text-muted)]">
+                  Go beyond recording transactions. Select any question below to see how
+                  Ledgerly AI analyzes your records.
                 </p>
-              </div>
+              </Reveal>
 
-              <div className="mt-10 grid grid-cols-1 gap-8 xl:grid-cols-[0.85fr_1.15fr] xl:gap-12">
-                <div>
-                  <p className="text-label text-[var(--color-text-muted)]">Try a question</p>
+              <div className="mt-12 grid grid-cols-1 gap-8 xl:grid-cols-[0.9fr_1.1fr] xl:gap-12">
+                <Reveal>
+                  <p className="text-xs font-semibold tracking-wider text-[var(--color-text-muted)] uppercase">
+                    Try a sample question
+                  </p>
                   <div
-                    className="mt-3 flex flex-wrap gap-2 xl:flex-col xl:items-stretch"
+                    className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-1"
                     role="group"
                     aria-label="Example financial questions"
                   >
@@ -1094,13 +1620,13 @@ export default function HomePage() {
                           type="button"
                           aria-pressed={active}
                           onClick={() => setActiveDemoId(demo.id)}
-                          className={`cursor-pointer rounded-[var(--radius-md)] border px-3 py-2 text-left text-[13px] transition-colors duration-[var(--duration-fast)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)] ${
+                          className={`cursor-pointer rounded-2xl border px-4 py-3 text-left text-[13.5px] transition-all ${
                             active
-                              ? 'border-[var(--color-primary)] bg-[var(--color-primary-subtle)] font-medium text-[var(--color-primary-text)]'
-                              : 'border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-border-hover)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text)]'
+                              ? 'border-[#1E3A5F] bg-[#EBF5FF] font-semibold text-[#1E3A5F] shadow-xs dark:border-sky-400 dark:bg-sky-950/60 dark:text-sky-200'
+                              : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:border-[#5BA6EA]/50 hover:text-[var(--color-text)]'
                           }`}
                         >
-                          {demo.question}
+                          &ldquo;{demo.question}&rdquo;
                         </button>
                       );
                     })}
@@ -1109,156 +1635,219 @@ export default function HomePage() {
                     This is a product demonstration. In the app, answers are generated from
                     your own transaction records — nothing is sent from this page.
                   </p>
-                </div>
+                </Reveal>
 
-                <div className="mx-auto w-full max-w-2xl rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-sm)] sm:p-5 xl:max-w-none">
-                  <div className="flex items-center justify-between gap-3 border-b border-[var(--color-border)] pb-3">
-                    <span className="flex items-center gap-2">
-                      <span className="flex h-7 w-7 items-center justify-center rounded-[var(--radius-sm)] bg-[var(--color-primary-subtle)] text-[var(--color-primary-text)]">
-                        <Sparkles className="h-4 w-4" aria-hidden="true" />
+                <Reveal delay={120}>
+                  <div className="rounded-[1.75rem] border border-[#CFE6FC] bg-gradient-to-b from-[#F2F8FF] to-white p-5 shadow-sm sm:p-6 dark:border-sky-900/40 dark:from-slate-900 dark:to-slate-950">
+                    <div className="flex items-center justify-between gap-3 border-b border-[var(--color-border)] pb-3.5">
+                      <span className="flex items-center gap-2.5">
+                        <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#1E3A5F] text-white">
+                          <Sparkles className="h-4 w-4" />
+                        </span>
+                        <span className="text-sm font-semibold text-[var(--color-text)]">
+                          Ledgerly AI
+                        </span>
                       </span>
-                      <span className="text-[13px] font-semibold text-[var(--color-text)]">
-                        Ledgerly AI
+                      <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-[var(--color-text-subtle)] shadow-2xs dark:bg-slate-800">
+                        Sample data
                       </span>
-                    </span>
-                    <span className="text-[11px] font-medium text-[var(--color-text-subtle)]">
-                      Sample data
-                    </span>
-                  </div>
+                    </div>
 
-                  <div className="mt-4 space-y-3">
-                    <p className="ml-auto w-fit max-w-[90%] rounded-[var(--radius-md)] rounded-br-[var(--radius-xs)] bg-[var(--color-surface-sunken)] px-3 py-2 text-[13px] text-[var(--color-text)]">
-                      {activeDemo.question}
-                    </p>
-
-                    <div aria-live="polite" className="space-y-3">
-                      <div className="flex items-start gap-2">
-                        <Sparkles
-                          className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-primary-text)]"
-                          aria-hidden="true"
-                        />
-                        <p className="max-w-[92%] text-[13.5px] leading-relaxed text-[var(--color-text)]">
-                          {activeDemo.answer}
-                        </p>
-                      </div>
-
-                      <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] p-3">
-                        <div className="flex items-baseline justify-between text-[11px] text-[var(--color-text-subtle)]">
-                          <span>{activeDemo.columnLabel}</span>
-                          <span>Amount</span>
-                        </div>
-                        <ul className="mt-1.5 divide-y divide-[var(--color-border)]">
-                          {activeDemo.rows.map((row) => (
-                            <li
-                              key={row.label}
-                              className="flex items-start justify-between gap-3 py-2"
-                            >
-                              <div className="min-w-0">
-                                <p className="truncate text-[12px] font-medium text-[var(--color-text)]">
-                                  {row.label}
-                                </p>
-                                <p className="mt-0.5 text-[11px] text-[var(--color-text-subtle)]">
-                                  {row.detail}
-                                </p>
-                              </div>
-                              <span className="shrink-0 text-[12px] font-medium tabular-nums text-[var(--color-text)]">
-                                {row.amount}
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-
-                      <p className="text-[11px] text-[var(--color-text-subtle)]">
-                        Illustrative sample data
+                    <div className="mt-5 space-y-4">
+                      <p className="ml-auto w-fit max-w-[90%] rounded-2xl rounded-br-xs bg-[#1E3A5F] px-4 py-2.5 text-[13px] font-medium text-white">
+                        {activeDemo.question}
                       </p>
+
+                      <div aria-live="polite" className="space-y-3.5">
+                        <div className="flex items-start gap-2.5">
+                          <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-[#2B75B6]" />
+                          <p className="text-[14px] leading-relaxed font-medium text-[var(--color-text)]">
+                            {activeDemo.answer}
+                          </p>
+                        </div>
+
+                        <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+                          <div className="flex items-baseline justify-between text-[11px] font-semibold tracking-wider text-[var(--color-text-subtle)] uppercase">
+                            <span>{activeDemo.columnLabel}</span>
+                            <span>Amount</span>
+                          </div>
+                          <ul className="mt-2 divide-y divide-[var(--color-border)]">
+                            {activeDemo.rows.map((row) => (
+                              <li
+                                key={row.label}
+                                className="flex items-start justify-between gap-3 py-2.5"
+                              >
+                                <div className="min-w-0">
+                                  <p className="truncate text-xs font-semibold text-[var(--color-text)]">
+                                    {row.label}
+                                  </p>
+                                  <p className="mt-0.5 text-[11px] text-[var(--color-text-subtle)]">
+                                    {row.detail}
+                                  </p>
+                                </div>
+                                <span className="shrink-0 text-xs font-semibold tabular-nums text-[var(--color-text)]">
+                                  {row.amount}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
+                </Reveal>
               </div>
             </div>
           </section>
 
           {/* ==================================================================
-              How it works
+              7. FINAL SKY-CLOUD CALL TO ACTION (Video 00:20 - 00:22)
               ================================================================== */}
-          <section
-            id="how-it-works"
-            className="scroll-mt-20 border-t border-[var(--color-border)] bg-[var(--color-bg)] py-20 sm:py-24"
-          >
-            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-              <div className="max-w-2xl">
-                <p className="text-eyebrow text-[var(--color-primary-text)]">How it works</p>
-                <h2 className="mt-3 font-display text-[2rem] leading-[1.12] font-normal tracking-[-0.015em] text-[var(--color-text)] sm:text-[2.4rem]">
-                  Three steps to complete clarity.
+          <section className="relative overflow-hidden border-t border-[var(--color-border)] pt-20 pb-0 sm:pt-28">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-[var(--color-bg)] via-[#D3ECFF]/70 to-[#BCE1FA]/90 dark:from-[var(--color-bg)] dark:via-[#0F253E]/60 dark:to-[#122B4A]/90"
+            />
+
+            <div className="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
+              <Reveal className="mx-auto max-w-2xl">
+                <h2 className="font-display text-[2.2rem] leading-[1.1] font-normal tracking-[-0.02em] text-[var(--color-text)] sm:text-[3rem]">
+                  Take Full Control of Your
+                  <br />
+                  Financial Future
                 </h2>
-                <p className="mt-4 text-[15px] leading-relaxed text-[var(--color-text-muted)]">
-                  Designed to be effortless and reliable, so tracking your finances never
-                  feels like a chore.
+                <p className="mx-auto mt-4 max-w-xl text-[15px] leading-relaxed text-[var(--color-text-muted)]">
+                  Take the guesswork out of daily spending. Join Ledgerly today and build a
+                  clearer picture of your money.
                 </p>
-              </div>
-
-              <ol className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-5">
-                {STEPS.map(({ number, title, copy }) => (
-                  <li
-                    key={number}
-                    className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5"
+                <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+                  <Link
+                    href="/login?mode=signup"
+                    className="inline-flex h-11 items-center justify-center rounded-full bg-[#1E3A5F] px-6 text-sm font-medium text-white shadow-md transition-all hover:-translate-y-0.5 hover:bg-[#162C49]"
                   >
-                    <span className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-primary-subtle)] text-[13px] font-semibold tabular-nums text-[var(--color-primary-text)]">
-                      {number}
-                    </span>
-                    <h3 className="mt-4 text-[16px] font-semibold text-[var(--color-text)]">
-                      {title}
-                    </h3>
-                    <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--color-text-muted)]">
-                      {copy}
-                    </p>
-                  </li>
-                ))}
-              </ol>
-            </div>
-          </section>
+                    Get started free
+                  </Link>
+                  <Link
+                    href="/login"
+                    className="inline-flex h-11 items-center justify-center rounded-full border border-white/80 bg-white/80 px-6 text-sm font-medium text-[#1E3A5F] backdrop-blur-md transition-all hover:bg-white dark:border-white/15 dark:bg-slate-900/80 dark:text-white"
+                  >
+                    Sign in to dashboard
+                  </Link>
+                </div>
+              </Reveal>
 
-          {/* ==================================================================
-              Final call to action
-              ================================================================== */}
-          <section className="px-4 pt-4 pb-20 sm:px-6 sm:pb-24 lg:px-8">
-            <div className="mx-auto max-w-5xl rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-primary-subtle)] px-6 py-14 text-center sm:px-12 sm:py-16">
-              <h2 className="mx-auto max-w-2xl font-display text-[2rem] leading-[1.12] font-normal tracking-[-0.015em] text-[var(--color-text)] sm:text-[2.5rem]">
-                Start seeing your finances more clearly.
-              </h2>
-              <p className="mx-auto mt-4 max-w-xl text-[15px] leading-relaxed text-[var(--color-text-muted)]">
-                Take the guesswork out of daily spending. Join Ledgerly today and build a
-                clearer picture of your money.
-              </p>
-              <div className="mt-8 flex flex-col items-center justify-center gap-2.5 sm:flex-row">
-                <Link
-                  href="/login?mode=signup"
-                  className={`${primaryButtonClass} w-full sm:w-auto`}
-                >
-                  Get started free
-                </Link>
-                <Link href="/login" className={`${secondaryButtonClass} w-full sm:w-auto`}>
-                  Sign in to dashboard
-                </Link>
-              </div>
-              <p className="mt-5 text-[12px] text-[var(--color-text-subtle)]">
-                Free personal finance tracking. Transparent records. Clear financial insights.
-              </p>
+              {/* Center Rising Phone + Floating Side Callouts (Video 00:21) */}
+              <Reveal delay={140} className="relative mx-auto mt-12 max-w-4xl">
+                {/* Left Floating Surplus Pill */}
+                <div className="animate-float-slow pointer-events-none absolute top-16 left-4 z-10 hidden items-center gap-3 rounded-2xl border border-white/80 bg-white/85 px-4 py-3 text-left shadow-lg backdrop-blur-md md:flex dark:border-white/10 dark:bg-slate-900/85">
+                  <div>
+                    <p className="text-[11px] text-[var(--color-text-muted)]">
+                      Monthly Surplus
+                    </p>
+                    <p className="text-sm font-semibold tabular-nums text-[var(--color-text)]">
+                      ৳6,450.00
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-600">
+                    +12.4%
+                  </span>
+                </div>
+
+                {/* Right Floating AI Insight Pill */}
+                <div className="animate-float-delayed pointer-events-none absolute top-24 right-4 z-10 hidden items-center gap-3 rounded-2xl border border-white/80 bg-white/85 px-4 py-3 text-left shadow-lg backdrop-blur-md md:flex dark:border-white/10 dark:bg-slate-900/85">
+                  <div>
+                    <p className="text-[11px] text-[var(--color-text-muted)]">
+                      Active Budget Status
+                    </p>
+                    <p className="text-xs font-semibold text-[var(--color-text)]">
+                      63% used · 19 days left
+                    </p>
+                  </div>
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#EBF5FF] text-[#1E3A5F]">
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </span>
+                </div>
+
+                {/* Rising Bottom Phone Frame */}
+                <div className="mx-auto max-w-[330px] rounded-t-[2.5rem] border-[7px] border-b-0 border-slate-900 bg-white p-4 pb-8 shadow-2xl dark:border-slate-800 dark:bg-slate-950">
+                  <div className="mx-auto mb-3 h-4 w-20 rounded-full bg-slate-950 dark:bg-slate-800" />
+                  <div className="flex items-center justify-between text-xs font-semibold text-slate-900 dark:text-white">
+                    <span>Cash Flow Trend</span>
+                    <span className="text-[#2B75B6]">Nov 2026</span>
+                  </div>
+                  <svg
+                    viewBox="0 0 260 90"
+                    className="mt-3 h-24 w-full overflow-visible"
+                    aria-hidden="true"
+                  >
+                    <defs>
+                      <linearGradient id="ctaAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.32" />
+                        <stop offset="100%" stopColor="#3B82F6" stopOpacity="0.0" />
+                      </linearGradient>
+                    </defs>
+                    <path
+                      d="M 0 70 Q 45 25, 90 48 T 175 22 T 260 15 L 260 90 L 0 90 Z"
+                      fill="url(#ctaAreaGrad)"
+                    />
+                    <path
+                      d="M 0 70 Q 45 25, 90 48 T 175 22 T 260 15"
+                      fill="none"
+                      stroke="#1E3A5F"
+                      strokeWidth="2.5"
+                    />
+                  </svg>
+                  <div className="mt-3 space-y-2 text-left">
+                    {HERO_CATEGORIES.slice(0, 3).map((cat) => (
+                      <div
+                        key={cat.name}
+                        className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 text-xs dark:bg-slate-900"
+                      >
+                        <span className="font-medium text-slate-700 dark:text-slate-300">
+                          {cat.name}
+                        </span>
+                        <span className="font-semibold tabular-nums text-slate-900 dark:text-white">
+                          {cat.amount}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </Reveal>
             </div>
           </section>
         </main>
 
         {/* ====================================================================
-            Footer
+            8. FOOTER WITH WATERMARK TYPOGRAPHY (Video 00:23 - 00:24)
             ==================================================================== */}
-        <footer className="border-t border-[var(--color-border)] bg-[var(--color-bg)]">
-          <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1.3fr]">
+        <footer className="relative overflow-hidden border-t border-[var(--color-border)] bg-[var(--color-surface)] pt-14 pb-8">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            {/* Top Trust / Highlights Bar (Mirrors Video's 4-Column Top Strip) */}
+            <div className="grid grid-cols-2 gap-4 border-b border-[var(--color-border)] pb-8 text-xs font-semibold tracking-wider text-[var(--color-text-muted)] uppercase sm:grid-cols-4">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-[#2B75B6]" />
+                <span>No Bank Link Needed</span>
+              </div>
+              <div className="flex items-center gap-2 sm:border-l sm:border-[var(--color-border)] sm:pl-6">
+                <Lock className="h-4 w-4 text-[#2B75B6]" />
+                <span>Isolated DB Records</span>
+              </div>
+              <div className="flex items-center gap-2 sm:border-l sm:border-[var(--color-border)] sm:pl-6">
+                <Sparkles className="h-4 w-4 text-[#2B75B6]" />
+                <span>AI Financial Insights</span>
+              </div>
+              <div className="flex items-center gap-2 sm:border-l sm:border-[var(--color-border)] sm:pl-6">
+                <HandCoins className="h-4 w-4 text-[#2B75B6]" />
+                <span>Debt &amp; Loan Audit</span>
+              </div>
+            </div>
+
+            <div className="mt-10 grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1.3fr]">
               <div>
                 <Link
                   href="/"
-                  className="inline-flex items-center gap-2.5 rounded-[var(--radius-sm)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)]"
+                  className="inline-flex items-center gap-2.5 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)]"
                 >
                   <span className="relative h-6 w-6 shrink-0">
                     <Image
@@ -1269,22 +1858,41 @@ export default function HomePage() {
                       className="object-contain"
                     />
                   </span>
-                  <span className="text-[15px] font-semibold tracking-tight text-[var(--color-text)]">
-                    Ledgerly<span className="text-[var(--color-primary)]">.</span>
+                  <span className="text-[16px] font-semibold tracking-tight text-[var(--color-text)]">
+                    Ledgerly<span className="text-[#2B75B6]">.</span>
                   </span>
                 </Link>
                 <p className="mt-3 max-w-sm text-[13px] leading-relaxed text-[var(--color-text-muted)]">
                   A personal finance companion for daily spending, monthly budgets, and the
                   money you share with other people.
                 </p>
+
+                {/* Pill Quick-Start Bar */}
+                <div className="mt-6 flex max-w-sm items-center rounded-full border border-[var(--color-border)] bg-[var(--color-bg)] p-1">
+                  <span className="flex-1 truncate px-3 text-xs text-[var(--color-text-muted)]">
+                    Ready to organize your finances?
+                  </span>
+                  <Link
+                    href="/login?mode=signup"
+                    className="inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-[#1E3A5F] px-3.5 text-xs font-medium text-white transition-colors hover:bg-[#162C49]"
+                  >
+                    Start Free
+                    <Send className="h-3 w-3" />
+                  </Link>
+                </div>
               </div>
 
               <nav aria-label="Product">
-                <h2 className="text-label">Product</h2>
-                <ul className="mt-3 space-y-2 text-[13px] text-[var(--color-text-muted)]">
+                <h2 className="text-xs font-semibold tracking-wider text-[var(--color-text)] uppercase">
+                  Product
+                </h2>
+                <ul className="mt-3 space-y-2.5 text-[13px] text-[var(--color-text-muted)]">
                   {NAV_LINKS.map((link) => (
                     <li key={link.href}>
-                      <a href={link.href} className={footerLinkClass}>
+                      <a
+                        href={link.href}
+                        className="transition-colors hover:text-[var(--color-text)]"
+                      >
                         {link.label}
                       </a>
                     </li>
@@ -1293,15 +1901,23 @@ export default function HomePage() {
               </nav>
 
               <nav aria-label="Account">
-                <h2 className="text-label">Account</h2>
-                <ul className="mt-3 space-y-2 text-[13px] text-[var(--color-text-muted)]">
+                <h2 className="text-xs font-semibold tracking-wider text-[var(--color-text)] uppercase">
+                  Account
+                </h2>
+                <ul className="mt-3 space-y-2.5 text-[13px] text-[var(--color-text-muted)]">
                   <li>
-                    <Link href="/login" className={footerLinkClass}>
+                    <Link
+                      href="/login"
+                      className="transition-colors hover:text-[var(--color-text)]"
+                    >
                       Sign in
                     </Link>
                   </li>
                   <li>
-                    <Link href="/login?mode=signup" className={footerLinkClass}>
+                    <Link
+                      href="/login?mode=signup"
+                      className="transition-colors hover:text-[var(--color-text)]"
+                    >
                       Create account
                     </Link>
                   </li>
@@ -1309,7 +1925,9 @@ export default function HomePage() {
               </nav>
 
               <div>
-                <h2 className="text-label">Security</h2>
+                <h2 className="text-xs font-semibold tracking-wider text-[var(--color-text)] uppercase">
+                  Security
+                </h2>
                 <ul className="mt-3 space-y-2 text-[13px] leading-relaxed text-[var(--color-text-muted)]">
                   <li>Sign-in is handled by a dedicated authentication provider.</li>
                   <li>Records are separated per account at the database level.</li>
@@ -1324,6 +1942,16 @@ export default function HomePage() {
                 Ledgerly. All rights reserved.
               </p>
               <p>Your records are private to your account.</p>
+            </div>
+
+            {/* Oversized Faded Brand Watermark (Matches Video 00:24 Footer) */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none mt-6 select-none overflow-hidden text-center"
+            >
+              <span className="block bg-gradient-to-b from-slate-900/[0.08] to-transparent bg-clip-text font-display text-[17vw] leading-[0.82] font-semibold tracking-tighter text-transparent dark:from-white/[0.08]">
+                Ledgerly
+              </span>
             </div>
           </div>
         </footer>
