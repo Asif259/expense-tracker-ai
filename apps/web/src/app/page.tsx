@@ -157,6 +157,7 @@ const STEPS = [
     number: '01',
     title: 'Record',
     badge: 'Effortless Entry',
+    featured: false,
     copy: 'Add daily transactions using quick manual forms or natural-language AI-assisted expense entry.',
     highlights: [
       'Natural language AI expense parsing',
@@ -182,6 +183,7 @@ const STEPS = [
     number: '03',
     title: 'Plan',
     badge: 'Complete Control',
+    featured: false,
     copy: "Monitor monthly budget health, stay ahead of bills, and keep track of money you've lent or borrowed.",
     highlights: [
       'Category-level monthly budget thresholds',
@@ -326,10 +328,18 @@ function Reveal({
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    if (!('IntersectionObserver' in window)) {
-      setVisible(true);
-      return;
+
+    const prefersReducedMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    ).matches;
+
+    if (prefersReducedMotion || !('IntersectionObserver' in window)) {
+      // Deferred so the state update happens after paint (and stays out of the
+      // synchronous effect body), while still guaranteeing content is visible.
+      const timer = window.setTimeout(() => setVisible(true), 0);
+      return () => window.clearTimeout(timer);
     }
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
