@@ -18,6 +18,16 @@ interface AccessibleChartTableProps<T extends object = Record<string, unknown>> 
   className?: string;
 }
 
+function alignClass(align: AccessibleTableColumn['align']) {
+  if (align === 'right') return 'text-right';
+  if (align === 'center') return 'text-center';
+  return 'text-left';
+}
+
+/**
+ * The text equivalent of a chart. Rendered inside ChartCard's table view, so it
+ * stays a plain table: no extra card, border, or nested container.
+ */
 export function AccessibleChartTable<T extends object>({
   caption,
   columns,
@@ -26,53 +36,48 @@ export function AccessibleChartTable<T extends object>({
   className = '',
 }: AccessibleChartTableProps<T>) {
   if (data.length === 0) {
-    return (
-      <div className="p-4 text-center text-xs text-[var(--color-text-muted)] bg-[var(--color-bg)] rounded-lg border border-[var(--color-border)]">
-        No tabular data available to display.
-      </div>
-    );
+    return <p className="text-secondary py-6">No rows to show for this chart.</p>;
   }
 
   return (
-    <div className={`overflow-x-auto rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] ${className}`}>
-      <table className="w-full text-left text-xs border-collapse">
+    <div className={`w-full overflow-x-auto ${className}`.trim()}>
+      <table className="w-full border-collapse">
         <caption className="sr-only">{caption}</caption>
         <thead>
-          <tr className="border-b border-[var(--color-border)] bg-[var(--color-bg)]">
-            {columns.map((col) => {
-              const align = col.align ?? (col.isCurrency ? 'right' : 'left');
-              return (
-                <th
-                  key={col.key}
-                  scope="col"
-                  className={`py-2 px-3 font-semibold text-[var(--color-text-muted)] ${
-                    align === 'right' ? 'text-right' : align === 'center' ? 'text-center' : 'text-left'
-                  }`}
-                >
-                  {col.label}
-                </th>
-              );
-            })}
+          <tr className="border-b border-[var(--color-border)]">
+            {columns.map((col) => (
+              <th
+                key={col.key}
+                scope="col"
+                className={`text-label py-2 pr-3 font-medium text-[var(--color-text-muted)] last:pr-0 ${alignClass(
+                  col.align ?? (col.isCurrency ? 'right' : 'left'),
+                )}`}
+              >
+                {col.label}
+              </th>
+            ))}
           </tr>
         </thead>
         <tbody className="divide-y divide-[var(--color-border)]">
           {data.map((row, rowIdx) => (
-            <tr key={rowIdx} className="hover:bg-[var(--color-surface-hover)] transition-colors">
+            <tr
+              key={rowIdx}
+              className="transition-colors duration-[var(--duration-fast)] hover:bg-[var(--color-surface-hover)]"
+            >
               {columns.map((col) => {
-                const align = col.align ?? (col.isCurrency ? 'right' : 'left');
                 const rawVal = (row as Record<string, unknown>)[col.key];
                 const displayVal = col.isCurrency
                   ? formatMoney(Number(rawVal) || 0, currency)
                   : rawVal !== null && rawVal !== undefined
-                  ? String(rawVal)
-                  : '—';
+                    ? String(rawVal)
+                    : '—';
 
                 return (
                   <td
                     key={col.key}
-                    className={`py-2.5 px-3 ${col.isCurrency ? 'tabular-nums font-medium text-[var(--color-text)]' : 'text-[var(--color-text)]'} ${
-                      align === 'right' ? 'text-right' : align === 'center' ? 'text-center' : 'text-left'
-                    }`}
+                    className={`text-label py-2.5 pr-3 last:pr-0 ${
+                      col.isCurrency ? 'tabular-nums text-[var(--color-text)]' : 'text-[var(--color-text)]'
+                    } ${alignClass(col.align ?? (col.isCurrency ? 'right' : 'left'))}`}
                   >
                     {displayVal}
                   </td>

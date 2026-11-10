@@ -34,16 +34,16 @@ export function RepaymentHistoryChart({
       labels: data.map((d) => d.label),
       datasets: [
         {
-          label: 'Receivables Recovered',
+          label: 'Recovered from loans',
           data: data.map((d) => d.lentRepaid),
           backgroundColor: palette.income,
           borderRadius: 4,
           borderSkipped: false,
         },
         {
-          label: 'Payables Settled',
+          label: 'Repaid on loans',
           data: data.map((d) => d.borrowedRepaid),
-          backgroundColor: palette.payable,
+          backgroundColor: palette.expense,
           borderRadius: 4,
           borderSkipped: false,
         },
@@ -56,29 +56,34 @@ export function RepaymentHistoryChart({
   }, [theme, currency]);
 
   const tableColumns = [
-    { key: 'label', label: 'Payment Period' },
-    { key: 'lentRepaid', label: 'Recovered (Lent)', isCurrency: true, align: 'right' as const },
-    { key: 'borrowedRepaid', label: 'Settled (Borrowed)', isCurrency: true, align: 'right' as const },
-    { key: 'totalRepaid', label: 'Total Volume', isCurrency: true, align: 'right' as const },
+    { key: 'label', label: 'Period' },
+    { key: 'lentRepaid', label: 'Recovered from loans', isCurrency: true, align: 'right' as const },
+    {
+      key: 'borrowedRepaid',
+      label: 'Repaid on loans',
+      isCurrency: true,
+      align: 'right' as const,
+    },
+    { key: 'totalRepaid', label: 'Total', isCurrency: true, align: 'right' as const },
     { key: 'count', label: 'Repayments', align: 'center' as const },
   ];
 
   return (
     <ChartCard
-      title="Repayment Velocity"
-      subtitle="Actual recorded loan repayment installments"
+      title="Repayments"
+      subtitle="Loan repayments recorded over time"
       currency={currency}
       loading={loading}
       error={error}
       onRetry={onRetry}
       isEmpty={data.length === 0}
-      emptyTitle="No repayment history"
-      emptyDescription={`No recorded repayment installments found for loans in ${currency}. Record repayments on active loans to track history.`}
+      emptyTitle="No repayments yet"
+      emptyDescription={`No loan repayments recorded in ${currency} yet. Record repayments on active loans to see them here.`}
       emptyActionHref="/loans"
-      emptyActionLabel="View Loans"
+      emptyActionLabel="View loans"
       accessibleTableView={
         <AccessibleChartTable
-          caption={`Repayment installments history over time in ${currency}`}
+          caption={`Loan repayment history over time in ${currency}`}
           columns={tableColumns}
           data={data}
           currency={currency}
@@ -86,7 +91,11 @@ export function RepaymentHistoryChart({
       }
       className={className}
     >
-      <div role="img" aria-label={`Loan repayment installments history chart in ${currency}`} className="w-full h-full">
+      <div
+        role="img"
+        aria-label={`Loan repayment history chart in ${currency}`}
+        className="h-full w-full"
+      >
         <Bar data={chartData} options={options} />
       </div>
     </ChartCard>

@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo, Suspense } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useCallback, useEffect, useRef, useState, Suspense } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import AppShell from '@/components/app-shell';
 import { useAuth } from '@/context/auth-context';
 import {
@@ -10,31 +11,81 @@ import {
   recordLoanRepayment,
   deleteLoanRepayment,
   Loan,
-  LoanRepayment,
 } from '@/lib/api';
 import { formatMoney, formatDate } from '@/lib/format';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { toast } from '@/components/toast';
-import Link from 'next/link';
-import { ArrowLeft, Plus, ArrowDownLeft, Trash2, X } from 'lucide-react';
+import { ArrowLeft, HandCoins, Plus, Trash2, X } from 'lucide-react';
 import {
-  ResponsiveDataTable,
-  ResponsiveColumn,
-  RowAction,
-  MobileTableConfig,
-} from '@/components/responsive-table';
+  Badge,
+  Button,
+  ButtonLink,
+  Card,
+  EmptyState,
+  ErrorState,
+  Field,
+  IconButton,
+  Input,
+  PageHeader,
+  Select,
+  Section,
+  Textarea,
+} from '@/components/ui';
+import type { BadgeTone } from '@/components/ui';
+
+const METHOD_LABELS: Record<Loan['payment_method'], string> = {
+  bkash: 'bKash',
+  nagad: 'Nagad',
+  cash: 'Cash',
+  bank: 'Bank',
+  other: 'Other',
+};
+
+function statusTone(status: Loan['status']): BadgeTone {
+  if (status === 'settled') return 'neutral';
+  if (status === 'overdue') return 'warning';
+  return 'accent';
+}
+
+function statusLabel(status: Loan['status']): string {
+  if (status === 'settled') return 'Settled';
+  if (status === 'overdue') return 'Overdue';
+  return 'Active';
+}
+
+function progressColor(status: Loan['status']): string {
+  if (status === 'settled') return 'bg-[var(--color-income)]';
+  if (status === 'overdue') return 'bg-[var(--color-warning)]';
+  return 'bg-[var(--color-primary)]';
+}
+
+function clampPct(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.min(Math.max(value, 0), 100);
+}
+
+function LoanDetailSkeleton() {
+  return (
+    <AppShell>
+      <div className="space-y-6" aria-busy="true" aria-label="Loading loan">
+        <div className="skeleton h-4 w-32" />
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="space-y-2">
+            <div className="skeleton h-8 w-56 max-w-full" />
+            <div className="skeleton h-4 w-40" />
+          </div>
+          <div className="skeleton h-9 w-40 rounded-[var(--radius-md)]" />
+        </div>
+        <div className="skeleton h-64 w-full rounded-[var(--radius-xl)]" />
+        <div className="skeleton h-44 w-full rounded-[var(--radius-xl)]" />
+      </div>
+    </AppShell>
+  );
+}
 
 export default function LoanDetailPage() {
   return (
-    <Suspense
-      fallback={
-        <AppShell>
-          <div className="max-w-4xl mx-auto py-12 text-center text-sm text-[var(--color-text-dim)]">
-            Loading loan details...
-          </div>
-        </AppShell>
-      }
-    >
+    <Suspense fallback={<LoanDetailSkeleton />}>
       <LoanDetailContent />
     </Suspense>
   );
@@ -42,30 +93,30 @@ export default function LoanDetailPage() {
 
 function LoanDetailContent() {
   const params = useParams();
-  const id = typeof params?.id === 'string' ? params.id : Array.isArray(params?.id) ? params.id[0] : '';
+  const id =
+    typeof params?.id === 'string' ? params.id : Array.isArray(params?.id) ? params.id[0] : '';
   const router = useRouter();
   const { getToken } = useAuth();
 
   const [loan, setLoan] = useState<Loan | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Repayment form state
   const [showRepayModal, setShowRepayModal] = useState(false);
   const [amount, setAmount] = useState('');
   const [paymentDate, setPaymentDate] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'bkash' | 'nagad' | 'bank' | 'other'>('bkash');
+  const [paymentMethod, setPaymentMethod] = useState<Loan['payment_method']>('bkash');
   const [reference, setReference] = useState('');
   const [notes, setNotes] = useState('');
+  const [repaymentErrors, setRepaymentErrors] = useState<{ amount?: string; date?: string }>({});
   const [submittingRepayment, setSubmittingRepayment] = useState(false);
+  const repaymentDialogRef = useRef<HTMLDivElement>(null);
+  const submittingRef = useRef(false);
 
-  // Deletion modals
+  // Deletion dialogs
   const [showDeleteLoanDialog, setShowDeleteLoanDialog] = useState(false);
   const [deleteRepaymentTarget, setDeleteRepaymentTarget] = useState<string | null>(null);
-
-  const openRepayModal = () => {
-    setPaymentDate(new Date().toISOString().split('T')[0]);
-    setShowRepayModal(true);
-  };
 
   const loadLoan = useCallback(async () => {
     try {
@@ -74,166 +125,115 @@ function LoanDetailContent() {
 
       const res = await getLoan(token, id);
       setLoan(res);
+      setLoadError(null);
     } catch (err: unknown) {
-      toast(err instanceof Error ? err.message : 'Failed to load loan details', 'error');
+      const message =
+        err instanceof Error ? err.message : 'Could not load this loan. Try again.';
+      setLoadError(message);
+      toast(message, 'error');
     } finally {
       setLoading(false);
     }
   }, [getToken, id]);
 
   useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const token = await getToken();
-        if (!token || !mounted) return;
-        const res = await getLoan(token, id);
-        if (mounted) {
-          setLoan(res);
-          setLoading(false);
-        }
-      } catch (err: unknown) {
-        if (mounted) {
-          setLoading(false);
-          toast(err instanceof Error ? err.message : 'Failed to load loan details', 'error');
-        }
-      }
+    void (async () => {
+      setLoading(true);
+      await loadLoan();
     })();
-    return () => {
-      mounted = false;
+  }, [loadLoan]);
+
+  useEffect(() => {
+    submittingRef.current = submittingRepayment;
+  }, [submittingRepayment]);
+
+  const openRepayModal = () => {
+    setPaymentDate(new Date().toISOString().split('T')[0]);
+    setRepaymentErrors({});
+    setReference('');
+    setNotes('');
+    setShowRepayModal(true);
+  };
+
+  const closeRepayModal = useCallback(() => {
+    setShowRepayModal(false);
+    setRepaymentErrors({});
+  }, []);
+
+  // Dialog behaviour: scroll lock, initial focus, Escape, focus trap, focus restore.
+  useEffect(() => {
+    if (!showRepayModal) return;
+
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const focusTimer = window.setTimeout(() => {
+      const first =
+        repaymentDialogRef.current?.querySelector<HTMLElement>('#repay-amount') ??
+        repaymentDialogRef.current?.querySelector<HTMLElement>('button, input, select');
+      first?.focus();
+    }, 0);
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        if (!submittingRef.current) closeRepayModal();
+        return;
+      }
+      if (event.key !== 'Tab' || !repaymentDialogRef.current) return;
+
+      const focusable = Array.from(
+        repaymentDialogRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href]',
+        ),
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
-  }, [getToken, id]);
 
-  const repaymentColumns: ResponsiveColumn<LoanRepayment>[] = useMemo(
-    () => [
-      {
-        id: 'payment_date',
-        header: 'Date',
-        role: 'identity',
-        priority: 1,
-        label: 'Payment Date',
-        sortable: true,
-        sortValue: (rep: LoanRepayment) => rep.payment_date,
-        cell: (rep: LoanRepayment) => (
-          <span className="font-semibold text-[var(--color-text)] tabular-nums">
-            {formatDate(rep.payment_date)}
-          </span>
-        ),
-      },
-      {
-        id: 'amount',
-        header: 'Amount',
-        role: 'value',
-        priority: 2,
-        align: 'right',
-        isNumeric: true,
-        label: 'Repayment Amount',
-        sortable: true,
-        sortValue: (rep: LoanRepayment) =>
-          typeof rep.amount === 'string' ? parseFloat(rep.amount) : rep.amount,
-        cell: (rep: LoanRepayment) => (
-          <span className="inline-flex items-center justify-end gap-1.5 font-bold tabular-nums text-[var(--color-text)]">
-            <ArrowDownLeft className="w-3.5 h-3.5 text-[var(--color-mint)]" />
-            <span>{formatMoney(rep.amount, loan?.currency || 'BDT')}</span>
-          </span>
-        ),
-      },
-      {
-        id: 'payment_method',
-        header: 'Method',
-        role: 'state',
-        priority: 3,
-        label: 'Payment Method',
-        cell: (rep: LoanRepayment) => (
-          <span className="px-2 py-0.5 rounded text-[10px] font-semibold uppercase bg-[var(--color-surface-hover)] border border-[var(--color-border)] text-[var(--color-text)] inline-flex items-center gap-1">
-            <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-primary)]" />
-            {rep.payment_method}
-          </span>
-        ),
-      },
-      {
-        id: 'reference',
-        header: 'Reference',
-        role: 'detail',
-        priority: 4,
-        label: 'Reference Code',
-        cell: (rep: LoanRepayment) => (
-          <span className="text-[var(--color-text-dim)]">{rep.reference || '—'}</span>
-        ),
-      },
-      {
-        id: 'notes',
-        header: 'Notes',
-        role: 'detail',
-        priority: 5,
-        label: 'Notes',
-        cell: (rep: LoanRepayment) => (
-          <span className="text-[var(--color-text-muted)] max-w-xs truncate block">
-            {rep.notes || '—'}
-          </span>
-        ),
-      },
-      {
-        id: 'actions',
-        header: 'Actions',
-        role: 'action',
-        priority: 6,
-        align: 'right',
-        cell: (rep: LoanRepayment) => (
-          <button
-            type="button"
-            onClick={() => setDeleteRepaymentTarget(rep.id)}
-            className="text-[var(--color-text-dim)] hover:text-[var(--color-danger)] transition-colors cursor-pointer p-1"
-            title="Delete Repayment Record"
-            aria-label={`Delete repayment of ${formatMoney(rep.amount, loan?.currency || 'BDT')}`}
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-        ),
-      },
-    ],
-    [loan?.currency]
-  );
-
-  const repaymentRowActions = useCallback(
-    (_rep: LoanRepayment): RowAction<LoanRepayment>[] => [
-      {
-        id: 'delete',
-        label: 'Delete Repayment',
-        icon: <Trash2 className="w-3.5 h-3.5" />,
-        variant: 'danger',
-        onClick: (r) => setDeleteRepaymentTarget(r.id),
-      },
-    ],
-    []
-  );
-
-  const repaymentMobileConfig: MobileTableConfig<LoanRepayment> = useMemo(
-    () => ({
-      identityColumnId: 'payment_date',
-      primaryValueColumnId: 'amount',
-      stateColumnId: 'payment_method',
-      secondaryDetailColumnIds: ['reference'],
-      detailMode: 'bottom-sheet',
-    }),
-    []
-  );
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.clearTimeout(focusTimer);
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+      previousFocus?.focus();
+    };
+  }, [showRepayModal, closeRepayModal]);
 
   const handleRecordRepayment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!loan) return;
 
-    const parsedAmt = parseFloat(amount);
-    if (isNaN(parsedAmt) || parsedAmt <= 0) {
-      toast('Please enter a valid amount greater than zero', 'error');
+    const parsedAmount = parseFloat(amount);
+    const nextErrors: { amount?: string; date?: string } = {};
+
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      nextErrors.amount = 'Enter an amount greater than zero.';
+    } else if (parsedAmount > Number(loan.outstanding_balance)) {
+      nextErrors.amount = `Enter no more than the outstanding balance of ${formatMoney(
+        loan.outstanding_balance,
+        loan.currency,
+      )}.`;
+    }
+    if (!paymentDate) {
+      nextErrors.date = 'Choose the date the payment was made.';
+    }
+
+    if (Object.keys(nextErrors).length > 0) {
+      setRepaymentErrors(nextErrors);
       return;
     }
 
-    if (parsedAmt > Number(loan.outstanding_balance)) {
-      toast(`Repayment exceeds outstanding balance of ${formatMoney(loan.outstanding_balance, loan.currency)}`, 'error');
-      return;
-    }
-
+    setRepaymentErrors({});
     setSubmittingRepayment(true);
     try {
       const token = await getToken();
@@ -247,14 +247,17 @@ function LoanDetailContent() {
         notes: notes.trim() || undefined,
       });
 
-      toast('Repayment recorded successfully!', 'success');
-      setShowRepayModal(false);
+      toast('Repayment recorded', 'success');
       setAmount('');
       setReference('');
       setNotes('');
+      closeRepayModal();
       loadLoan();
     } catch (err: unknown) {
-      toast(err instanceof Error ? err.message : 'Failed to record repayment', 'error');
+      toast(
+        err instanceof Error ? err.message : 'Could not record the repayment. Try again.',
+        'error',
+      );
     } finally {
       setSubmittingRepayment(false);
     }
@@ -266,10 +269,10 @@ function LoanDetailContent() {
       if (!token) return;
 
       await deleteLoan(token, id);
-      toast('Loan deleted successfully', 'success');
+      toast('Loan deleted', 'success');
       router.push('/loans');
     } catch (err: unknown) {
-      toast(err instanceof Error ? err.message : 'Failed to delete loan', 'error');
+      toast(err instanceof Error ? err.message : 'Could not delete the loan. Try again.', 'error');
     }
   };
 
@@ -280,20 +283,34 @@ function LoanDetailContent() {
       if (!token) return;
 
       await deleteLoanRepayment(token, id, deleteRepaymentTarget);
-      toast('Repayment record deleted', 'success');
+      toast('Repayment deleted', 'success');
       setDeleteRepaymentTarget(null);
       loadLoan();
     } catch (err: unknown) {
-      toast(err instanceof Error ? err.message : 'Failed to delete repayment', 'error');
+      toast(
+        err instanceof Error ? err.message : 'Could not delete the repayment. Try again.',
+        'error',
+      );
     }
   };
 
   if (loading) {
+    return <LoanDetailSkeleton />;
+  }
+
+  if (loadError && !loan) {
     return (
       <AppShell>
-        <div className="flex justify-center py-20">
-          <div className="animate-spin h-8 w-8 border-2 border-[var(--color-primary)] border-t-transparent rounded-full" />
-        </div>
+        <Card padding="lg" className="mx-auto max-w-xl">
+          <ErrorState
+            title="Could not load this loan"
+            description={loadError}
+            onRetry={() => {
+              setLoading(true);
+              void loadLoan();
+            }}
+          />
+        </Card>
       </AppShell>
     );
   }
@@ -301,17 +318,22 @@ function LoanDetailContent() {
   if (!loan) {
     return (
       <AppShell>
-        <div className="max-w-2xl mx-auto px-4 py-16 text-center space-y-4">
-          <h2 className="text-xl font-bold text-[var(--color-text)]">Loan record not found</h2>
-          <p className="text-sm text-[var(--color-text-muted)]">This loan may have been deleted or belongs to another user.</p>
-          <Link
-            href="/loans"
-            className="inline-flex items-center gap-1.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] text-xs font-semibold px-4 py-2 rounded-xl transition-colors shadow-sm cursor-pointer"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Back to Debts & Loans</span>
-          </Link>
-        </div>
+        <Card padding="lg" className="mx-auto max-w-xl">
+          <EmptyState
+            icon={<HandCoins aria-hidden="true" />}
+            title="Loan not found"
+            description="This loan may have been deleted, or it belongs to another account."
+            action={
+              <ButtonLink
+                href="/loans"
+                variant="secondary"
+                leadingIcon={<ArrowLeft className="h-4 w-4" aria-hidden="true" />}
+              >
+                Back to debts & loans
+              </ButtonLink>
+            }
+          />
+        </Card>
       </AppShell>
     );
   }
@@ -319,322 +341,365 @@ function LoanDetailContent() {
   const isLent = loan.direction === 'lent';
   const isSettled = loan.status === 'settled';
   const isOverdue = loan.status === 'overdue';
+  const repayments = loan.repayments ?? [];
+  const progress = clampPct(loan.progress_pct);
 
   return (
     <AppShell>
-      <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
-        {/* Navigation Breadcrumb */}
-        <div className="flex items-center justify-between">
+      <div className="space-y-8">
+        <div>
           <Link
             href="/loans"
-            className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors inline-flex items-center gap-1 font-medium cursor-pointer"
+            className="inline-flex items-center gap-1.5 text-secondary transition-colors duration-[var(--duration-fast)] hover:text-[var(--color-text)]"
           >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Back to Debts & Loans</span>
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            Debts & loans
           </Link>
-
-          <button
-            onClick={() => setShowDeleteLoanDialog(true)}
-            className="text-xs text-[var(--color-danger)] hover:underline font-semibold cursor-pointer"
-          >
-            Delete Loan
-          </button>
         </div>
 
-        {/* Hero Card */}
-        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-6 sm:p-8 space-y-6 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <span
-                  className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1.5 ${
-                    isLent
-                      ? 'bg-[var(--color-pale-mint)] text-[var(--color-text)]'
-                      : 'bg-[var(--color-pale-yellow)] text-[var(--color-text)]'
-                  }`}
+        <PageHeader
+          title={loan.person_name}
+          meta={
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge tone="outline" dot>
+                {isLent ? 'Lent' : 'Borrowed'}
+              </Badge>
+              <Badge tone={statusTone(loan.status)} dot>
+                {statusLabel(loan.status)}
+              </Badge>
+              {loan.person_contact && <span>{loan.person_contact}</span>}
+            </div>
+          }
+          actions={
+            <>
+              {!isSettled && (
+                <Button
+                  variant="primary"
+                  onClick={openRepayModal}
+                  leadingIcon={<Plus className="h-4 w-4" aria-hidden="true" />}
                 >
-                  <span className={`h-1.5 w-1.5 rounded-full ${isLent ? 'bg-[var(--color-mint)]' : 'bg-[var(--color-amber)]'}`} />
-                  {isLent ? 'I Lent Money' : 'I Borrowed Money'}
-                </span>
-                <span
-                  className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full capitalize border ${
-                    isSettled
-                      ? 'bg-[var(--color-surface-hover)] text-[var(--color-text-dim)] border-[var(--color-border)]'
-                      : isOverdue
-                      ? 'bg-[var(--color-pale-yellow)] text-[var(--color-text)] border-[var(--color-border)]'
-                      : 'bg-[var(--color-pale-cyan)] text-[var(--color-text)] border-[var(--color-border)]'
-                  }`}
-                >
-                  {loan.status}
-                </span>
-              </div>
-
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-[var(--color-text)] tracking-tight mt-2">
-                {loan.person_name}
-              </h1>
-              {loan.person_contact && (
-                <p className="text-xs text-[var(--color-text-muted)] mt-0.5">{loan.person_contact}</p>
+                  Record repayment
+                </Button>
               )}
-            </div>
-
-            {!isSettled && (
-              <button
-                onClick={openRepayModal}
-                className="inline-flex items-center gap-1.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors shadow-sm cursor-pointer"
+              <Button
+                variant="ghost"
+                onClick={() => setShowDeleteLoanDialog(true)}
+                leadingIcon={<Trash2 className="h-4 w-4" aria-hidden="true" />}
+                className="text-[var(--color-danger)]! hover:bg-[var(--color-danger-subtle)]!"
               >
-                <Plus className="w-4 h-4" />
-                <span>Record Repayment</span>
-              </button>
-            )}
-          </div>
+                Delete loan
+              </Button>
+            </>
+          }
+        />
 
-          {/* Outstanding Balance Banner */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-[var(--color-border)]">
-            <div>
-              <div className="text-xs text-[var(--color-text-muted)]">
-                {isLent ? 'Remaining to Collect' : 'Remaining to Pay'}
-              </div>
-              <div className="text-2xl sm:text-3xl font-extrabold tabular-nums text-[var(--color-text)] mt-1 tracking-tight">
+        {/* Balance summary */}
+        <Card padding="lg" className="space-y-5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <p className="text-label text-[var(--color-text-muted)]">
+                {isLent ? 'Remaining to collect' : 'Remaining to repay'}
+              </p>
+              <p className="text-metric-xl mt-1 tabular-nums">
                 {formatMoney(loan.outstanding_balance, loan.currency)}
-              </div>
+              </p>
+              <p className="text-secondary mt-1.5 tabular-nums">
+                {formatMoney(loan.principal_amount, loan.currency)} original
+                <span aria-hidden="true"> · </span>
+                {formatMoney(loan.total_repaid, loan.currency)} repaid
+              </p>
             </div>
-
-            <div>
-              <div className="text-xs text-[var(--color-text-muted)]">Original Principal</div>
-              <div className="text-xl font-bold tabular-nums text-[var(--color-text)] mt-1">
-                {formatMoney(loan.principal_amount, loan.currency)}
-              </div>
-            </div>
-
-            <div>
-              <div className="text-xs text-[var(--color-text-muted)]">Total Repaid</div>
-              <div className="text-xl font-bold tabular-nums text-[var(--color-text)] mt-1">
-                {formatMoney(loan.total_repaid, loan.currency)}
-              </div>
+            <div className="sm:text-right">
+              <p className="text-label text-[var(--color-text-muted)]">Progress</p>
+              <p className="text-metric-sm mt-1 tabular-nums">{progress}% repaid</p>
+              <p className="text-caption mt-0.5">
+                {isSettled ? 'Fully settled' : `${formatMoney(loan.outstanding_balance, loan.currency)} left`}
+              </p>
             </div>
           </div>
 
-          {/* Progress Bar */}
-          <div className="space-y-1.5 pt-2">
-            <div className="h-2 w-full bg-[var(--color-border)] rounded-full overflow-hidden">
+          <div>
+            <div
+              role="progressbar"
+              aria-label="Loan repayment progress"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={progress}
+              className="h-2 w-full overflow-hidden rounded-full bg-[var(--color-surface-sunken)]"
+            >
               <div
-                className={`h-full rounded-full transition-all duration-300 ${
-                  isSettled
-                    ? 'bg-[var(--color-mint)]'
-                    : isOverdue
-                    ? 'bg-[var(--color-amber)]'
-                    : 'bg-[var(--color-primary)]'
-                }`}
-                style={{ width: `${loan.progress_pct}%` }}
+                className={`h-full rounded-full transition-[width] duration-150 ${progressColor(loan.status)}`}
+                style={{ width: `${progress}%` }}
               />
             </div>
-            <div className="flex justify-between text-xs text-[var(--color-text-muted)] font-medium">
-              <span className="tabular-nums">{loan.progress_pct}% settled</span>
-              <span className="tabular-nums">{formatMoney(loan.total_repaid, loan.currency)} / {formatMoney(loan.principal_amount, loan.currency)}</span>
+            <div className="mt-1.5 flex flex-wrap justify-between gap-2 text-caption tabular-nums">
+              <span>{formatMoney(loan.total_repaid, loan.currency)} repaid</span>
+              <span>{formatMoney(loan.outstanding_balance, loan.currency)} remaining</span>
             </div>
           </div>
 
-          {/* Loan Details Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-[var(--color-border)] text-xs">
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-4 border-t border-[var(--color-border)] pt-5 sm:grid-cols-4">
             <div>
-              <span className="text-[var(--color-text-muted)] block">Loan Date</span>
-              <span className="font-semibold text-[var(--color-text)]">{loan.loan_date}</span>
+              <dt className="text-caption">Loan date</dt>
+              <dd className="text-body mt-0.5 tabular-nums">{formatDate(loan.loan_date)}</dd>
             </div>
             <div>
-              <span className="text-[var(--color-text-muted)] block">Due Date</span>
-              <span className={`font-semibold ${isOverdue ? 'text-[var(--color-warning)]' : 'text-[var(--color-text)]'}`}>
-                {loan.due_date || 'No due date'}
-              </span>
+              <dt className="text-caption">Due date</dt>
+              <dd
+                className={`text-body mt-0.5 tabular-nums ${
+                  isOverdue ? 'text-[var(--color-warning)]' : ''
+                }`}
+              >
+                {loan.due_date ? formatDate(loan.due_date) : 'No due date'}
+              </dd>
             </div>
             <div>
-              <span className="text-[var(--color-text-muted)] block">Transfer Method</span>
-              <span className="font-semibold text-[var(--color-text)] capitalize">{loan.payment_method}</span>
+              <dt className="text-caption">Method</dt>
+              <dd className="text-body mt-0.5">{METHOD_LABELS[loan.payment_method]}</dd>
             </div>
             <div>
-              <span className="text-[var(--color-text-muted)] block">Currency</span>
-              <span className="font-semibold text-[var(--color-text)]">{loan.currency}</span>
+              <dt className="text-caption">Currency</dt>
+              <dd className="text-body mt-0.5">{loan.currency}</dd>
             </div>
-          </div>
+          </dl>
 
           {loan.notes && (
-            <div className="pt-2 text-xs text-[var(--color-text-muted)] bg-[var(--color-bg)] p-3 rounded-xl">
-              <strong>Notes:</strong> {loan.notes}
+            <div className="border-t border-[var(--color-border)] pt-4">
+              <p className="text-caption">Notes</p>
+              <p className="text-body mt-1 whitespace-pre-line">{loan.notes}</p>
             </div>
           )}
-        </div>
+        </Card>
 
-        {/* Repayment History Timeline */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-[var(--color-text)]">
-              Repayment History ({loan.repayments?.length || 0})
-            </h2>
-            {!isSettled && (
-              <button
-                onClick={openRepayModal}
-                className="text-xs text-[var(--color-primary)] hover:underline font-semibold cursor-pointer inline-flex items-center gap-1"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Add Partial Payment</span>
-              </button>
-            )}
-          </div>
+        {/* Repayment history */}
+        <Section
+          title="Repayment history"
+          description={
+            repayments.length > 0
+              ? `${repayments.length} ${repayments.length === 1 ? 'payment' : 'payments'} recorded`
+              : 'Payments recorded against this loan appear here.'
+          }
+        >
+          {repayments.length === 0 ? (
+            <Card padding="lg">
+              <EmptyState
+                icon={<HandCoins aria-hidden="true" />}
+                title="No repayments yet"
+                description="Record the first payment to keep the remaining balance up to date."
+                action={
+                  !isSettled ? (
+                    <Button variant="secondary" size="sm" onClick={openRepayModal}>
+                      Record repayment
+                    </Button>
+                  ) : undefined
+                }
+              />
+            </Card>
+          ) : (
+            <div className="surface-card overflow-hidden">
+              <ul role="list" className="divide-y divide-[var(--color-border)]">
+                {repayments.map((repayment) => (
+                  <li key={repayment.id}>
+                    <div className="flex items-start justify-between gap-4 px-4 py-3.5 sm:px-5">
+                      <div className="min-w-0">
+                        <p className="text-body tabular-nums">
+                          {formatDate(repayment.payment_date)}
+                        </p>
+                        <p className="text-caption mt-0.5 truncate">
+                          {METHOD_LABELS[repayment.payment_method]}
+                          {repayment.reference ? ` · ${repayment.reference}` : ''}
+                          {repayment.notes ? ` · ${repayment.notes}` : ''}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <span className="text-metric-sm tabular-nums">
+                          {formatMoney(repayment.amount, loan.currency)}
+                        </span>
+                        <IconButton
+                          label={`Delete repayment of ${formatMoney(repayment.amount, loan.currency)} on ${formatDate(repayment.payment_date)}`}
+                          size="sm"
+                          onClick={() => setDeleteRepaymentTarget(repayment.id)}
+                          className="text-[var(--color-text-subtle)]! hover:bg-[var(--color-danger-subtle)]! hover:text-[var(--color-danger)]!"
+                        >
+                          <Trash2 className="h-4 w-4" aria-hidden="true" />
+                        </IconButton>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </Section>
 
-          <ResponsiveDataTable<LoanRepayment>
-            data={loan.repayments || []}
-            columns={repaymentColumns}
-            keyExtractor={(rep) => rep.id}
-            actions={repaymentRowActions}
-            mobileConfig={repaymentMobileConfig}
-            breakpoint="sm"
-            ariaLabel="Loan repayment history ledger"
-            tableTitle="Repayment Ledger"
-            emptyTitle="No repayments recorded yet"
-            emptyDescription="Use the '+ Add Partial Payment' button above to log repayments."
-          />
-        </div>
-
-        {/* Record Repayment Modal */}
+        {/* Repayment dialog */}
         {showRepayModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-base font-bold text-[var(--color-text)]">Record Repayment</h3>
-                <button
-                  onClick={() => setShowRepayModal(false)}
-                  className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] text-sm cursor-pointer"
+          <div
+            className="fixed inset-0 z-[80] flex animate-fade-in items-end justify-center bg-[var(--color-scrim)] sm:items-center sm:p-4"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget && !submittingRepayment) {
+                closeRepayModal();
+              }
+            }}
+          >
+            <div
+              ref={repaymentDialogRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="repay-dialog-title"
+              aria-describedby="repay-dialog-context"
+              onMouseDown={(event) => event.stopPropagation()}
+              className="max-h-[calc(100dvh-1rem)] w-full max-w-md animate-slide-up overflow-y-auto rounded-t-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-elevated)] p-5 shadow-[var(--shadow-lg)] sm:rounded-[var(--radius-xl)] sm:p-6"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h2 id="repay-dialog-title" className="text-section-title">
+                    Record repayment
+                  </h2>
+                  <p id="repay-dialog-context" className="text-secondary mt-1">
+                    {isLent ? `Payment from ${loan.person_name}` : `Payment to ${loan.person_name}`}
+                  </p>
+                </div>
+                <IconButton
+                  label="Close"
+                  size="sm"
+                  onClick={closeRepayModal}
+                  disabled={submittingRepayment}
                 >
-                  <X className="w-4 h-4" />
-                </button>
+                  <X className="h-4 w-4" aria-hidden="true" />
+                </IconButton>
               </div>
 
-              <div className="bg-[var(--color-bg)] p-3 rounded-xl text-xs space-y-1">
-                <div className="text-[var(--color-text-muted)]">
-                  Outstanding Balance:{' '}
-                  <strong className="text-[var(--color-text)] font-semibold">
+              <div className="mt-4 rounded-[var(--radius-lg)] bg-[var(--color-surface-sunken)] px-3.5 py-3">
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="text-label">Outstanding balance</span>
+                  <span className="text-metric-sm tabular-nums">
                     {formatMoney(loan.outstanding_balance, loan.currency)}
-                  </strong>
+                  </span>
                 </div>
               </div>
 
-              <form onSubmit={handleRecordRepayment} className="space-y-4 text-xs sm:text-sm">
-                <div>
-                  <label htmlFor="repay-amount" className="block text-xs font-medium text-[var(--color-text-muted)] mb-1">
-                    Repayment Amount ({loan.currency}) <span className="text-[var(--color-danger)]">*</span>
-                  </label>
-                  <input
+              <form onSubmit={handleRecordRepayment} noValidate className="mt-4 space-y-4">
+                <Field
+                  id="repay-amount"
+                  label={`Amount (${loan.currency})`}
+                  required
+                  error={repaymentErrors.amount}
+                  hint="Pay any amount up to the outstanding balance."
+                >
+                  <Input
                     id="repay-amount"
                     type="number"
+                    inputMode="decimal"
                     step="0.01"
                     min="0.01"
                     max={Number(loan.outstanding_balance)}
                     required
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
                     placeholder="0.00"
-                    className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl px-3.5 py-2.5 text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)]"
+                    value={amount}
+                    invalid={Boolean(repaymentErrors.amount)}
+                    onChange={(e) => {
+                      setAmount(e.target.value);
+                      if (repaymentErrors.amount) {
+                        setRepaymentErrors((prev) => ({ ...prev, amount: undefined }));
+                      }
+                    }}
                   />
-                </div>
+                </Field>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label htmlFor="repay-date" className="block text-xs font-medium text-[var(--color-text-muted)] mb-1">
-                      Payment Date <span className="text-[var(--color-danger)]">*</span>
-                    </label>
-                    <input
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field
+                    id="repay-date"
+                    label="Payment date"
+                    required
+                    error={repaymentErrors.date}
+                  >
+                    <Input
                       id="repay-date"
                       type="date"
                       required
                       value={paymentDate}
-                      onChange={(e) => setPaymentDate(e.target.value)}
-                      className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl px-3 py-2 text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)]"
+                      invalid={Boolean(repaymentErrors.date)}
+                      onChange={(e) => {
+                        setPaymentDate(e.target.value);
+                        if (repaymentErrors.date) {
+                          setRepaymentErrors((prev) => ({ ...prev, date: undefined }));
+                        }
+                      }}
                     />
-                  </div>
-
-                  <div>
-                    <label htmlFor="repay-method" className="block text-xs font-medium text-[var(--color-text-muted)] mb-1">
-                      Method
-                    </label>
-                    <select
+                  </Field>
+                  <Field id="repay-method" label="Method">
+                    <Select
                       id="repay-method"
                       value={paymentMethod}
-                      onChange={(e) => setPaymentMethod(e.target.value as 'cash' | 'bkash' | 'nagad' | 'bank' | 'other')}
-                      className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl px-3 py-2 text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] capitalize cursor-pointer"
+                      onChange={(e) =>
+                        setPaymentMethod(e.target.value as Loan['payment_method'])
+                      }
                     >
                       <option value="bkash">bKash</option>
                       <option value="nagad">Nagad</option>
                       <option value="cash">Cash</option>
                       <option value="bank">Bank</option>
                       <option value="other">Other</option>
-                    </select>
-                  </div>
+                    </Select>
+                  </Field>
                 </div>
 
-                <div>
-                  <label htmlFor="repay-reference" className="block text-xs font-medium text-[var(--color-text-muted)] mb-1">
-                    Reference / Transaction ID
-                  </label>
-                  <input
+                <Field
+                  id="repay-reference"
+                  label="Reference"
+                  hint="Optional transaction ID or note."
+                >
+                  <Input
                     id="repay-reference"
                     type="text"
+                    placeholder="e.g. TRX123456"
                     value={reference}
                     onChange={(e) => setReference(e.target.value)}
-                    placeholder="e.g. TRX123456"
-                    className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl px-3 py-2 text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)]"
                   />
-                </div>
+                </Field>
 
-                <div>
-                  <label htmlFor="repay-notes" className="block text-xs font-medium text-[var(--color-text-muted)] mb-1">
-                    Notes
-                  </label>
-                  <input
+                <Field id="repay-notes" label="Notes" hint="Optional.">
+                  <Textarea
                     id="repay-notes"
-                    type="text"
+                    rows={2}
+                    placeholder="e.g. Partial payment after salary."
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Optional note"
-                    className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl px-3 py-2 text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)]"
                   />
-                </div>
+                </Field>
 
-                <div className="flex gap-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowRepayModal(false)}
-                    className="w-1/2 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text-muted)] font-medium cursor-pointer"
+                <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
+                  <Button
+                    variant="secondary"
+                    onClick={closeRepayModal}
+                    disabled={submittingRepayment}
                   >
                     Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={submittingRepayment}
-                    className="w-1/2 py-2.5 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] font-semibold transition-colors disabled:opacity-50 cursor-pointer"
-                  >
-                    {submittingRepayment ? 'Saving...' : 'Confirm Repayment'}
-                  </button>
+                  </Button>
+                  <Button type="submit" variant="primary" loading={submittingRepayment}>
+                    Record repayment
+                  </Button>
                 </div>
               </form>
             </div>
           </div>
         )}
 
-        {/* Delete Loan Dialog */}
         <ConfirmDialog
           open={showDeleteLoanDialog}
-          title="Delete Entire Loan"
-          message={`Are you sure you want to delete the loan with "${loan.person_name}"? All repayment history will be deleted.`}
-          confirmLabel="Delete Loan"
+          title="Delete loan"
+          message={`Delete the loan with ${loan.person_name}? Its repayment history will be deleted too.`}
+          confirmLabel="Delete loan"
           onConfirm={handleDeleteLoan}
           onCancel={() => setShowDeleteLoanDialog(false)}
         />
 
-        {/* Delete Repayment Dialog */}
         <ConfirmDialog
-          open={!!deleteRepaymentTarget}
-          title="Delete Repayment Record"
-          message="Are you sure you want to delete this repayment record? The outstanding loan balance will increase accordingly."
-          confirmLabel="Delete Repayment"
+          open={Boolean(deleteRepaymentTarget)}
+          title="Delete repayment"
+          message="Delete this repayment? The outstanding balance will increase by the payment amount."
+          confirmLabel="Delete repayment"
           onConfirm={handleDeleteRepayment}
           onCancel={() => setDeleteRepaymentTarget(null)}
         />

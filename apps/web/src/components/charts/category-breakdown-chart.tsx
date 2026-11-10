@@ -10,7 +10,7 @@ import { CategoryBreakdownPoint } from '@/lib/chart-aggregation';
 import { formatMoney } from '@/lib/format';
 import { ChartCard } from './chart-card';
 import { AccessibleChartTable } from './accessible-chart-table';
-import { PieChart, BarChartHorizontal } from 'lucide-react';
+import { SegmentedControl } from '@/components/ui';
 
 interface CategoryBreakdownChartProps {
   data: CategoryBreakdownPoint[];
@@ -50,7 +50,7 @@ export function CategoryBreakdownChart({
           backgroundColor: colors,
           borderColor: palette.cardBg,
           borderWidth: 2,
-          hoverOffset: 4,
+          hoverOffset: 3,
         },
       ],
     };
@@ -61,7 +61,7 @@ export function CategoryBreakdownChart({
       labels: data.map((d) => d.categoryName),
       datasets: [
         {
-          label: 'Spent Amount',
+          label: 'Spent',
           data: data.map((d) => d.amount),
           backgroundColor: colors,
           borderRadius: 4,
@@ -82,7 +82,7 @@ export function CategoryBreakdownChart({
         tooltip: {
           backgroundColor: palette.cardBg,
           titleColor: palette.textPrimary,
-          bodyColor: palette.textPrimary, // Strict neutral text styling
+          bodyColor: palette.textPrimary,
           borderColor: palette.borderColor,
           borderWidth: 1,
           padding: 10,
@@ -131,7 +131,7 @@ export function CategoryBreakdownChart({
           grid: { color: palette.gridColor },
           ticks: {
             color: palette.textMuted,
-            font: { family: CHART_FONT_FAMILY, size: 10, weight: 500 },
+            font: { family: CHART_FONT_FAMILY, size: 11, weight: 500 },
             callback: (val: string | number) => {
               const num = Number(val);
               return num >= 1000 ? `${(num / 1000).toFixed(0)}k` : num;
@@ -153,24 +153,24 @@ export function CategoryBreakdownChart({
 
   const tableColumns = [
     { key: 'categoryName', label: 'Category' },
-    { key: 'amount', label: 'Spent Amount', isCurrency: true, align: 'right' as const },
-    { key: 'percentage', label: 'Share (%)', align: 'center' as const },
+    { key: 'amount', label: 'Spent', isCurrency: true, align: 'right' as const },
+    { key: 'percentage', label: 'Share', align: 'center' as const },
     { key: 'count', label: 'Entries', align: 'center' as const },
   ];
 
   return (
     <ChartCard
-      title="Expense Categories"
-      subtitle="Allocation across spending sectors"
+      title="Expense categories"
+      subtitle="Where your spending went"
       currency={currency}
       loading={loading}
       error={error}
       onRetry={onRetry}
       isEmpty={data.length === 0}
-      emptyTitle="No categorized expenses"
-      emptyDescription={`No expense records found in ${currency}. Add transactions to view category allocations.`}
+      emptyTitle="No categories yet"
+      emptyDescription={`No expenses recorded in ${currency} yet. Add a transaction to see where your money goes.`}
       emptyActionHref="/transactions/new"
-      emptyActionLabel="+ Add Transaction"
+      emptyActionLabel="Add a transaction"
       accessibleTableView={
         <AccessibleChartTable
           caption={`Expense distribution by category in ${currency}`}
@@ -182,87 +182,77 @@ export function CategoryBreakdownChart({
       className={className}
       heightClass="h-auto min-h-[320px]"
     >
-      <div className="flex flex-col h-full gap-4">
-        {/* Toggle between Doughnut and Horizontal Bar view */}
-        <div className="flex items-center justify-between pb-1">
-          <span className="text-xs text-[var(--color-text-muted)]">
-            Total:{' '}
-            <strong className="tabular-nums font-semibold text-[var(--color-text)]">
+      <div className="flex h-full flex-col gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="text-secondary">
+            Total{' '}
+            <span className="text-card-title ml-0.5 tabular-nums">
               {formatMoney(totalExpense, currency)}
-            </strong>
+            </span>
           </span>
 
-          <div className="flex items-center gap-1 rounded-lg border border-[var(--color-border)] p-0.5 bg-[var(--color-bg)]">
-            <button
-              type="button"
-              onClick={() => setChartMode('doughnut')}
-              aria-label="Switch to doughnut chart"
-              title="Doughnut View"
-              className={`p-1 rounded cursor-pointer transition-colors ${
-                chartMode === 'doughnut'
-                  ? 'bg-[var(--color-surface)] text-[var(--color-text)] shadow-xs'
-                  : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
-              }`}
-            >
-              <PieChart className="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setChartMode('bar')}
-              aria-label="Switch to horizontal bar chart"
-              title="Horizontal Bar View"
-              className={`p-1 rounded cursor-pointer transition-colors ${
-                chartMode === 'bar'
-                  ? 'bg-[var(--color-surface)] text-[var(--color-text)] shadow-xs'
-                  : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
-              }`}
-            >
-              <BarChartHorizontal className="w-3.5 h-3.5" />
-            </button>
-          </div>
+          <SegmentedControl
+            label="Category chart type"
+            size="sm"
+            value={chartMode}
+            onChange={setChartMode}
+            options={[
+              { value: 'doughnut', label: 'Share' },
+              { value: 'bar', label: 'Bars' },
+            ]}
+          />
         </div>
 
-        {/* Visual Chart Canvas */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-          <div className="md:col-span-5 h-48 relative flex items-center justify-center">
+        <div className="grid grid-cols-1 items-center gap-4 md:grid-cols-12">
+          <div className="relative flex h-48 items-center justify-center md:col-span-5">
             {chartMode === 'doughnut' ? (
               <>
-                <Doughnut data={doughnutData} options={doughnutOptions} />
-                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <span className="text-[10px] uppercase font-bold text-[var(--color-text-muted)]">
-                    {data.length} Categories
+                <div
+                  className="h-full w-full"
+                  role="img"
+                  aria-label={`Expense share by category doughnut chart in ${currency}`}
+                >
+                  <Doughnut data={doughnutData} options={doughnutOptions} />
+                </div>
+                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-label text-[var(--color-text-muted)]">
+                    {data.length} categories
                   </span>
-                  <span className="text-xs tabular-nums font-bold text-[var(--color-text)]">
+                  <span className="text-metric-sm tabular-nums">
                     {formatMoney(totalExpense, currency)}
                   </span>
                 </div>
               </>
             ) : (
-              <Bar data={horizontalBarData} options={barOptions} />
+              <div
+                className="h-full w-full"
+                role="img"
+                aria-label={`Expense share by category bar chart in ${currency}`}
+              >
+                <Bar data={horizontalBarData} options={barOptions} />
+              </div>
             )}
           </div>
 
-          {/* Accessible Side Legend with Neutral Monetary Values */}
-          <div className="md:col-span-7 space-y-2 divide-y divide-[var(--color-border)] max-h-48 overflow-y-auto pr-1">
+          {/* Text legend doubles as the accessible summary of the chart */}
+          <div className="max-h-48 space-y-0 divide-y divide-[var(--color-border)] overflow-y-auto pr-1 md:col-span-7">
             {data.map((cat, idx) => (
-              <div
-                key={cat.categoryId}
-                className="pt-2 first:pt-0 flex items-center justify-between text-xs"
-              >
-                <div className="flex items-center gap-2 min-w-0">
+              <div key={cat.categoryId} className="flex items-center justify-between gap-2 py-2">
+                <div className="flex min-w-0 items-center gap-2">
                   <span
-                    className="w-2.5 h-2.5 rounded-full shrink-0"
+                    className="h-2.5 w-2.5 shrink-0 rounded-full"
                     style={{ backgroundColor: colors[idx] }}
+                    aria-hidden="true"
                   />
-                  <span className="text-[var(--color-text)] truncate font-medium">
+                  <span className="text-label truncate text-[var(--color-text)]">
                     {cat.categoryName}
                   </span>
                 </div>
-                <div className="flex items-center gap-2.5 shrink-0 pl-2">
-                  <span className="text-[11px] tabular-nums font-medium text-[var(--color-text-muted)]">
+                <div className="flex shrink-0 items-center gap-2.5">
+                  <span className="text-caption tabular-nums text-[var(--color-text-muted)]">
                     {cat.percentage}%
                   </span>
-                  <span className="tabular-nums font-semibold text-[var(--color-text)]">
+                  <span className="text-label tabular-nums text-[var(--color-text)]">
                     {formatMoney(cat.amount, currency)}
                   </span>
                 </div>

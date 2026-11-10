@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Mic, MicOff, Square, X, AlertCircle } from 'lucide-react';
+import { AlertCircle, Mic, MicOff, Square, X } from 'lucide-react';
+import { Alert, Badge, Button, IconButton } from '@/components/ui';
 import { SupportedSpeechLang } from '@/lib/use-speech-recognition';
 
 interface VoiceInputControlProps {
@@ -17,6 +18,11 @@ interface VoiceInputControlProps {
   disabled?: boolean;
 }
 
+const LANGUAGES: { value: SupportedSpeechLang; label: string; spokenLabel: string }[] = [
+  { value: 'en-US', label: 'English', spokenLabel: 'English' },
+  { value: 'bn-BD', label: 'বাংলা', spokenLabel: 'Bangla' },
+];
+
 export function VoiceInputControl({
   isSupported,
   isListening,
@@ -31,181 +37,163 @@ export function VoiceInputControl({
 }: VoiceInputControlProps) {
   const [showTooltip, setShowTooltip] = useState(false);
 
+  const lang = LANGUAGES.find((item) => item.value === selectedLang) ?? LANGUAGES[0];
+  const controlsDisabled = disabled || isListening;
+
   return (
-    <div className="flex flex-col gap-2 w-full">
-      {/* Screen Reader live status announcement */}
+    <div className="flex w-full flex-col gap-2.5">
+      {/* Screen reader live status announcement */}
       <div role="status" aria-live="polite" className="sr-only">
         {isListening
-          ? `Microphone active. Listening for transaction description in ${
-              selectedLang === 'bn-BD' ? 'Bangla' : 'English'
-            }.`
+          ? `Microphone active. Listening for a transaction description in ${lang.spokenLabel}.`
           : error
-          ? `Speech error: ${error}`
-          : 'Microphone idle.'}
+            ? `Speech error: ${error}`
+            : 'Microphone idle.'}
       </div>
 
-      {/* Primary voice control bar */}
-      <div className="flex flex-wrap items-center justify-between gap-2.5">
-        {/* Left side: Language Selector pills */}
+      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+        {/* Language selector */}
         <div
-          className="flex items-center rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] p-0.5 text-xs shadow-xs"
+          className="inline-flex w-fit items-center gap-0.5 rounded-[var(--radius-md)] bg-[var(--color-surface-sunken)] p-0.5"
           role="group"
           aria-label="Speech recognition language"
         >
-          <button
-            type="button"
-            onClick={() => onLanguageChange('en-US')}
-            disabled={isListening || disabled}
-            aria-pressed={selectedLang === 'en-US'}
-            className={`min-h-[36px] sm:min-h-[32px] px-2.5 py-1 rounded-md font-medium transition-all text-xs cursor-pointer select-none ${
-              selectedLang === 'en-US'
-                ? 'bg-[var(--color-surface)] text-[var(--color-text)] shadow-xs font-semibold'
-                : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
-            } disabled:opacity-50 disabled:cursor-not-allowed`}
-          >
-            EN
-          </button>
-          <button
-            type="button"
-            onClick={() => onLanguageChange('bn-BD')}
-            disabled={isListening || disabled}
-            aria-pressed={selectedLang === 'bn-BD'}
-            className={`min-h-[36px] sm:min-h-[32px] px-2.5 py-1 rounded-md font-medium transition-all text-xs cursor-pointer select-none ${
-              selectedLang === 'bn-BD'
-                ? 'bg-[var(--color-surface)] text-[var(--color-text)] shadow-xs font-semibold'
-                : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
-            } disabled:opacity-50 disabled:cursor-not-allowed`}
-          >
-            বাংলা (BN)
-          </button>
-        </div>
-
-        {/* Right side: Microphone / Stop controls */}
-        <div className="flex items-center gap-2 relative">
-          {!isListening ? (
-            <div className="relative inline-flex items-center">
+          {LANGUAGES.map((option) => {
+            const active = option.value === selectedLang;
+            return (
               <button
+                key={option.value}
                 type="button"
-                onClick={onStart}
-                disabled={disabled || !isSupported}
-                onMouseEnter={() => setShowTooltip(true)}
-                onMouseLeave={() => setShowTooltip(false)}
-                onFocus={() => setShowTooltip(true)}
-                onBlur={() => setShowTooltip(false)}
-                aria-label={
-                  isSupported
-                    ? 'Start voice input (speech-to-text)'
-                    : 'Voice input unavailable in this browser'
-                }
-                className={`min-h-[44px] min-w-[44px] px-3.5 py-2 rounded-xl text-xs font-medium border flex items-center justify-center gap-2 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] active:scale-[0.98] ${
-                  isSupported
-                    ? 'border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] text-[var(--color-text)] shadow-xs hover:border-[var(--color-primary)]'
-                    : 'border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text-dim)] cursor-not-allowed opacity-60'
+                onClick={() => onLanguageChange(option.value)}
+                disabled={controlsDisabled}
+                aria-pressed={active}
+                className={`h-8 cursor-pointer rounded-[var(--radius-sm)] px-3 text-[13px] font-medium transition-colors duration-[var(--duration-fast)] disabled:cursor-not-allowed disabled:opacity-50 ${
+                  active
+                    ? 'bg-[var(--color-surface)] text-[var(--color-text)]'
+                    : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
                 }`}
               >
-                {isSupported ? (
-                  <>
-                    <Mic className="w-4 h-4 text-[var(--color-primary)] shrink-0" />
-                    <span className="hidden sm:inline">Voice Input</span>
-                  </>
-                ) : (
-                  <>
-                    <MicOff className="w-4 h-4 text-[var(--color-text-dim)] shrink-0" />
-                    <span className="hidden sm:inline">Mic Unsupported</span>
-                  </>
-                )}
+                {option.label}
               </button>
+            );
+          })}
+        </div>
 
-              {/* Accessible tooltip */}
+        {/* Microphone / recording controls */}
+        <div className="flex flex-wrap items-center gap-2">
+          {!isListening ? (
+            <div
+              className="relative inline-flex items-center"
+              onMouseEnter={() => setShowTooltip(true)}
+              onMouseLeave={() => setShowTooltip(false)}
+              onFocus={() => setShowTooltip(true)}
+              onBlur={() => setShowTooltip(false)}
+            >
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  setShowTooltip(false);
+                  onStart();
+                }}
+                disabled={disabled || !isSupported}
+                aria-label={
+                  isSupported
+                    ? `Start voice input in ${lang.spokenLabel}`
+                    : 'Voice input is not available in this browser'
+                }
+                leadingIcon={
+                  isSupported ? (
+                    <Mic className="h-4 w-4 text-[var(--color-primary)]" aria-hidden="true" />
+                  ) : (
+                    <MicOff className="h-4 w-4" aria-hidden="true" />
+                  )
+                }
+                className="min-h-10"
+              >
+                {isSupported ? 'Speak' : 'Mic unavailable'}
+              </Button>
+
               {showTooltip && (
                 <div
                   role="tooltip"
-                  className="absolute bottom-full right-0 mb-2 z-30 px-2.5 py-1.5 text-[11px] rounded-lg bg-[var(--color-surface-elevated)] text-[var(--color-text)] border border-[var(--color-border)] shadow-lg max-w-[220px] whitespace-normal pointer-events-none"
+                  className="pointer-events-none absolute right-0 bottom-full z-30 mb-2 max-w-[240px] rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-elevated)] px-2.5 py-1.5 text-caption whitespace-normal text-[var(--color-text)] shadow-[var(--shadow-md)]"
                 >
                   {isSupported
-                    ? `Click to speak your expense in ${
-                        selectedLang === 'bn-BD' ? 'Bangla' : 'English'
-                      }. Microphone permission requested on click.`
-                    : 'Web Speech API is not supported in this browser. Please use standard manual keyboard input.'}
+                    ? `Start speaking in ${lang.spokenLabel}. Your browser will ask for microphone permission the first time.`
+                    : 'This browser does not support voice input. You can type the transaction instead.'}
                 </div>
               )}
             </div>
           ) : (
-            <div className="flex items-center gap-2 animate-[fadeIn_0.15s_ease-out]">
-              {/* Cancel Button */}
-              <button
+            <>
+              <Button
                 type="button"
+                variant="ghost"
                 onClick={onCancel}
-                aria-label="Cancel voice recording"
-                className="min-h-[44px] min-w-[44px] px-3 py-2 rounded-xl text-xs font-medium border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-all cursor-pointer flex items-center justify-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-danger)]"
+                leadingIcon={<X className="h-4 w-4" aria-hidden="true" />}
+                className="min-h-10"
               >
-                <X className="w-4 h-4 shrink-0" />
-                <span className="hidden sm:inline">Cancel</span>
-              </button>
-
-              {/* Stop Listening Button */}
-              <button
+                Cancel
+              </Button>
+              <Button
                 type="button"
+                variant="danger"
                 onClick={onStop}
-                aria-label="Stop listening"
-                className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-semibold bg-[var(--color-danger)] hover:bg-[var(--color-danger-hover)] text-white shadow-md shadow-[var(--color-danger)]/20 transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-danger)]"
+                leadingIcon={<Square className="h-4 w-4 fill-current" aria-hidden="true" />}
+                className="min-h-10"
               >
-                <span className="relative flex h-2.5 w-2.5 shrink-0">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white" />
-                </span>
-                <Square className="w-3.5 h-3.5 fill-current shrink-0" />
-                <span>Stop Listening</span>
-              </button>
-            </div>
+                Stop listening
+              </Button>
+            </>
           )}
         </div>
       </div>
 
-      {/* Active listening status indicator */}
+      {/* Active listening status */}
       {isListening && (
-        <div className="flex items-center justify-between p-3 rounded-xl bg-[var(--color-pale-mint)] border border-[var(--color-primary)]/30 text-xs text-[var(--color-text)] animate-pulse">
-          <div className="flex items-center gap-2">
-            <Mic className="w-4 h-4 text-[var(--color-primary)] animate-bounce" />
-            <span className="font-medium">
-              Listening in {selectedLang === 'bn-BD' ? 'Bangla (বাংলা)' : 'English'}...
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius-lg)] border border-[var(--color-primary-subtle-hover)] bg-[var(--color-primary-subtle)] px-3.5 py-2.5">
+          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+            <span
+              className="h-2 w-2 shrink-0 rounded-full bg-[var(--color-primary)]"
+              aria-hidden="true"
+            />
+            <span className="text-label text-[var(--color-text)]">
+              Listening in {selectedLang === 'bn-BD' ? 'বাংলা' : 'English'}
             </span>
-            <span className="text-[var(--color-text-muted)] text-[11px] hidden sm:inline">
-              Speak naturally (e.g. &quot;Spent 250 taka on lunch using bKash today&quot;)
+            <span className="text-caption hidden sm:inline">
+              Speak naturally, for example “Spent 250 taka on lunch today”.
             </span>
           </div>
-          <span className="text-[10px] uppercase font-mono tracking-wider text-[var(--color-primary)] font-bold">
-            REC
-          </span>
+          <Badge tone="accent" dot>
+            Recording
+          </Badge>
         </div>
       )}
 
-      {/* Error alert with fallback advice */}
+      {/* Error with fallback advice */}
       {error && (
-        <div
-          role="alert"
-          className="flex items-start justify-between p-3 rounded-xl bg-[var(--color-warning-bg)]/20 border border-[var(--color-warning)] text-xs text-[var(--color-text)]"
+        <Alert
+          tone="warning"
+          title={error}
+          action={
+            onClearError ? (
+              <IconButton label="Dismiss voice input error" size="sm" onClick={onClearError}>
+                <X className="h-4 w-4" aria-hidden="true" />
+              </IconButton>
+            ) : undefined
+          }
         >
-          <div className="flex items-start gap-2">
-            <AlertCircle className="w-4 h-4 text-[var(--color-warning)] shrink-0 mt-0.5" />
-            <div className="space-y-0.5">
-              <p className="font-semibold">{error}</p>
-              <p className="text-[11px] text-[var(--color-text-muted)]">
-                You can type your transaction directly into the text box above anytime.
-              </p>
-            </div>
-          </div>
-          {onClearError && (
-            <button
-              type="button"
-              onClick={onClearError}
-              aria-label="Dismiss error"
-              className="p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text)] rounded-md cursor-pointer ml-2 shrink-0"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
+          You can type the transaction directly into the text box above instead.
+        </Alert>
+      )}
+
+      {/* Icon-only visual hint for unsupported browsers is announced above; keep the note quiet. */}
+      {!isSupported && (
+        <p className="text-caption flex items-center gap-1.5">
+          <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+          Voice input is not available in this browser. Typing works the same way.
+        </p>
       )}
     </div>
   );

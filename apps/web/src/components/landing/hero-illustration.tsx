@@ -1,172 +1,151 @@
 'use client';
 
-import React from 'react';
-import { ArrowUpRight, ArrowDownLeft, CheckCircle2, TrendingUp, Wallet, Shield } from 'lucide-react';
+import {
+  ArrowUpRight,
+  ArrowDownLeft,
+  CheckCircle2,
+  TrendingUp,
+  Wallet,
+  Lock,
+} from 'lucide-react';
 
+/**
+ * A product preview, not an illustration: the same ledger surface a signed-in
+ * user sees. Amounts are always neutral text (never colored); direction is
+ * carried by the small arrow icon and its tint.
+ */
 export function HeroIllustration() {
   return (
     <div
-      className="relative w-full max-w-[520px] mx-auto select-none"
-      aria-label="Interactive preview of Ledgerly personal finance ledger"
+      className="relative mx-auto w-full max-w-[520px] select-none"
       role="img"
+      aria-label="Preview of the Ledgerly ledger for November 2026: net cash flow ৳6,450, 63% of the monthly budget used, and three recent transactions — a grocery expense, consulting income, and a broadband bill."
     >
-      {/* Organic Background Blob Shapes */}
-      <div className="absolute inset-0 sm:-inset-6 -z-10 pointer-events-none opacity-80 overflow-hidden sm:overflow-visible">
-        <svg
-          viewBox="0 0 600 560"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className="w-full h-full transform scale-100 sm:scale-105"
-        >
-          <path
-            d="M480 230C520 330 470 450 360 500C250 550 130 510 70 410C10 310 20 170 110 90C200 10 340 30 420 90C470 128 450 170 480 230Z"
-            fill="var(--color-landing-mint)"
-            className="transition-colors duration-500"
-          />
-          <path
-            d="M520 180C560 260 510 380 430 420C350 460 270 410 230 350C190 290 210 200 270 140C330 80 440 80 490 120C510 136 505 156 520 180Z"
-            fill="var(--color-landing-aqua)"
-            opacity="0.65"
-            className="transition-colors duration-500"
-          />
-        </svg>
-      </div>
-
-      {/* Main Financial Ledger Interface Card */}
-      <div className="relative rounded-2xl bg-landing-surface-card border border-landing-border shadow-xl shadow-teal-950/5 p-5 sm:p-6 space-y-5">
-        {/* Card Header: Account Overview & Net Cash Flow */}
-        <div className="flex items-center justify-between pb-4 border-b border-landing-border">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-landing-mint text-landing-teal flex items-center justify-center">
-              <Wallet className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="text-xs font-semibold text-landing-text-muted block">
-                Net Cash Flow
+      <div className="relative rounded-[var(--radius-xl)] border border-landing-border bg-landing-surface-card p-4 shadow-md sm:p-6">
+        {/* Header: account overview */}
+        <div className="flex items-center justify-between gap-3 border-b border-landing-border pb-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-primary-subtle)] text-[var(--color-primary-text)]">
+              <Wallet className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <span className="block text-xs font-medium text-landing-text-muted">
+                Net cash flow · November 2026
               </span>
-              <span className="text-xl sm:text-2xl font-bold text-landing-text tabular-nums">
-                ৳32,450.00
+              <span className="block text-xl font-semibold tabular-nums text-landing-text sm:text-2xl">
+                ৳6,450.00
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-landing-mint/60 border border-landing-border text-xs font-semibold text-landing-teal-dark dark:text-landing-teal">
-            <TrendingUp className="w-3.5 h-3.5" />
-            <span>+14.2%</span>
+          <span className="hidden shrink-0 items-center gap-1.5 text-xs font-medium text-landing-text-muted sm:flex">
+            <TrendingUp className="h-4 w-4 text-[var(--color-primary-text)]" aria-hidden="true" />
+            <span className="tabular-nums">+৳4,120 vs Sept</span>
+          </span>
+        </div>
+
+        {/* Monthly budget usage */}
+        <div className="mt-4 space-y-2 rounded-[var(--radius-md)] border border-landing-border bg-landing-alt p-3.5">
+          <div className="flex items-center justify-between gap-3 text-xs">
+            <span className="font-medium text-landing-text">Monthly budget</span>
+            <span className="tabular-nums text-landing-text-muted">৳28,550 of ৳45,000</span>
+          </div>
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-landing-border">
+            <div className="h-full rounded-full bg-landing-teal" style={{ width: '63%' }} />
+          </div>
+          <div className="flex items-center justify-between text-xs text-landing-text-muted">
+            <span className="tabular-nums">63% used</span>
+            <span>19 days left</span>
           </div>
         </div>
 
-        {/* Category Budget Progress Bar */}
-        <div className="p-3.5 rounded-xl bg-landing-alt border border-landing-border space-y-2">
-          <div className="flex items-center justify-between text-xs">
-            <span className="font-semibold text-landing-text">Monthly Budget Usage</span>
-            <span className="text-landing-text-muted tabular-nums">৳28,550 of ৳45,000</span>
-          </div>
-          <div className="w-full h-2 rounded-full bg-landing-border overflow-hidden">
-            <div
-              className="h-full rounded-full bg-landing-teal"
-              style={{ width: '63.4%' }}
-            />
-          </div>
-          <div className="flex items-center justify-between text-[11px] text-landing-text-muted">
-            <span>63.4% spent</span>
-            <span>12 days remaining</span>
-          </div>
-        </div>
-
-        {/* Recent Financial Ledger Transactions */}
-        <div className="space-y-2.5">
-          <div className="flex items-center justify-between text-xs text-landing-text-muted font-medium px-1">
-            <span>Recent Transactions</span>
+        {/* Recent activity */}
+        <div className="mt-4">
+          <div className="flex items-center justify-between px-1 pb-2 text-xs text-landing-text-muted">
+            <span>Recent activity</span>
             <span>Status</span>
           </div>
 
-          {/* Transaction 1 */}
-          <div className="p-3 rounded-xl bg-landing-surface border border-landing-border/80 flex items-center justify-between hover:border-landing-teal/30 transition-colors">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center">
-                <ArrowDownLeft className="w-4 h-4" />
-              </div>
-              <div>
-                <span className="text-xs sm:text-sm font-semibold text-landing-text block">
-                  Agora Superstore
+          <ul className="space-y-2">
+            <li className="flex items-center justify-between gap-3 rounded-[var(--radius-md)] border border-landing-border bg-landing-surface px-3 py-2.5">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--radius-sm)] bg-[var(--color-expense-subtle)] text-[var(--color-expense)]">
+                  <ArrowDownLeft className="h-4 w-4" aria-hidden="true" />
                 </span>
-                <span className="text-[11px] text-landing-text-muted">
-                  Food &amp; Dining • Yesterday
-                </span>
+                <div className="min-w-0">
+                  <span className="block truncate text-[13px] font-medium text-landing-text">
+                    Agora Superstore
+                  </span>
+                  <span className="block text-[11px] text-landing-text-muted">
+                    Food &amp; dining · Nov 8
+                  </span>
+                </div>
               </div>
-            </div>
-            <div className="text-right">
-              <span className="text-xs sm:text-sm font-bold text-landing-text tabular-nums block">
-                -৳1,200.00
-              </span>
-              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
-                Cleared
-              </span>
-            </div>
-          </div>
+              <div className="shrink-0 text-right">
+                <span className="block text-[13px] font-semibold tabular-nums text-landing-text">
+                  −৳1,200.00
+                </span>
+                <span className="block text-[11px] text-landing-text-muted">Cleared</span>
+              </div>
+            </li>
 
-          {/* Transaction 2 */}
-          <div className="p-3 rounded-xl bg-landing-surface border border-landing-border/80 flex items-center justify-between hover:border-landing-teal/30 transition-colors">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-                <ArrowUpRight className="w-4 h-4" />
-              </div>
-              <div>
-                <span className="text-xs sm:text-sm font-semibold text-landing-text block">
-                  Design Consulting
+            <li className="flex items-center justify-between gap-3 rounded-[var(--radius-md)] border border-landing-border bg-landing-surface px-3 py-2.5">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--radius-sm)] bg-[var(--color-primary-subtle)] text-[var(--color-primary-text)]">
+                  <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
                 </span>
-                <span className="text-[11px] text-landing-text-muted">
-                  Direct Deposit • Oct 08
-                </span>
+                <div className="min-w-0">
+                  <span className="block truncate text-[13px] font-medium text-landing-text">
+                    Design consulting
+                  </span>
+                  <span className="block text-[11px] text-landing-text-muted">
+                    Client work · Nov 5
+                  </span>
+                </div>
               </div>
-            </div>
-            <div className="text-right">
-              <span className="text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400 tabular-nums block">
-                +৳35,000.00
-              </span>
-              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
-                Received
-              </span>
-            </div>
-          </div>
+              <div className="shrink-0 text-right">
+                <span className="block text-[13px] font-semibold tabular-nums text-landing-text">
+                  +৳35,000.00
+                </span>
+                <span className="block text-[11px] text-landing-text-muted">Received</span>
+              </div>
+            </li>
 
-          {/* Transaction 3 */}
-          <div className="p-3 rounded-xl bg-landing-surface border border-landing-border/80 flex items-center justify-between hover:border-landing-teal/30 transition-colors">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center">
-                <ArrowDownLeft className="w-4 h-4" />
-              </div>
-              <div>
-                <span className="text-xs sm:text-sm font-semibold text-landing-text block">
-                  Broadband Internet
+            <li className="flex items-center justify-between gap-3 rounded-[var(--radius-md)] border border-landing-border bg-landing-surface px-3 py-2.5">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--radius-sm)] bg-[var(--color-expense-subtle)] text-[var(--color-expense)]">
+                  <ArrowDownLeft className="h-4 w-4" aria-hidden="true" />
                 </span>
-                <span className="text-[11px] text-landing-text-muted">
-                  Utilities • Oct 05
-                </span>
+                <div className="min-w-0">
+                  <span className="block truncate text-[13px] font-medium text-landing-text">
+                    Broadband internet
+                  </span>
+                  <span className="block text-[11px] text-landing-text-muted">
+                    Utilities · Nov 2
+                  </span>
+                </div>
               </div>
-            </div>
-            <div className="text-right">
-              <span className="text-xs sm:text-sm font-bold text-landing-text tabular-nums block">
-                -৳1,050.00
-              </span>
-              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
-                Cleared
-              </span>
-            </div>
-          </div>
+              <div className="shrink-0 text-right">
+                <span className="block text-[13px] font-semibold tabular-nums text-landing-text">
+                  −৳1,350.00
+                </span>
+                <span className="block text-[11px] text-landing-text-muted">Cleared</span>
+              </div>
+            </li>
+          </ul>
         </div>
       </div>
 
-      {/* Floating Settlement & Security Badges (Clean financial indicators) */}
-      <div className="absolute -bottom-3 left-2 sm:-left-4 z-20 flex items-center gap-1.5 sm:gap-2 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-landing-surface-card border border-landing-border shadow-md text-[11px] sm:text-xs font-semibold text-landing-text max-w-[calc(100%-1rem)]">
-        <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-500 shrink-0" />
-        <span className="truncate">Loan to Tanvir: ৳2,500 settled</span>
+      {/* Floating settlement note */}
+      <div className="absolute -bottom-3 left-3 z-10 hidden max-w-[calc(100%-1.5rem)] items-center gap-2 rounded-[var(--radius-md)] border border-landing-border bg-landing-surface-card px-3 py-2 text-xs font-medium text-landing-text shadow-md sm:-left-4 sm:flex">
+        <CheckCircle2 className="h-4 w-4 shrink-0 text-[var(--color-primary-text)]" aria-hidden="true" />
+        <span className="truncate">Loan to Tanvir · ৳2,500 settled</span>
       </div>
 
-      <div className="absolute -top-3 right-2 sm:-right-3 z-20 flex items-center gap-1.5 sm:gap-2 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-landing-surface-card border border-landing-border shadow-md text-[11px] sm:text-xs font-semibold text-landing-text max-w-[calc(100%-1rem)]">
-        <Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-landing-teal shrink-0" />
-        <span className="truncate">PostgreSQL RLS Protected</span>
+      {/* Floating privacy note */}
+      <div className="absolute -top-3 right-3 z-10 hidden max-w-[calc(100%-1.5rem)] items-center gap-2 rounded-[var(--radius-md)] border border-landing-border bg-landing-surface-card px-3 py-2 text-xs font-medium text-landing-text shadow-md sm:-right-4 sm:flex">
+        <Lock className="h-4 w-4 shrink-0 text-[var(--color-primary-text)]" aria-hidden="true" />
+        <span className="truncate">Private to your account</span>
       </div>
     </div>
   );

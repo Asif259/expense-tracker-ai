@@ -9,7 +9,6 @@ import { LoanPortfolioSummary } from '@/lib/chart-aggregation';
 import { formatMoney } from '@/lib/format';
 import { ChartCard } from './chart-card';
 import { AccessibleChartTable } from './accessible-chart-table';
-import { ArrowDownLeft, ArrowUpRight } from 'lucide-react';
 
 interface LoanBalanceChartProps {
   summary: LoanPortfolioSummary | null;
@@ -37,18 +36,18 @@ export function LoanBalanceChart({
     }
 
     return {
-      labels: ['Owed to You (Receivables)', 'You Owe (Payables)'],
+      labels: ['Owed to you', 'You owe'],
       datasets: [
         {
-          label: 'Outstanding Balance',
+          label: 'Outstanding',
           data: [summary.outstandingReceivables, summary.outstandingPayables],
-          backgroundColor: [palette.receivable, palette.payable],
+          backgroundColor: [palette.receivable, palette.expense],
           borderRadius: 4,
           borderSkipped: false,
           barPercentage: 0.5,
         },
         {
-          label: 'Total Repaid',
+          label: 'Repaid',
           data: [summary.repaidLent, summary.repaidBorrowed],
           backgroundColor: [palette.income, palette.income],
           borderRadius: 4,
@@ -67,13 +66,13 @@ export function LoanBalanceChart({
     if (!summary) return [];
     return [
       {
-        direction: 'Owed to You (Receivables)',
+        direction: 'Owed to you',
         principal: summary.totalLent,
         repaid: summary.repaidLent,
         outstanding: summary.outstandingReceivables,
       },
       {
-        direction: 'You Owe (Payables)',
+        direction: 'You owe',
         principal: summary.totalBorrowed,
         repaid: summary.repaidBorrowed,
         outstanding: summary.outstandingPayables,
@@ -82,10 +81,10 @@ export function LoanBalanceChart({
   }, [summary]);
 
   const tableColumns = [
-    { key: 'direction', label: 'Loan Direction' },
+    { key: 'direction', label: 'Direction' },
     { key: 'principal', label: 'Principal', isCurrency: true, align: 'right' as const },
     { key: 'repaid', label: 'Repaid', isCurrency: true, align: 'right' as const },
-    { key: 'outstanding', label: 'Outstanding Balance', isCurrency: true, align: 'right' as const },
+    { key: 'outstanding', label: 'Outstanding', isCurrency: true, align: 'right' as const },
   ];
 
   const isEmpty =
@@ -97,17 +96,17 @@ export function LoanBalanceChart({
 
   return (
     <ChartCard
-      title="Debt & Loan Obligations"
-      subtitle="Bilateral exposure and settlement balances"
+      title="Debts and loans"
+      subtitle="Outstanding balances and amounts repaid"
       currency={currency}
       loading={loading}
       error={error}
       onRetry={onRetry}
       isEmpty={isEmpty}
-      emptyTitle="No loan records"
-      emptyDescription={`No bilateral loan contracts or debts found in ${currency}. Record a loan to track liabilities.`}
+      emptyTitle="No loans yet"
+      emptyDescription={`No loans or debts recorded in ${currency} yet. Record one to track what you owe and what is owed to you.`}
       emptyActionHref="/loans/new"
-      emptyActionLabel="+ Record a Loan"
+      emptyActionLabel="Record a loan"
       accessibleTableView={
         <AccessibleChartTable
           caption={`Debt and loan obligations breakdown in ${currency}`}
@@ -119,53 +118,33 @@ export function LoanBalanceChart({
       className={className}
       heightClass="h-auto min-h-[300px]"
     >
-      <div className="space-y-4">
-        {/* Visual Chart Canvas */}
+      <div className="flex h-full flex-col gap-4">
         <div className="h-44 w-full">
           <Bar data={chartData} options={options} />
         </div>
 
-        {/* Dual Card Metrics - Neutral numbers with directional iconography */}
+        {/* Plain hairline summary — ChartCard already provides the surface. */}
         {summary && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-[var(--color-border)]">
-            <div className="p-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="w-7 h-7 rounded-md bg-[var(--color-pale-cyan)] text-[var(--color-text)] flex items-center justify-center text-xs font-bold shrink-0">
-                  <ArrowDownLeft className="w-4 h-4 text-[#6CB3F9]" />
-                </span>
-                <div>
-                  <span className="text-[10px] uppercase font-bold text-[var(--color-text-muted)] block">
-                    Receivables (Owed to You)
-                  </span>
-                  <span className="text-sm tabular-nums font-bold text-[var(--color-text)] mt-0.5 block">
-                    {formatMoney(summary.outstandingReceivables, currency)}
-                  </span>
-                </div>
-              </div>
-              <span className="text-[11px] tabular-nums font-medium text-[var(--color-text-muted)]">
-                Repaid: {formatMoney(summary.repaidLent, currency)}
-              </span>
+          <dl className="grid grid-cols-1 gap-x-6 gap-y-3 border-t border-[var(--color-border)] pt-3 sm:grid-cols-2">
+            <div className="min-w-0">
+              <dt className="text-label text-[var(--color-text-muted)]">Owed to you</dt>
+              <dd className="text-metric-sm mt-0.5 tabular-nums">
+                {formatMoney(summary.outstandingReceivables, currency)}
+              </dd>
+              <p className="text-caption mt-0.5">
+                {formatMoney(summary.repaidLent, currency)} repaid so far
+              </p>
             </div>
-
-            <div className="p-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="w-7 h-7 rounded-md bg-[var(--color-pale-yellow)] text-[var(--color-text)] flex items-center justify-center text-xs font-bold shrink-0">
-                  <ArrowUpRight className="w-4 h-4 text-[#5452CF]" />
-                </span>
-                <div>
-                  <span className="text-[10px] uppercase font-bold text-[var(--color-text-muted)] block">
-                    Payables (You Owe)
-                  </span>
-                  <span className="text-sm tabular-nums font-bold text-[var(--color-text)] mt-0.5 block">
-                    {formatMoney(summary.outstandingPayables, currency)}
-                  </span>
-                </div>
-              </div>
-              <span className="text-[11px] tabular-nums font-medium text-[var(--color-text-muted)]">
-                Repaid: {formatMoney(summary.repaidBorrowed, currency)}
-              </span>
+            <div className="min-w-0">
+              <dt className="text-label text-[var(--color-text-muted)]">You owe</dt>
+              <dd className="text-metric-sm mt-0.5 tabular-nums">
+                {formatMoney(summary.outstandingPayables, currency)}
+              </dd>
+              <p className="text-caption mt-0.5">
+                {formatMoney(summary.repaidBorrowed, currency)} repaid so far
+              </p>
             </div>
-          </div>
+          </dl>
         )}
       </div>
     </ChartCard>

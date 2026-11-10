@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { formatMoney } from '@/lib/format';
+import { Button, Field, Input, SegmentedControl } from '@/components/ui';
 
 interface LoanCalculatorProps {
   onSaveAsNewLoan?: (loanData: {
@@ -14,12 +15,31 @@ interface LoanCalculatorProps {
   }) => void;
 }
 
+type CalculatorMethod = 'cash' | 'bkash' | 'bank' | 'nagad';
+
+const METHOD_LABELS: Record<CalculatorMethod, string> = {
+  bkash: 'bKash',
+  nagad: 'Nagad',
+  cash: 'Cash',
+  bank: 'Bank',
+};
+
+const METHOD_OPTIONS = (Object.keys(METHOD_LABELS) as CalculatorMethod[]).map((method) => ({
+  value: method,
+  label: METHOD_LABELS[method],
+}));
+
+const DIRECTION_OPTIONS = [
+  { value: 'lent', label: 'I lent money' },
+  { value: 'borrowed', label: 'I borrowed money' },
+] as const;
+
 export function LoanCalculator({ onSaveAsNewLoan }: LoanCalculatorProps) {
   const [direction, setDirection] = useState<'lent' | 'borrowed'>('borrowed');
   const [personName, setPersonName] = useState('Rahim');
   const [principalStr, setPrincipalStr] = useState('1000');
   const [repaidStr, setRepaidStr] = useState('500');
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'bkash' | 'bank' | 'nagad' | 'other'>('bkash');
+  const [paymentMethod, setPaymentMethod] = useState<CalculatorMethod>('bkash');
   const [dueDate, setDueDate] = useState('2026-10-15');
   const currency = 'BDT';
 
@@ -31,171 +51,146 @@ export function LoanCalculator({ onSaveAsNewLoan }: LoanCalculatorProps) {
 
   const headerText =
     direction === 'borrowed'
-      ? `You still owe ${personName || 'person'}`
-      : `${personName || 'Person'} still owes you`;
+      ? `You still owe ${personName.trim() || 'this person'}`
+      : `${personName.trim() || 'This person'} still owes you`;
 
   return (
-    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-6 sm:p-7 shadow-xl">
-      <div className="mb-5">
-        <h3 className="text-lg font-bold text-[var(--color-text)] tracking-tight">Try a loan example</h3>
-        <p className="text-xs sm:text-sm text-[var(--color-text-muted)] mt-1">
-          Change the values to see how the outstanding balance should behave.
+    <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 sm:p-6">
+      <div>
+        <h3 className="text-section-title">Loan calculator</h3>
+        <p className="text-secondary mt-1">
+          Adjust the amounts to see how the outstanding balance changes.
         </p>
       </div>
 
-      <div className="space-y-4">
-        {/* Direction radios */}
-        <div className="space-y-2">
-          <label className="flex items-center gap-3 cursor-pointer text-sm text-[var(--color-text)]">
-            <input
-              type="radio"
-              name="calc-direction"
-              checked={direction === 'lent'}
-              onChange={() => setDirection('lent')}
-              className="w-4 h-4 text-[var(--color-primary)] border-[var(--color-border)] bg-[var(--color-bg)] focus:ring-[var(--color-primary)]"
-            />
-            <span>I lent money to someone</span>
-          </label>
-          <label className="flex items-center gap-3 cursor-pointer text-sm text-[var(--color-text)]">
-            <input
-              type="radio"
-              name="calc-direction"
-              checked={direction === 'borrowed'}
-              onChange={() => setDirection('borrowed')}
-              className="w-4 h-4 text-[var(--color-primary)] border-[var(--color-border)] bg-[var(--color-bg)] focus:ring-[var(--color-primary)]"
-            />
-            <span>I borrowed money from someone</span>
-          </label>
-        </div>
-
-        {/* Person's name */}
+      <div className="mt-5 space-y-4">
         <div>
-          <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1.5">
-            Person&apos;s name
-          </label>
-          <input
-            type="text"
-            value={personName}
-            onChange={(e) => setPersonName(e.target.value)}
-            placeholder="e.g. Rahim"
-            className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl px-4 py-2.5 text-sm text-[var(--color-text)] placeholder-[var(--color-text-dim)] focus:outline-none focus:border-[var(--color-primary)] transition-colors"
-          />
+          <p className="text-label">Direction</p>
+          <div className="mt-1.5">
+            <SegmentedControl
+              options={[...DIRECTION_OPTIONS]}
+              value={direction}
+              onChange={setDirection}
+              label="Loan direction"
+            />
+          </div>
         </div>
 
-        {/* Original loan & Total repaid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-          <div>
-            <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1.5">
-              Original loan (৳)
-            </label>
-            <input
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field id="calc-person-name" label="Person's name">
+            <Input
+              id="calc-person-name"
+              type="text"
+              autoComplete="off"
+              placeholder="e.g. Rahim"
+              value={personName}
+              onChange={(e) => setPersonName(e.target.value)}
+            />
+          </Field>
+          <Field id="calc-due-date" label="Expected repayment">
+            <Input
+              id="calc-due-date"
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+            />
+          </Field>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field id="calc-principal" label={`Original loan (${currency})`}>
+            <Input
+              id="calc-principal"
               type="number"
+              inputMode="decimal"
               min="0"
               step="any"
               value={principalStr}
               onChange={(e) => setPrincipalStr(e.target.value)}
-              className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl px-4 py-2.5 text-sm text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] transition-colors"
+              className="tabular-nums"
             />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1.5">
-              Total repaid (৳)
-            </label>
-            <input
+          </Field>
+          <Field id="calc-repaid" label={`Total repaid (${currency})`}>
+            <Input
+              id="calc-repaid"
               type="number"
+              inputMode="decimal"
               min="0"
               step="any"
               value={repaidStr}
               onChange={(e) => setRepaidStr(e.target.value)}
-              className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl px-4 py-2.5 text-sm text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] transition-colors"
+              className="tabular-nums"
+            />
+          </Field>
+        </div>
+
+        <div>
+          <p className="text-label">Transfer method</p>
+          <div className="mt-1.5">
+            <SegmentedControl
+              options={METHOD_OPTIONS}
+              value={paymentMethod}
+              onChange={setPaymentMethod}
+              label="Transfer method"
             />
           </div>
         </div>
 
-        {/* Transfer method */}
-        <div>
-          <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1.5">
-            Transfer method
-          </label>
-          <div className="flex flex-wrap gap-4 pt-1">
-            {(['cash', 'bkash', 'bank', 'nagad'] as const).map((method) => (
-              <label key={method} className="flex items-center gap-2 cursor-pointer text-sm text-[var(--color-text)]">
-                <input
-                  type="radio"
-                  name="calc-method"
-                  checked={paymentMethod === method}
-                  onChange={() => setPaymentMethod(method)}
-                  className="w-4 h-4 text-[var(--color-primary)] border-[var(--color-border)] bg-[var(--color-bg)] focus:ring-[var(--color-primary)]"
-                />
-                <span className="capitalize">{method === 'bkash' ? 'bKash' : method === 'nagad' ? 'Nagad' : method}</span>
-              </label>
-            ))}
-          </div>
-        </div>
+        <div className="border-t border-[var(--color-border)] pt-5">
+          <p className="text-label text-[var(--color-text-muted)]">{headerText}</p>
+          <p className="text-metric mt-1 tabular-nums">{formatMoney(outstanding, currency)}</p>
 
-        {/* Expected repayment date */}
-        <div>
-          <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1.5">
-            Expected repayment date
-          </label>
-          <div className="relative">
-            <input
-              type="date"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-              className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl px-4 py-2.5 text-sm text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] transition-colors"
-            />
-          </div>
-        </div>
-
-        {/* Result Card matching user image */}
-        <div className="mt-6 pt-5 border-t border-[var(--color-border)] space-y-3">
-          <div className="text-xs sm:text-sm text-[var(--color-text-muted)] font-medium">
-            {headerText}
-          </div>
-          <div className="text-2xl sm:text-3xl font-extrabold tabular-nums text-[var(--color-text)] tracking-tight">
-            {formatMoney(outstanding, currency)}
-          </div>
-
-          <div className="space-y-2 pt-2 text-xs sm:text-sm">
-            <div className="flex justify-between items-center text-[var(--color-text-muted)]">
-              <span>Original amount</span>
-              <span className="font-medium tabular-nums text-[var(--color-text)]">{formatMoney(principal, currency)}</span>
+          <dl className="mt-4 space-y-2 text-secondary">
+            <div className="flex items-baseline justify-between gap-3">
+              <dt>Original amount</dt>
+              <dd className="tabular-nums text-[var(--color-text)]">
+                {formatMoney(principal, currency)}
+              </dd>
             </div>
-            <div className="flex justify-between items-center text-[var(--color-text-muted)]">
-              <span>Already repaid</span>
-              <span className="font-medium tabular-nums text-[var(--color-text)]">{formatMoney(clampedRepaid, currency)}</span>
+            <div className="flex items-baseline justify-between gap-3">
+              <dt>Already repaid</dt>
+              <dd className="tabular-nums text-[var(--color-text)]">
+                {formatMoney(clampedRepaid, currency)}
+              </dd>
             </div>
-            <div className="flex justify-between items-center text-[var(--color-text-muted)]">
-              <span>Method</span>
-              <span className="font-medium text-[var(--color-text)] capitalize">
-                {paymentMethod === 'bkash' ? 'bKash' : paymentMethod === 'nagad' ? 'Nagad' : paymentMethod}
-              </span>
+            <div className="flex items-baseline justify-between gap-3">
+              <dt>Method</dt>
+              <dd className="text-[var(--color-text)]">{METHOD_LABELS[paymentMethod]}</dd>
             </div>
             {dueDate && (
-              <div className="flex justify-between items-center text-[var(--color-text-muted)]">
-                <span>Due date</span>
-                <span className="font-medium text-[var(--color-text)]">{dueDate}</span>
+              <div className="flex items-baseline justify-between gap-3">
+                <dt>Repayment date</dt>
+                <dd className="tabular-nums text-[var(--color-text)]">{dueDate}</dd>
               </div>
             )}
-          </div>
+          </dl>
 
-          {/* Progress bar */}
-          <div className="pt-2">
-            <div className="h-2 w-full bg-[var(--color-border)] rounded-full overflow-hidden">
+          <div className="mt-4">
+            <div className="flex items-baseline justify-between gap-3 text-caption">
+              <span className="tabular-nums">{progressPct.toFixed(1)}% repaid</span>
+              <span className="tabular-nums">
+                {formatMoney(clampedRepaid, currency)} of {formatMoney(principal, currency)}
+              </span>
+            </div>
+            <div
+              role="progressbar"
+              aria-label="Loan repayment progress"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={Math.round(progressPct)}
+              className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-[var(--color-surface-sunken)]"
+            >
               <div
-                className="h-full bg-[var(--color-primary)] rounded-full transition-all duration-300"
+                className="h-full rounded-full bg-[var(--color-primary)]"
                 style={{ width: `${progressPct}%` }}
               />
-            </div>
-            <div className="text-[11px] text-[var(--color-text-muted)] mt-1.5 font-medium tabular-nums">
-              {progressPct.toFixed(1)}% repaid
             </div>
           </div>
 
           {onSaveAsNewLoan && (
-            <button
-              type="button"
+            <Button
+              variant="primary"
+              className="mt-5 w-full"
               onClick={() =>
                 onSaveAsNewLoan({
                   person_name: personName,
@@ -206,10 +201,9 @@ export function LoanCalculator({ onSaveAsNewLoan }: LoanCalculatorProps) {
                   due_date: dueDate || undefined,
                 })
               }
-              className="w-full mt-4 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] text-xs sm:text-sm font-semibold py-2.5 px-4 rounded-xl transition-colors shadow-lg shadow-[var(--color-primary)]/15"
             >
-              Save as Real Loan Record →
-            </button>
+              Use this plan
+            </Button>
           )}
         </div>
       </div>

@@ -10,6 +10,7 @@ import { BudgetItemProgress } from '@/lib/chart-aggregation';
 import { formatMoney } from '@/lib/format';
 import { ChartCard } from './chart-card';
 import { AccessibleChartTable } from './accessible-chart-table';
+import { Badge } from '@/components/ui';
 import { AlertTriangle, CheckCircle2 } from 'lucide-react';
 
 interface BudgetProgressChartProps {
@@ -19,6 +20,22 @@ interface BudgetProgressChartProps {
   error?: string | null;
   onRetry?: () => void;
   className?: string;
+}
+
+/** Chart.js canvases need concrete colours; alpha is derived from the palette value. */
+function withAlpha(hex: string, alpha: number) {
+  const value = hex.replace('#', '');
+  const full =
+    value.length === 3
+      ? value
+          .split('')
+          .map((char) => char + char)
+          .join('')
+      : value;
+  const r = parseInt(full.slice(0, 2), 16);
+  const g = parseInt(full.slice(2, 4), 16);
+  const b = parseInt(full.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
 export function BudgetProgressChart({
@@ -37,19 +54,17 @@ export function BudgetProgressChart({
       labels: data.map((d) => d.name),
       datasets: [
         {
-          label: 'Spent Amount',
+          label: 'Spent',
           data: data.map((d) => d.spent),
-          backgroundColor: data.map((d) =>
-            d.isOverBudget ? palette.expense : palette.income
-          ),
+          backgroundColor: data.map((d) => (d.isOverBudget ? palette.expense : palette.income)),
           borderRadius: 4,
           borderSkipped: false,
           barPercentage: 0.6,
         },
         {
-          label: 'Budget Limit',
+          label: 'Limit',
           data: data.map((d) => d.limit),
-          backgroundColor: theme === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+          backgroundColor: withAlpha(palette.textMuted, theme === 'dark' ? 0.32 : 0.16),
           borderRadius: 4,
           borderSkipped: false,
           barPercentage: 0.6,
@@ -70,13 +85,15 @@ export function BudgetProgressChart({
           align: 'end' as const,
           labels: {
             color: palette.textMuted,
+            boxWidth: 10,
+            boxHeight: 10,
             font: { family: CHART_FONT_FAMILY, size: 11, weight: 500 },
           },
         },
         tooltip: {
           backgroundColor: palette.cardBg,
           titleColor: palette.textPrimary,
-          bodyColor: palette.textPrimary, // Strict neutral text
+          bodyColor: palette.textPrimary,
           borderColor: palette.borderColor,
           borderWidth: 1,
           padding: 10,
@@ -96,7 +113,7 @@ export function BudgetProgressChart({
           grid: { color: palette.gridColor },
           ticks: {
             color: palette.textMuted,
-            font: { family: CHART_FONT_FAMILY, size: 10, weight: 500 },
+            font: { family: CHART_FONT_FAMILY, size: 11, weight: 500 },
             callback: (val: string | number) => {
               const num = Number(val);
               return num >= 1000 ? `${(num / 1000).toFixed(0)}k` : num;
@@ -117,29 +134,29 @@ export function BudgetProgressChart({
   }, [palette, currency]);
 
   const tableColumns = [
-    { key: 'name', label: 'Budget Target' },
+    { key: 'name', label: 'Budget' },
     { key: 'spent', label: 'Spent', isCurrency: true, align: 'right' as const },
     { key: 'limit', label: 'Limit', isCurrency: true, align: 'right' as const },
     { key: 'remaining', label: 'Remaining', isCurrency: true, align: 'right' as const },
-    { key: 'percent', label: 'Utilized (%)', align: 'center' as const },
+    { key: 'percent', label: 'Used', align: 'center' as const },
   ];
 
   return (
     <ChartCard
-      title="Budget Progress"
-      subtitle="Spending limits and utilization"
+      title="Budget progress"
+      subtitle="How spending compares to each limit"
       currency={currency}
       loading={loading}
       error={error}
       onRetry={onRetry}
       isEmpty={data.length === 0}
-      emptyTitle="No budgets configured"
-      emptyDescription={`No spending budget limits defined for this period in ${currency}. Set limits to monitor budget velocity.`}
+      emptyTitle="No budgets yet"
+      emptyDescription={`No spending limits are set in ${currency}. Add a budget to compare spending against it here.`}
       emptyActionHref="/transactions"
-      emptyActionLabel="View Transactions"
+      emptyActionLabel="View transactions"
       accessibleTableView={
         <AccessibleChartTable
-          caption={`Budget limits and utilization progress in ${currency}`}
+          caption={`Budget limits and utilization in ${currency}`}
           columns={tableColumns}
           data={data}
           currency={currency}
@@ -148,61 +165,57 @@ export function BudgetProgressChart({
       className={className}
       heightClass="h-auto min-h-[300px]"
     >
-      <div className="space-y-4">
-        {/* Visual Chart */}
+      <div className="flex h-full flex-col gap-4">
         <div className="h-44 w-full">
           <Bar data={chartData} options={options} />
         </div>
 
-        {/* Detailed status row with neutral financial amounts */}
-        <div className="space-y-2.5 pt-2 border-t border-[var(--color-border)]">
+        <ul className="divide-y divide-[var(--color-border)] border-t border-[var(--color-border)]">
           {data.map((b) => (
-            <div
+            <li
               key={b.id}
-              className="p-2.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
+              className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
             >
-              <div className="flex items-center gap-2">
-                {b.isOverBudget ? (
-                  <AlertTriangle className="w-4 h-4 text-[var(--color-expense)] shrink-0" />
-                ) : (
-                  <CheckCircle2 className="w-4 h-4 text-[var(--color-primary)] shrink-0" />
-                )}
-                <div>
-                  <span className="font-semibold text-[var(--color-text)]">{b.name}</span>
-                  <span className="text-[11px] text-[var(--color-text-muted)] ml-2">
-                    {b.percent}% utilized
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 tabular-nums text-right">
-                <span className="text-[var(--color-text-muted)] text-[11px]">
-                  Spent:{' '}
-                  <strong className="text-[var(--color-text)] font-semibold">
-                    {formatMoney(b.spent, currency)}
-                  </strong>
-                </span>
-                <span className="text-[var(--color-text-muted)] text-[11px]">
-                  Limit:{' '}
-                  <strong className="text-[var(--color-text)] font-semibold">
-                    {formatMoney(b.limit, currency)}
-                  </strong>
-                </span>
+              <div className="flex min-w-0 items-center gap-2">
                 <span
-                  className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
+                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--radius-md)] ${
                     b.isOverBudget
-                      ? 'bg-[var(--color-pale-yellow)] text-[var(--color-text)]'
-                      : 'bg-[var(--color-pale-mint)] text-[var(--color-text)]'
+                      ? 'bg-[var(--color-expense-subtle)] text-[var(--color-expense)]'
+                      : 'bg-[var(--color-income-subtle)] text-[var(--color-income)]'
                   }`}
                 >
+                  {b.isOverBudget ? (
+                    <AlertTriangle className="h-4 w-4" aria-hidden="true" />
+                  ) : (
+                    <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                  )}
+                </span>
+                <span className="text-card-title truncate">{b.name}</span>
+                <span className="text-caption tabular-nums">{b.percent}% used</span>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pl-9 tabular-nums sm:justify-end sm:pl-0">
+                <span className="text-caption">
+                  Spent{' '}
+                  <span className="text-label text-[var(--color-text)]">
+                    {formatMoney(b.spent, currency)}
+                  </span>
+                </span>
+                <span className="text-caption">
+                  Limit{' '}
+                  <span className="text-label text-[var(--color-text)]">
+                    {formatMoney(b.limit, currency)}
+                  </span>
+                </span>
+                <Badge tone={b.isOverBudget ? 'warning' : 'success'}>
                   {b.isOverBudget
                     ? `Over by ${formatMoney(Math.abs(b.remaining), currency)}`
                     : `${formatMoney(b.remaining, currency)} left`}
-                </span>
+                </Badge>
               </div>
-            </div>
+            </li>
           ))}
-        </div>
+        </ul>
       </div>
     </ChartCard>
   );

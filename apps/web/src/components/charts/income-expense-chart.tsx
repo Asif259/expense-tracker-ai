@@ -70,17 +70,17 @@ export function IncomeExpenseChart({
 
   return (
     <ChartCard
-      title="Income vs Expenses"
-      subtitle="Monthly cash flow comparison"
+      title="Income and expenses"
+      subtitle="Inflow and outflow by month"
       currency={currency}
       loading={loading}
       error={error}
       onRetry={onRetry}
       isEmpty={data.length === 0}
-      emptyTitle="No cash flow recorded"
-      emptyDescription={`No income or expense records found in ${currency}. Add transactions to generate this comparison.`}
+      emptyTitle="No cash flow yet"
+      emptyDescription={`No income or expenses recorded in ${currency} yet. Add a transaction to see this chart.`}
       emptyActionHref="/transactions/new"
-      emptyActionLabel="+ Add Transaction"
+      emptyActionLabel="Add a transaction"
       accessibleTableView={
         <AccessibleChartTable
           caption={`Income versus Expenses comparison in ${currency}`}
@@ -91,7 +91,7 @@ export function IncomeExpenseChart({
       }
       className={className}
     >
-      <div role="img" aria-label={`Income vs Expenses grouped bar chart in ${currency}`} className="w-full h-full">
+      <div role="img" aria-label={`Income and expenses grouped bar chart in ${currency}`} className="w-full h-full">
         <Bar data={chartData} options={options} />
       </div>
     </ChartCard>

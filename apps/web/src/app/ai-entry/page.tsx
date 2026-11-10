@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
+import { useState, useEffect, useCallback, useRef, Suspense, type FormEvent } from 'react';
 import { useSearchParams } from 'next/navigation';
 import AppShell from '@/components/app-shell';
 import { useAuth } from '@/context/auth-context';
@@ -18,10 +18,24 @@ import { ConfirmDialog } from '@/components/confirm-dialog';
 import { VoiceInputControl } from '@/components/voice-input-control';
 import { useSpeechRecognition, SupportedSpeechLang } from '@/lib/use-speech-recognition';
 import {
-  CheckCircle2,
+  Alert,
+  Badge,
+  Button,
+  ButtonLink,
+  Card,
+  EmptyState,
+  Field,
+  PageHeader,
+  Section,
+  Select,
+  Skeleton,
+  Textarea,
+} from '@/components/ui';
+import {
   AlertTriangle,
   Check,
-  Sparkles,
+  CheckCircle2,
+  FileText,
   RefreshCw,
 } from 'lucide-react';
 
@@ -33,6 +47,10 @@ const QUICK_EXAMPLES = [
   'আজ দুপুরে লাঞ্চে ২৫০ টাকা খরচ করেছি',
 ];
 
+function capitalize(value: string) {
+  return value ? value.charAt(0).toUpperCase() + value.slice(1) : value;
+}
+
 function AiEntryInner() {
   const { getToken } = useAuth();
   const searchParams = useSearchParams();
@@ -41,6 +59,7 @@ function AiEntryInner() {
   const [currencyPref, setCurrencyPref] = useState('BDT');
   const [parsing, setParsing] = useState(false);
   const [parseResult, setParseResult] = useState<ParseExpenseResult | null>(null);
+  const [parseError, setParseError] = useState<string | null>(null);
   const [speechLang, setSpeechLang] = useState<SupportedSpeechLang>('en-US');
 
   // Baseline text tracker to preserve text before spoken input and support cancel revert
@@ -111,7 +130,7 @@ function AiEntryInner() {
     };
   }, [getToken]);
 
-  const handleParse = async (e?: React.FormEvent) => {
+  const handleParse = async (e?: FormEvent<HTMLFormElement>) => {
     if (e) e.preventDefault();
 
     if (speech.isListening) {
@@ -125,6 +144,7 @@ function AiEntryInner() {
     }
 
     setParsing(true);
+    setParseError(null);
     setParseResult(null);
 
     try {
@@ -138,14 +158,17 @@ function AiEntryInner() {
 
       setParseResult(result);
       if (result.success && result.draftId) {
-        toast('AI draft created! Review and confirm below.', 'success');
+        toast('Draft created. Review it below before saving.', 'success');
         loadPendingDrafts();
       } else if (result.clarificationNeeded) {
-        toast(result.message || 'Clarification needed', 'info');
+        toast(result.message || 'A little more detail is needed.', 'info');
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'AI parsing failed';
-      toast(msg, 'error');
+      setParseError(
+        err instanceof Error
+          ? err.message
+          : "We couldn't read that description right now. Check your connection and try again.",
+      );
     } finally {
       setParsing(false);
     }
@@ -158,7 +181,7 @@ function AiEntryInner() {
       if (!token) throw new Error('Not authenticated');
 
       await confirmDraft(token, draftId);
-      toast('Transaction confirmed and committed to ledger!', 'success');
+      toast('Transaction saved.', 'success');
 
       // Clear current parseResult if it matches confirmed draft
       if (parseResult?.draftId === draftId) {
@@ -182,7 +205,7 @@ function AiEntryInner() {
       if (!token) throw new Error('Not authenticated');
 
       await discardDraft(token, discardTargetId);
-      toast('Draft discarded', 'info');
+      toast('Draft discarded.', 'info');
 
       if (parseResult?.draftId === discardTargetId) {
         setParseResult(null);
@@ -196,57 +219,56 @@ function AiEntryInner() {
     }
   };
 
+  const extracted = parseResult?.extracted;
+  const draftCountLabel = `${drafts.length} draft${drafts.length === 1 ? '' : 's'}`;
+
   return (
     <AppShell>
-      <div className="max-w-4xl mx-auto space-y-8">
-        {/* Header */}
-        <div>
-          <h1 className="text-page-title">AI Natural Language Entry</h1>
-          <p className="text-secondary mt-1">
-            Type or speak your expenses and income naturally in English or Bangla. Groq parses the amounts and creates review drafts with zero direct database mutation.
-          </p>
-        </div>
+      <div className="mx-auto max-w-3xl space-y-8">
+        <PageHeader
+          title="Add a transaction by describing it"
+          description="Type or say something like “Spent 350 BDT on lunch today”. You'll review the draft below and confirm it before it is saved."
+        />
 
-        {/* Input box */}
-        <div className="p-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-lg space-y-4">
-          <form onSubmit={handleParse} className="space-y-4">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label
-                  htmlFor="transaction-description-input"
-                  className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-dim)]"
-                >
-                  Describe Transaction
-                </label>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-[var(--color-text-dim)]">Default Currency:</span>
-                  <select
-                    value={currencyPref}
-                    onChange={(e) => setCurrencyPref(e.target.value)}
-                    aria-label="Default Currency Preference"
-                    className="px-2 py-1 text-xs rounded border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
-                  >
-                    {SUPPORTED_CURRENCIES.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <textarea
+        {/* Input */}
+        <Card className="p-5 sm:p-6">
+          <form onSubmit={handleParse} className="space-y-5">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+              <Field
                 id="transaction-description-input"
-                rows={3}
-                required
-                value={inputQuery}
-                onChange={(e) => setInputQuery(e.target.value)}
-                placeholder="e.g. Paid 1,200 BDT for grocery items at Agora yesterday evening (or tap Voice Input to speak)"
-                className="w-full px-3.5 py-2.5 text-sm rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] placeholder-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none transition-colors"
-              />
+                label="Description"
+                className="min-w-0 flex-1"
+              >
+                <Textarea
+                  id="transaction-description-input"
+                  rows={3}
+                  required
+                  value={inputQuery}
+                  onChange={(e) => setInputQuery(e.target.value)}
+                  placeholder="e.g. Paid 1,200 BDT for groceries at Agora yesterday evening"
+                />
+              </Field>
+
+              <Field
+                id="currency-preference"
+                label="Currency"
+                className="w-full sm:w-28 sm:shrink-0"
+              >
+                <Select
+                  id="currency-preference"
+                  value={currencyPref}
+                  onChange={(e) => setCurrencyPref(e.target.value)}
+                >
+                  {SUPPORTED_CURRENCIES.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
             </div>
 
-            {/* Voice Control Component */}
+            {/* Voice input */}
             <VoiceInputControl
               isSupported={speech.isSupported}
               isListening={speech.isListening}
@@ -260,181 +282,177 @@ function AiEntryInner() {
               disabled={parsing}
             />
 
-            {/* Quick example pills */}
+            {/* Unsupported-input fallback: quick examples */}
             <div>
-              <span className="text-[11px] text-[var(--color-text-dim)] block mb-1.5">
-                Quick examples to try:
-              </span>
-              <div className="flex flex-wrap gap-2">
-                {QUICK_EXAMPLES.map((eg, idx) => (
+              <p className="text-label text-[var(--color-text-muted)]">Examples you can edit</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {QUICK_EXAMPLES.map((example) => (
                   <button
-                    key={idx}
+                    key={example}
                     type="button"
-                    onClick={() => setInputQuery(eg)}
-                    className="px-2.5 py-1 text-[11px] rounded-md border border-[var(--color-border)] bg-[var(--color-surface-hover)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-border-hover)] transition-colors cursor-pointer text-left"
+                    onClick={() => setInputQuery(example)}
+                    className="max-w-full cursor-pointer rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-2.5 py-1.5 text-left text-label text-[var(--color-text-secondary)] transition-colors duration-[var(--duration-fast)] hover:border-[var(--color-border-strong)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text)]"
                   >
-                    {eg}
+                    {example}
                   </button>
                 ))}
               </div>
             </div>
 
-            <div className="pt-2 flex justify-end">
-              <button
-                type="submit"
-                disabled={parsing}
-                className="px-5 py-2.5 text-xs font-semibold rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-2 shadow-md shadow-[var(--color-secondary)]/20"
-              >
-                {parsing ? (
-                  <div className="animate-spin h-3.5 w-3.5 border-2 border-white border-t-transparent rounded-full" />
-                ) : (
-                  <Sparkles className="w-3.5 h-3.5" />
-                )}
-                <span>{parsing ? 'Parsing with Groq...' : 'Parse with AI'}</span>
-              </button>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--color-border)] pt-4">
+              <p className="text-caption max-w-sm">
+                Nothing is saved until you confirm the draft.
+              </p>
+              <Button type="submit" variant="primary" loading={parsing}>
+                Create draft
+              </Button>
             </div>
           </form>
-        </div>
+        </Card>
 
-        {/* Live Parse Result Card */}
-        {parseResult && (
-          <div className="p-6 rounded-xl border border-[var(--color-primary)]/40 bg-[var(--color-surface)] space-y-4 animate-[fadeIn_0.2s_ease-out]">
-            <div className="flex items-center justify-between pb-3 border-b border-[var(--color-border)]">
-              <div className="flex items-center gap-2.5">
-                {parseResult.success ? (
-                  <CheckCircle2 className="w-5 h-5 text-[var(--color-mint)] shrink-0" />
-                ) : (
-                  <AlertTriangle className="w-5 h-5 text-[var(--color-amber)] shrink-0" />
-                )}
-                <div>
-                  <h3 className="text-sm font-semibold">
-                    {parseResult.success
-                      ? 'AI Extraction Successful (Pending Draft)'
-                      : 'Clarification Needed'}
-                  </h3>
-                  <p className="text-xs text-[var(--color-text-muted)]">
-                    {parseResult.message}
-                  </p>
-                </div>
-              </div>
-
-              {parseResult.draftId && (
-                <span className="text-[11px] font-mono text-[var(--color-text-dim)]">
-                  Draft #{parseResult.draftId.slice(0, 8)}
-                </span>
-              )}
-            </div>
-
-            {/* Extracted payload breakdown */}
-            {parseResult.extracted && (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 rounded-lg bg-[var(--color-bg)] text-xs">
-                <div>
-                  <span className="text-[var(--color-text-dim)] block uppercase tracking-wider text-[10px]">
-                    Type
-                  </span>
-                  <span className="font-semibold capitalize text-[var(--color-text)]">
-                    {parseResult.extracted.type || 'expense'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[var(--color-text-dim)] block uppercase tracking-wider text-[10px]">
-                    Amount
-                  </span>
-                  <span className="font-bold tabular-nums text-[var(--color-text)] text-sm">
-                    {parseResult.extracted.amount
-                      ? formatMoney(
-                          parseResult.extracted.amount,
-                          parseResult.extracted.currency || 'BDT',
-                        )
-                      : '—'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[var(--color-text-dim)] block uppercase tracking-wider text-[10px]">
-                    Category
-                  </span>
-                  <span className="font-semibold text-[var(--color-text)]">
-                    {parseResult.extracted.category_name ||
-                      parseResult.proposedCategory ||
-                      'Uncategorized'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[var(--color-text-dim)] block uppercase tracking-wider text-[10px]">
-                    Date
-                  </span>
-                  <span className="font-semibold text-[var(--color-text)] tabular-nums">
-                    {parseResult.extracted.transaction_date || 'Today'}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* Description */}
-            {parseResult.extracted?.description && (
-              <p className="text-xs text-[var(--color-text-muted)] italic">
-                &quot;{parseResult.extracted.description}&quot;
-              </p>
-            )}
-
-            {/* Confirmation actions */}
-            {parseResult.draftId && (
-              <div className="pt-2 flex items-center justify-end gap-3 border-t border-[var(--color-border)]">
-                <button
-                  type="button"
-                  onClick={() => setDiscardTargetId(parseResult.draftId!)}
-                  className="px-3.5 py-1.5 text-xs rounded-lg border border-[var(--color-border)] hover:bg-[var(--color-surface-hover)] text-[var(--color-text-muted)] transition-colors cursor-pointer"
-                >
-                  Discard Draft
-                </button>
-                <button
-                  type="button"
-                  disabled={actionDraftId === parseResult.draftId}
-                  onClick={() => handleConfirm(parseResult.draftId!)}
-                  className="px-5 py-2.5 text-xs font-semibold rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2 shadow-md shadow-[var(--color-primary)]/20 active:scale-[0.98]"
-                >
-                  {actionDraftId === parseResult.draftId ? (
-                    <div className="animate-spin h-3.5 w-3.5 border-2 border-current border-t-transparent rounded-full" />
-                  ) : (
-                    <Check className="w-4 h-4" />
-                  )}
-                  <span>Confirm &amp; Record to Ledger</span>
-                </button>
-              </div>
-            )}
-          </div>
+        {/* Parse failure */}
+        {parseError && (
+          <Alert
+            tone="danger"
+            title="We couldn't read that description"
+            action={
+              <ButtonLink href="/transactions/new" variant="secondary" size="sm">
+                Add it manually
+              </ButtonLink>
+            }
+          >
+            {parseError} You can rephrase the sentence and try again.
+          </Alert>
         )}
 
-        {/* Pending Drafts Queue */}
-        <div className="p-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-base font-semibold">Unconfirmed AI Drafts Queue</h2>
-              <p className="text-xs text-[var(--color-text-muted)]">
-                Drafts created by AI await explicit user confirmation before touching the PostgreSQL transactions ledger.
-              </p>
+        {/* Parsed draft awaiting confirmation */}
+        {parseResult && (
+          <Card className="space-y-4 p-5 sm:p-6">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex min-w-0 items-start gap-3">
+                <span
+                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--radius-md)] ${
+                    parseResult.success
+                      ? 'bg-[var(--color-income-subtle)] text-[var(--color-income)]'
+                      : 'bg-[var(--color-warning-subtle)] text-[var(--color-warning)]'
+                  }`}
+                >
+                  {parseResult.success ? (
+                    <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                  ) : (
+                    <AlertTriangle className="h-4 w-4" aria-hidden="true" />
+                  )}
+                </span>
+                <div className="min-w-0">
+                  <h2 className="text-card-title">
+                    {parseResult.success ? 'Draft ready to review' : 'A little more detail is needed'}
+                  </h2>
+                  <p className="text-secondary mt-0.5">{parseResult.message}</p>
+                </div>
+              </div>
+              {parseResult.draftId && <Badge tone="outline">Draft</Badge>}
             </div>
-            <button
-              onClick={loadPendingDrafts}
-              className="text-xs text-[var(--color-primary)] hover:underline cursor-pointer flex items-center gap-1.5 font-medium"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-              <span>Refresh</span>
-            </button>
-          </div>
 
+            {extracted && (
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-4 border-y border-[var(--color-border)] py-4 sm:grid-cols-4">
+                <div>
+                  <dt className="text-label text-[var(--color-text-muted)]">Type</dt>
+                  <dd className="mt-1">
+                    <Badge tone={extracted.type === 'income' ? 'success' : 'neutral'}>
+                      {capitalize(extracted.type || 'expense')}
+                    </Badge>
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-label text-[var(--color-text-muted)]">Amount</dt>
+                  <dd className="text-metric-sm mt-1 tabular-nums">
+                    {extracted.amount
+                      ? formatMoney(extracted.amount, extracted.currency || 'BDT')
+                      : '—'}
+                  </dd>
+                </div>
+                <div className="min-w-0">
+                  <dt className="text-label text-[var(--color-text-muted)]">Category</dt>
+                  <dd className="text-card-title mt-1 truncate">
+                    {extracted.category_name || parseResult.proposedCategory || 'Uncategorized'}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-label text-[var(--color-text-muted)]">Date</dt>
+                  <dd className="text-card-title mt-1 tabular-nums">
+                    {extracted.transaction_date || 'Today'}
+                  </dd>
+                </div>
+              </dl>
+            )}
+
+            {extracted?.description && (
+              <p className="text-secondary">“{extracted.description}”</p>
+            )}
+
+            {parseResult.draftId && (
+              <div className="flex flex-wrap items-center justify-end gap-2 border-t border-[var(--color-border)] pt-4">
+                <Button
+                  variant="ghost"
+                  onClick={() => setDiscardTargetId(parseResult.draftId!)}
+                >
+                  Discard
+                </Button>
+                <Button
+                  variant="primary"
+                  loading={actionDraftId === parseResult.draftId}
+                  onClick={() => handleConfirm(parseResult.draftId!)}
+                  leadingIcon={<Check className="h-4 w-4" aria-hidden="true" />}
+                >
+                  Confirm and save
+                </Button>
+              </div>
+            )}
+          </Card>
+        )}
+
+        {/* Drafts to review */}
+        <Section
+          title="Drafts to review"
+          description={
+            drafts.length > 0
+              ? `${draftCountLabel} waiting for your confirmation.`
+              : 'Drafts appear here until you save or discard them.'
+          }
+          actions={
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={loadPendingDrafts}
+              leadingIcon={<RefreshCw className="h-4 w-4" aria-hidden="true" />}
+            >
+              Refresh
+            </Button>
+          }
+        >
           {loadingDrafts ? (
-            <div className="space-y-3 py-4">
-              {[1, 2].map((i) => (
-                <div key={i} className="h-16 bg-[var(--color-border)]/40 rounded-lg animate-pulse" />
+            <ul className="divide-y divide-[var(--color-border)] border-y border-[var(--color-border)]">
+              {[0, 1].map((i) => (
+                <li key={i} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <Skeleton className="h-4 w-40" />
+                    <Skeleton className="w-64" style={{ height: 14 }} />
+                  </div>
+                  <div className="flex gap-2">
+                    <Skeleton className="h-8 w-16 rounded-[var(--radius-md)]" />
+                    <Skeleton className="h-8 w-20 rounded-[var(--radius-md)]" />
+                  </div>
+                </li>
               ))}
-            </div>
+            </ul>
           ) : drafts.length === 0 ? (
-            <div className="text-center py-8 text-xs text-[var(--color-text-dim)]">
-              No pending drafts in queue.
-            </div>
+            <EmptyState
+              icon={<FileText aria-hidden="true" />}
+              title="No drafts to review"
+              description="Describe a transaction above and it will appear here, waiting for you to confirm or discard it."
+            />
           ) : (
-            <div className="divide-y divide-[var(--color-border)]">
+            <ul className="divide-y divide-[var(--color-border)] border-y border-[var(--color-border)]">
               {drafts.map((d) => {
                 const payload = (d.payload || {}) as Record<string, unknown>;
                 const amount = String(payload.amount || '0');
@@ -444,60 +462,56 @@ function AiEntryInner() {
                 const txDate = String(payload.transaction_date || '');
 
                 return (
-                  <div
+                  <li
                     key={d.id}
-                    className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                    className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"
                   >
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs tabular-nums font-semibold text-[var(--color-text)]">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-card-title tabular-nums">
                           {formatMoney(amount, currency)}
                         </span>
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase bg-[var(--color-bg)] border border-[var(--color-border)] text-[var(--color-text-muted)]">
-                          {type}
-                        </span>
+                        <Badge tone={type === 'income' ? 'success' : 'neutral'}>
+                          {capitalize(type)}
+                        </Badge>
                         {txDate && (
-                          <span className="text-[11px] tabular-nums text-[var(--color-text-dim)]">
-                            • {formatDate(txDate)}
-                          </span>
+                          <span className="text-caption tabular-nums">{formatDate(txDate)}</span>
                         )}
                       </div>
-                      <p className="text-xs text-[var(--color-text-muted)]">{desc}</p>
+                      <p className="text-secondary mt-1 break-words">{desc}</p>
                     </div>
 
-                    <div className="flex items-center gap-2 self-end sm:self-auto">
-                      <button
+                    <div className="flex shrink-0 items-center gap-2 self-end sm:self-auto">
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => setDiscardTargetId(d.id)}
-                        className="px-3 py-1.5 text-xs rounded-lg border border-[var(--color-border)] hover:bg-[var(--color-surface-hover)] text-[var(--color-text-muted)] transition-colors cursor-pointer"
                       >
                         Discard
-                      </button>
-                      <button
-                        disabled={actionDraftId === d.id}
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        loading={actionDraftId === d.id}
                         onClick={() => handleConfirm(d.id)}
-                        className="px-4 py-2 text-xs font-semibold rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5 shadow-md shadow-[var(--color-primary)]/15"
+                        leadingIcon={<Check className="h-4 w-4" aria-hidden="true" />}
                       >
-                        {actionDraftId === d.id ? (
-                          <div className="animate-spin h-3.5 w-3.5 border-2 border-[var(--color-primary-contrast)] border-t-transparent rounded-full" />
-                        ) : (
-                          <Check className="w-3.5 h-3.5" />
-                        )}
-                        <span>Confirm</span>
-                      </button>
+                        Confirm
+                      </Button>
                     </div>
-                  </div>
+                  </li>
                 );
               })}
-            </div>
+            </ul>
           )}
-        </div>
+        </Section>
       </div>
 
       {/* Discard confirmation dialog */}
       <ConfirmDialog
         open={!!discardTargetId}
-        title="Discard AI Draft"
-        message="Are you sure you want to discard this draft? It will be permanently removed from the pending drafts queue."
+        title="Discard draft"
+        message="This draft will be removed and nothing will be saved. You can describe the transaction again at any time."
         confirmLabel="Discard"
         onConfirm={handleDiscard}
         onCancel={() => setDiscardTargetId(null)}
@@ -511,8 +525,13 @@ export default function AiEntryPage() {
     <Suspense
       fallback={
         <AppShell>
-          <div className="flex items-center justify-center min-h-[300px]">
-            <div className="animate-spin h-7 w-7 border-2 border-[var(--color-primary)] border-t-transparent rounded-full" />
+          <div className="mx-auto max-w-3xl space-y-8">
+            <div className="space-y-2">
+              <Skeleton className="h-8 w-72" />
+              <Skeleton className="h-4 w-full max-w-lg" />
+            </div>
+            <Skeleton className="h-56 w-full rounded-[var(--radius-xl)]" />
+            <Skeleton className="h-40 w-full rounded-[var(--radius-xl)]" />
           </div>
         </AppShell>
       }

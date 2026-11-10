@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import AppShell from '@/components/app-shell';
 import { useAuth } from '@/context/auth-context';
 import {
@@ -11,17 +12,100 @@ import {
   Loan,
   CurrencyLoanSummary,
 } from '@/lib/api';
-import { formatMoney } from '@/lib/format';
+import { formatMoney, formatDate } from '@/lib/format';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { toast } from '@/components/toast';
-import Link from 'next/link';
-import { Plus, ArrowRight, ArrowDownLeft, ArrowUpRight, AlertCircle, Trash2, X, BarChart3 } from 'lucide-react';
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  BarChart3,
+  HandCoins,
+  Plus,
+  RotateCcw,
+  SearchX,
+  Trash2,
+  X,
+} from 'lucide-react';
 import { LoanBalanceChart, RepaymentHistoryChart } from '@/components/charts';
 import { aggregateLoanPortfolio, aggregateRepaymentHistory } from '@/lib/chart-aggregation';
+import {
+  Badge,
+  Button,
+  ButtonLink,
+  Card,
+  EmptyState,
+  ErrorState,
+  Field,
+  IconButton,
+  Input,
+  PageHeader,
+  Select,
+  StatStrip,
+  Metric,
+} from '@/components/ui';
+import type { BadgeTone } from '@/components/ui';
+
+const PAYMENT_METHODS: Record<Loan['payment_method'], string> = {
+  bkash: 'bKash',
+  nagad: 'Nagad',
+  cash: 'Cash',
+  bank: 'Bank',
+  other: 'Other',
+};
+
+function statusTone(status: Loan['status']): BadgeTone {
+  if (status === 'settled') return 'neutral';
+  if (status === 'overdue') return 'warning';
+  return 'accent';
+}
+
+function statusLabel(status: Loan['status']): string {
+  if (status === 'settled') return 'Settled';
+  if (status === 'overdue') return 'Overdue';
+  return 'Active';
+}
+
+function progressColor(status: Loan['status']): string {
+  if (status === 'settled') return 'bg-[var(--color-income)]';
+  if (status === 'overdue') return 'bg-[var(--color-warning)]';
+  return 'bg-[var(--color-primary)]';
+}
+
+function clampPct(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.min(Math.max(value, 0), 100);
+}
+
+/** Rows-only skeleton; the summary and charts render their own loading shells. */
+function LoanRowsSkeleton() {
+  return (
+    <div className="surface-card overflow-hidden" aria-busy="true" aria-label="Loading loans">
+      {[0, 1, 2, 3].map((i) => (
+        <div
+          key={i}
+          aria-hidden="true"
+          className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-4 gap-y-3 border-b border-[var(--color-border)] px-4 py-4 last:border-b-0 sm:px-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,0.9fr)_minmax(0,1.1fr)_auto] lg:items-center"
+        >
+          <div className="space-y-2">
+            <div className="skeleton h-4 w-40 max-w-full" />
+            <div className="skeleton h-3 w-28" />
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            <div className="skeleton h-5 w-24" />
+            <div className="skeleton h-3 w-32 max-w-full" />
+          </div>
+          <div className="skeleton col-span-2 h-1.5 w-full rounded-full lg:col-span-1" />
+          <div className="skeleton col-span-2 ml-auto h-8 w-24 rounded-[var(--radius-md)] lg:col-span-1" />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function LoansPage() {
   const { getToken } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [loans, setLoans] = useState<Loan[]>([]);
   const [total, setTotal] = useState(0);
   const [summaries, setSummaries] = useState<Record<string, CurrencyLoanSummary>>({});
@@ -31,15 +115,18 @@ export default function LoansPage() {
   const [statusFilter, setStatusFilter] = useState<'' | 'active' | 'overdue' | 'settled'>('');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Repayment Modal state
+  // Repayment dialog state
   const [repaymentTarget, setRepaymentTarget] = useState<Loan | null>(null);
   const [repaymentAmount, setRepaymentAmount] = useState('');
   const [repaymentDate, setRepaymentDate] = useState('');
-  const [repaymentMethod, setRepaymentMethod] = useState<'cash' | 'bkash' | 'nagad' | 'bank' | 'other'>('bkash');
+  const [repaymentMethod, setRepaymentMethod] = useState<Loan['payment_method']>('bkash');
   const [repaymentReference, setRepaymentReference] = useState('');
+  const [repaymentErrors, setRepaymentErrors] = useState<{ amount?: string; date?: string }>({});
   const [repaying, setRepaying] = useState(false);
+  const repaymentDialogRef = useRef<HTMLDivElement>(null);
+  const repayingRef = useRef(false);
 
-  // Delete modal state
+  // Delete dialog state
   const [deleteTarget, setDeleteTarget] = useState<Loan | null>(null);
 
   const loadData = useCallback(async () => {
@@ -60,32 +147,131 @@ export default function LoansPage() {
       setSummaries(summaryRes.currencies || {});
       setLoans(listRes.data || []);
       setTotal(listRes.total || 0);
+      setLoadError(null);
     } catch (err: unknown) {
-      toast(err instanceof Error ? err.message : 'Failed to load debt and loan data', 'error');
+      const message =
+        err instanceof Error ? err.message : 'Could not load your loans. Try again.';
+      setLoadError(message);
+      toast(message, 'error');
     } finally {
       setLoading(false);
     }
   }, [getToken, directionFilter, statusFilter, searchQuery]);
 
   useEffect(() => {
-    loadData();
+    void (async () => {
+      await loadData();
+    })();
   }, [loadData]);
+
+  useEffect(() => {
+    repayingRef.current = repaying;
+  }, [repaying]);
+
+  const hasFilters = Boolean(directionFilter || statusFilter || searchQuery.trim());
+
+  const resetFilters = () => {
+    setDirectionFilter('');
+    setStatusFilter('');
+    setSearchQuery('');
+  };
+
+  const openRepaymentDialog = (loan: Loan) => {
+    setRepaymentTarget(loan);
+    setRepaymentAmount('');
+    setRepaymentErrors({});
+    setRepaymentReference('');
+    setRepaymentDate(new Date().toISOString().split('T')[0]);
+  };
+
+  const closeRepaymentDialog = useCallback(() => {
+    setRepaymentTarget(null);
+    setRepaymentErrors({});
+    setRepaymentReference('');
+  }, []);
+
+  // Dialog behaviour: scroll lock, initial focus, Escape, focus trap, focus restore.
+  useEffect(() => {
+    if (!repaymentTarget) return;
+
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const focusTimer = window.setTimeout(() => {
+      const first =
+        repaymentDialogRef.current?.querySelector<HTMLElement>('#repayment-amount') ??
+        repaymentDialogRef.current?.querySelector<HTMLElement>('button, input, select');
+      first?.focus();
+    }, 0);
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        if (!repayingRef.current) closeRepaymentDialog();
+        return;
+      }
+      if (event.key !== 'Tab' || !repaymentDialogRef.current) return;
+
+      const focusable = Array.from(
+        repaymentDialogRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href]',
+        ),
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.clearTimeout(focusTimer);
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+      previousFocus?.focus();
+    };
+  }, [repaymentTarget, closeRepaymentDialog]);
+
+  const remainingAfterPayment = useMemo(() => {
+    if (!repaymentTarget) return 0;
+    const balance = Number(repaymentTarget.outstanding_balance);
+    const amount = parseFloat(repaymentAmount);
+    if (isNaN(amount) || amount <= 0) return balance;
+    return Math.max(balance - amount, 0);
+  }, [repaymentTarget, repaymentAmount]);
 
   const handleRecordRepayment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!repaymentTarget) return;
 
-    const amt = parseFloat(repaymentAmount);
-    if (isNaN(amt) || amt <= 0) {
-      toast('Please enter a valid repayment amount greater than zero.', 'error');
+    const amount = parseFloat(repaymentAmount);
+    const nextErrors: { amount?: string; date?: string } = {};
+
+    if (isNaN(amount) || amount <= 0) {
+      nextErrors.amount = 'Enter an amount greater than zero.';
+    } else if (amount > Number(repaymentTarget.outstanding_balance)) {
+      nextErrors.amount = `Enter no more than the remaining balance of ${formatMoney(
+        repaymentTarget.outstanding_balance,
+        repaymentTarget.currency,
+      )}.`;
+    }
+    if (!repaymentDate) {
+      nextErrors.date = 'Choose the date the payment was made.';
+    }
+
+    if (Object.keys(nextErrors).length > 0) {
+      setRepaymentErrors(nextErrors);
       return;
     }
 
-    if (amt > Number(repaymentTarget.outstanding_balance)) {
-      toast(`Repayment exceeds remaining balance of ${formatMoney(repaymentTarget.outstanding_balance, repaymentTarget.currency)}`, 'error');
-      return;
-    }
-
+    setRepaymentErrors({});
     setRepaying(true);
     try {
       const token = await getToken();
@@ -98,13 +284,15 @@ export default function LoansPage() {
         reference: repaymentReference.trim() || undefined,
       });
 
-      toast('Repayment recorded successfully!', 'success');
-      setRepaymentTarget(null);
+      toast('Repayment recorded', 'success');
       setRepaymentAmount('');
-      setRepaymentReference('');
+      closeRepaymentDialog();
       loadData();
     } catch (err: unknown) {
-      toast(err instanceof Error ? err.message : 'Failed to record repayment', 'error');
+      toast(
+        err instanceof Error ? err.message : 'Could not record the repayment. Try again.',
+        'error',
+      );
     } finally {
       setRepaying(false);
     }
@@ -117,11 +305,11 @@ export default function LoansPage() {
       if (!token) return;
 
       await deleteLoan(token, deleteTarget.id);
-      toast('Loan record deleted.', 'success');
+      toast('Loan deleted', 'success');
       setDeleteTarget(null);
       loadData();
     } catch (err: unknown) {
-      toast(err instanceof Error ? err.message : 'Failed to delete loan', 'error');
+      toast(err instanceof Error ? err.message : 'Could not delete the loan. Try again.', 'error');
     }
   };
 
@@ -159,499 +347,554 @@ export default function LoansPage() {
     return aggregateRepaymentHistory(loans, chartCurrency);
   }, [loans, chartCurrency]);
 
+  const currencySummary = summaries[chartCurrency];
+  const overdueReceivables = currencySummary?.overdue_receivables ?? 0;
+  const overduePayables = currencySummary?.overdue_payables ?? 0;
+  const repaidTotal = activeLoanSummary.repaidLent + activeLoanSummary.repaidBorrowed;
+
   return (
     <AppShell>
-      <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-page-title">
-              Debt & Loan Management
-            </h1>
-            <p className="text-secondary mt-1">
-              Track money you lent to others and money you borrowed with partial repayment history.
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            {currenciesList.length > 0 && (
-              <button
-                type="button"
-                onClick={() => setShowCharts(!showCharts)}
-                className="inline-flex items-center gap-1.5 bg-[var(--color-surface)] border border-[var(--color-border)] hover:bg-[var(--color-surface-hover)] text-[var(--color-text)] text-xs font-semibold px-3 py-2 rounded-xl transition-colors cursor-pointer"
+      <div className="space-y-6">
+        <PageHeader
+          title="Debts & loans"
+          description="Track money you lent and money you borrowed, and record repayments against each person."
+          actions={
+            <>
+              {currenciesList.length > 0 && (
+                <Button
+                  variant="secondary"
+                  onClick={() => setShowCharts((value) => !value)}
+                  aria-pressed={showCharts}
+                  leadingIcon={<BarChart3 className="h-4 w-4" aria-hidden="true" />}
+                >
+                  {showCharts ? 'Hide charts' : 'Show charts'}
+                </Button>
+              )}
+              <ButtonLink
+                href="/loans/new"
+                variant="primary"
+                className="order-first w-full sm:order-none sm:w-auto"
+                leadingIcon={<Plus className="h-4 w-4" aria-hidden="true" />}
               >
-                <BarChart3 className="w-4 h-4 text-[var(--color-primary)]" />
-                <span>{showCharts ? 'Hide Visual Analytics' : 'Show Visual Analytics'}</span>
-              </button>
-            )}
+                New loan
+              </ButtonLink>
+            </>
+          }
+        />
 
-            <Link
-              href="/loans/new"
-              className="inline-flex items-center gap-1.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] text-sm font-semibold px-4 py-2 rounded-xl transition-colors shadow-lg shadow-[var(--color-primary)]/15 cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              <span>New Loan</span>
-            </Link>
-          </div>
-        </div>
-
-        {/* Visual Chart Analytics Section */}
-        {showCharts && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-section-title">
-                Portfolio Analytics & Velocity
-              </h2>
+        {/* Portfolio summary + charts */}
+        {(loading || currenciesList.length > 0) && (
+          <section aria-labelledby="portfolio-heading" className="space-y-4">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div className="min-w-0">
+                <h2 id="portfolio-heading" className="text-section-title">
+                  Portfolio
+                </h2>
+                <p className="text-secondary mt-0.5">
+                  Outstanding balances and repayment activity in {chartCurrency}.
+                </p>
+              </div>
               {currenciesList.length > 1 && (
-                <div className="flex items-center gap-1.5 text-xs">
-                  <span className="text-[var(--color-text-muted)]">Currency:</span>
-                  <select
-                    value={chartCurrency}
-                    onChange={(e) => setSelectedCurrencyState(e.target.value)}
-                    className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-2 py-1 font-semibold text-[var(--color-text)]"
-                  >
-                    {currenciesList.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
+                <div className="flex items-center gap-2">
+                  <label htmlFor="chart-currency" className="text-label">
+                    Currency
+                  </label>
+                  <div className="w-24">
+                    <Select
+                      id="chart-currency"
+                      value={chartCurrency}
+                      onChange={(e) => setSelectedCurrencyState(e.target.value)}
+                    >
+                      {currenciesList.map((currency) => (
+                        <option key={currency} value={currency}>
+                          {currency}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
                 </div>
               )}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <LoanBalanceChart
-                summary={activeLoanSummary}
-                currency={chartCurrency}
-                loading={loading}
-              />
-              <RepaymentHistoryChart
-                data={repaymentHistoryData}
-                currency={chartCurrency}
-                loading={loading}
-              />
-            </div>
-          </div>
+            {loading && currenciesList.length === 0 ? (
+              <div
+                className="grid grid-cols-1 gap-4 border-y border-[var(--color-border)] py-4 sm:grid-cols-2 lg:grid-cols-4"
+                aria-hidden="true"
+              >
+                {[0, 1, 2, 3].map((i) => (
+                  <div key={i} className="space-y-2 px-4">
+                    <div className="skeleton h-3 w-20" />
+                    <div className="skeleton h-7 w-32 max-w-full" />
+                    <div className="skeleton h-3 w-24" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <StatStrip>
+                <div className="p-4 sm:px-5">
+                  <Metric
+                    label="To collect"
+                    value={formatMoney(activeLoanSummary.outstandingReceivables, chartCurrency)}
+                    hint={
+                      overdueReceivables > 0 ? (
+                        <span className="text-[var(--color-warning)]">
+                          {formatMoney(overdueReceivables, chartCurrency)} overdue
+                        </span>
+                      ) : (
+                        'Nothing overdue'
+                      )
+                    }
+                    icon={<ArrowDownLeft aria-hidden="true" />}
+                  />
+                </div>
+                <div className="p-4 sm:px-5">
+                  <Metric
+                    label="To repay"
+                    value={formatMoney(activeLoanSummary.outstandingPayables, chartCurrency)}
+                    hint={
+                      overduePayables > 0 ? (
+                        <span className="text-[var(--color-warning)]">
+                          {formatMoney(overduePayables, chartCurrency)} overdue
+                        </span>
+                      ) : (
+                        'Nothing overdue'
+                      )
+                    }
+                    icon={<ArrowUpRight aria-hidden="true" />}
+                  />
+                </div>
+                <div className="p-4 sm:px-5">
+                  <p className="text-label text-[var(--color-text-muted)]">Active loans</p>
+                  <p className="text-metric-sm mt-1.5 tabular-nums">
+                    {activeLoanSummary.activeCount}
+                  </p>
+                  <p className="text-caption mt-1">
+                    {activeLoanSummary.overdueCount} overdue · {activeLoanSummary.settledCount}{' '}
+                    settled
+                  </p>
+                </div>
+                <div className="p-4 sm:px-5">
+                  <p className="text-label text-[var(--color-text-muted)]">Totals</p>
+                  <dl className="mt-1.5 space-y-1 text-secondary">
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+                      <dt>Lent</dt>
+                      <dd className="tabular-nums text-[var(--color-text)]">
+                        {formatMoney(activeLoanSummary.totalLent, chartCurrency)}
+                      </dd>
+                    </div>
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+                      <dt>Borrowed</dt>
+                      <dd className="tabular-nums text-[var(--color-text)]">
+                        {formatMoney(activeLoanSummary.totalBorrowed, chartCurrency)}
+                      </dd>
+                    </div>
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+                      <dt>Repaid</dt>
+                      <dd className="tabular-nums text-[var(--color-text)]">
+                        {formatMoney(repaidTotal, chartCurrency)}
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
+              </StatStrip>
+            )}
+
+            {showCharts && (
+              <div className="grid gap-4 lg:grid-cols-2">
+                <LoanBalanceChart
+                  summary={activeLoanSummary}
+                  currency={chartCurrency}
+                  loading={loading}
+                />
+                <RepaymentHistoryChart
+                  data={repaymentHistoryData}
+                  currency={chartCurrency}
+                  loading={loading}
+                />
+              </div>
+            )}
+          </section>
         )}
 
+        {/* Filter toolbar */}
+        <Card padding="md">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.6fr)_auto] lg:items-end">
+            <Field id="loan-direction-filter" label="Direction">
+              <Select
+                id="loan-direction-filter"
+                value={directionFilter}
+                onChange={(e) =>
+                  setDirectionFilter(e.target.value as '' | 'lent' | 'borrowed')
+                }
+              >
+                <option value="">All directions</option>
+                <option value="lent">I lent money</option>
+                <option value="borrowed">I borrowed money</option>
+              </Select>
+            </Field>
+            <Field id="loan-status-filter" label="Status">
+              <Select
+                id="loan-status-filter"
+                value={statusFilter}
+                onChange={(e) =>
+                  setStatusFilter(e.target.value as '' | 'active' | 'overdue' | 'settled')
+                }
+              >
+                <option value="">All statuses</option>
+                <option value="active">Active</option>
+                <option value="overdue">Overdue</option>
+                <option value="settled">Settled</option>
+              </Select>
+            </Field>
+            <Field id="loan-search" label="Search">
+              <Input
+                id="loan-search"
+                type="search"
+                placeholder="Name, contact, or notes"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </Field>
+            <div className="flex items-center lg:justify-end lg:pb-0.5">
+              <Button
+                variant="ghost"
+                onClick={resetFilters}
+                disabled={!hasFilters}
+                leadingIcon={<RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />}
+              >
+                Reset filters
+              </Button>
+            </div>
+          </div>
+        </Card>
 
-        {/* Currency Summary Metric Cards */}
-        {currenciesList.length > 0 ? (
-          <div className="space-y-4">
-            <h2 className="text-xs uppercase tracking-wider font-semibold text-[var(--color-text-dim)]">
-              Outstanding Balances by Currency
+        {/* Loan list */}
+        <section aria-labelledby="loans-heading" className="space-y-3">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 id="loans-heading" className="text-section-title">
+              Loans
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {currenciesList.map((cur) => {
-                const s = summaries[cur]!;
-                return (
-                  <div
-                    key={cur}
-                    className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-5 space-y-4"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-[var(--color-primary)] bg-[var(--color-primary)]/10 px-2.5 py-1 rounded-lg">
-                        {cur}
-                      </span>
-                      <span className="text-xs text-[var(--color-text-muted)]">
-                        {s.active_loans_count + s.overdue_loans_count} active
-                      </span>
-                    </div>
-
-                    <div className="space-y-3">
-                      <div>
-                        <div className="text-xs text-[var(--color-text-muted)] flex items-center justify-between">
-                          <span>You Are Owed (Receivables)</span>
-                          <span className="w-5 h-5 rounded bg-[var(--color-pale-mint)] text-[var(--color-text)] flex items-center justify-center">
-                            <ArrowDownLeft className="w-3.5 h-3.5 text-[var(--color-mint)]" />
-                          </span>
-                        </div>
-                        <div className="text-metric-sm mt-0.5">
-                          {formatMoney(s.outstanding_receivables, cur)}
-                        </div>
-                        {s.overdue_receivables > 0 && (
-                          <div className="text-[11px] text-[var(--color-warning)] mt-0.5 flex items-center gap-1">
-                            <AlertCircle className="w-3 h-3" />
-                            <span>{formatMoney(s.overdue_receivables, cur)} overdue</span>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="pt-2 border-t border-[var(--color-border)]">
-                        <div className="text-xs text-[var(--color-text-muted)] flex items-center justify-between">
-                          <span>You Owe (Payables)</span>
-                          <span className="w-5 h-5 rounded bg-[var(--color-pale-yellow)] text-[var(--color-text)] flex items-center justify-center">
-                            <ArrowUpRight className="w-3.5 h-3.5 text-[var(--color-amber)]" />
-                          </span>
-                        </div>
-                        <div className="text-metric-sm mt-0.5">
-                          {formatMoney(s.outstanding_payables, cur)}
-                        </div>
-                        {s.overdue_payables > 0 && (
-                          <div className="text-[11px] text-[var(--color-warning)] mt-0.5 flex items-center gap-1">
-                            <AlertCircle className="w-3 h-3" />
-                            <span>{formatMoney(s.overdue_payables, cur)} overdue</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ) : !loading ? (
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-6 text-center text-sm text-[var(--color-text-muted)]">
-            No active debts or loans recorded yet. Click &quot;+ New Loan&quot; to log your first lent or borrowed money.
-          </div>
-        ) : null}
-
-        {/* Filter Bar */}
-        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-4 flex flex-col md:flex-row gap-4 justify-between items-center">
-          {/* Direction & Status tabs */}
-          <div className="flex flex-wrap gap-2 w-full md:w-auto">
-            <button
-              onClick={() => {
-                setDirectionFilter('');
-                setStatusFilter('');
-              }}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
-                !directionFilter && !statusFilter
-                  ? 'bg-[var(--color-primary)] text-[var(--color-primary-contrast)] shadow-sm'
-                  : 'bg-[var(--color-bg)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
-              }`}
-            >
-              All Loans ({total})
-            </button>
-            <button
-              onClick={() => setDirectionFilter(directionFilter === 'lent' ? '' : 'lent')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
-                directionFilter === 'lent'
-                  ? 'bg-[var(--color-pale-mint)] text-[var(--color-text)] border border-[var(--color-border)] shadow-sm'
-                  : 'bg-[var(--color-bg)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
-              }`}
-            >
-              I Lent Money
-            </button>
-            <button
-              onClick={() => setDirectionFilter(directionFilter === 'borrowed' ? '' : 'borrowed')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
-                directionFilter === 'borrowed'
-                  ? 'bg-[var(--color-pale-yellow)] text-[var(--color-text)] border border-[var(--color-border)] shadow-sm'
-                  : 'bg-[var(--color-bg)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
-              }`}
-            >
-              I Borrowed Money
-            </button>
-            <button
-              onClick={() => setStatusFilter(statusFilter === 'active' ? '' : 'active')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
-                statusFilter === 'active'
-                  ? 'bg-[var(--color-pale-cyan)] border border-[var(--color-border)] text-[var(--color-text)]'
-                  : 'bg-[var(--color-bg)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
-              }`}
-            >
-              Active
-            </button>
-            <button
-              onClick={() => setStatusFilter(statusFilter === 'overdue' ? '' : 'overdue')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
-                statusFilter === 'overdue'
-                  ? 'bg-[var(--color-warning-bg)] border border-[var(--color-warning)]/30 text-[var(--color-text)]'
-                  : 'bg-[var(--color-bg)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
-              }`}
-            >
-              Overdue
-            </button>
-            <button
-              onClick={() => setStatusFilter(statusFilter === 'settled' ? '' : 'settled')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
-                statusFilter === 'settled'
-                  ? 'bg-[var(--color-surface-hover)] border border-[var(--color-border)] text-[var(--color-text-dim)]'
-                  : 'bg-[var(--color-bg)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
-              }`}
-            >
-              Settled
-            </button>
+            {!loading && !loadError && (
+              <p className="text-secondary tabular-nums">
+                {total === 1 ? '1 loan' : `${total} loans`}
+                {hasFilters ? ' matching filters' : ''}
+              </p>
+            )}
           </div>
 
-          {/* Search */}
-          <div className="w-full md:w-64">
-            <input
-              type="text"
-              placeholder="Search person or notes..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl px-3.5 py-2 text-xs text-[var(--color-text)] placeholder-[var(--color-text-dim)] focus:outline-none focus:border-[var(--color-primary)]"
-            />
-          </div>
-        </div>
-
-        {/* Loans List */}
-        {loading ? (
-          <div className="flex justify-center py-16">
-            <div className="animate-spin h-8 w-8 border-2 border-[var(--color-primary)] border-t-transparent rounded-full" />
-          </div>
-        ) : loans.length === 0 ? (
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-12 text-center">
-            <p className="text-base font-semibold text-[var(--color-text)]">No loans matching your filter</p>
-            <p className="text-xs text-[var(--color-text-muted)] mt-1">Try resetting filters or create a new loan record.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {loans.map((loan) => {
-              const isLent = loan.direction === 'lent';
-              const isOverdue = loan.status === 'overdue';
-              const isSettled = loan.status === 'settled';
-
-              return (
-                <div
-                  key={loan.id}
-                  className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-5 flex flex-col justify-between hover:border-[var(--color-border-hover)] transition-colors shadow-sm"
-                >
-                  <div className="space-y-4">
-                    {/* Top Row: Person & Status */}
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <Link
-                          href={`/loans/${loan.id}`}
-                          className="font-bold text-base text-[var(--color-text)] hover:text-[var(--color-primary)] transition-colors cursor-pointer"
-                        >
-                          {loan.person_name}
-                        </Link>
-                        {loan.person_contact && (
-                          <div className="text-xs text-[var(--color-text-muted)] mt-0.5">
-                            {loan.person_contact}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-1.5">
-                        <span
-                          className={`text-[11px] font-semibold px-2 py-0.5 rounded-full inline-flex items-center gap-1 ${
-                            isLent
-                              ? 'bg-[var(--color-pale-mint)] text-[var(--color-text)]'
-                              : 'bg-[var(--color-pale-yellow)] text-[var(--color-text)]'
-                          }`}
-                        >
-                          <span className={`h-1.5 w-1.5 rounded-full ${isLent ? 'bg-[var(--color-mint)]' : 'bg-[var(--color-amber)]'}`} />
-                          {isLent ? 'Lent' : 'Borrowed'}
-                        </span>
-                        <span
-                          className={`text-[11px] font-semibold px-2 py-0.5 rounded-full capitalize border ${
-                            isSettled
-                              ? 'bg-[var(--color-surface-hover)] text-[var(--color-text-dim)] border-[var(--color-border)]'
-                              : isOverdue
-                              ? 'bg-[var(--color-pale-yellow)] text-[var(--color-text)] border-[var(--color-border)]'
-                              : 'bg-[var(--color-pale-cyan)] text-[var(--color-text)] border-[var(--color-border)]'
-                          }`}
-                        >
-                          {loan.status}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Middle: Outstanding vs Principal */}
-                    <div>
-                      <div className="text-xs text-[var(--color-text-muted)]">
-                        {isLent ? 'Remaining to Collect:' : 'Remaining to Repay:'}
-                      </div>
-                      <div className="text-2xl font-extrabold tabular-nums text-[var(--color-text)] mt-0.5 tracking-tight">
-                        {formatMoney(loan.outstanding_balance, loan.currency)}
-                      </div>
-                      <div className="text-xs text-[var(--color-text-dim)] mt-1 tabular-nums">
-                        Principal: {formatMoney(loan.principal_amount, loan.currency)} • Repaid:{' '}
-                        {formatMoney(loan.total_repaid, loan.currency)}
-                      </div>
-                    </div>
-
-                    {/* Progress Bar */}
-                    <div className="space-y-1">
-                      <div className="h-1.5 w-full bg-[var(--color-border)] rounded-full overflow-hidden">
-                        <div
-                          className={`h-full rounded-full transition-all duration-300 ${
-                            isSettled
-                              ? 'bg-[var(--color-mint)]'
-                              : isOverdue
-                              ? 'bg-[var(--color-amber)]'
-                              : 'bg-[var(--color-soft-blue)]'
-                          }`}
-                          style={{ width: `${loan.progress_pct}%` }}
-                        />
-                      </div>
-                      <div className="flex justify-between text-[11px] text-[var(--color-text-muted)]">
-                        <span className="tabular-nums">{loan.progress_pct}% repaid</span>
-                        {loan.due_date && (
-                          <span className={isOverdue ? 'text-[var(--color-warning)] font-semibold' : ''}>
-                            Due: {loan.due_date}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {loan.notes && (
-                      <p className="text-xs text-[var(--color-text-muted)] bg-[var(--color-bg)] p-2.5 rounded-xl italic line-clamp-2">
-                        &quot;{loan.notes}&quot;
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Actions Bottom Bar */}
-                  <div className="pt-4 mt-4 border-t border-[var(--color-border)] flex items-center justify-between gap-2">
-                    <Link
-                      href={`/loans/${loan.id}`}
-                      className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors font-medium inline-flex items-center gap-1 cursor-pointer"
+          {loading ? (
+            <LoanRowsSkeleton />
+          ) : loadError ? (
+            <Card padding="lg">
+              <ErrorState
+                title="Could not load loans"
+                description={loadError}
+                onRetry={() => {
+                  setLoading(true);
+                  void loadData();
+                }}
+              />
+            </Card>
+          ) : loans.length === 0 ? (
+            <Card padding="lg">
+              {hasFilters ? (
+                <EmptyState
+                  icon={<SearchX aria-hidden="true" />}
+                  title="No loans match these filters"
+                  description="Try a different name or clear the filters to see all of your loans."
+                  action={
+                    <Button variant="secondary" size="sm" onClick={resetFilters}>
+                      Reset filters
+                    </Button>
+                  }
+                />
+              ) : (
+                <EmptyState
+                  icon={<HandCoins aria-hidden="true" />}
+                  title="No loans yet"
+                  description="Record money you lent or borrowed to start tracking what is still outstanding."
+                  action={
+                    <ButtonLink
+                      href="/loans/new"
+                      variant="secondary"
+                      size="sm"
+                      leadingIcon={<Plus className="h-3.5 w-3.5" aria-hidden="true" />}
                     >
-                      <span>History & Details</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </Link>
+                      Record your first loan
+                    </ButtonLink>
+                  }
+                />
+              )}
+            </Card>
+          ) : (
+            <div className="surface-card overflow-hidden">
+              <ul role="list" className="divide-y divide-[var(--color-border)]">
+                {loans.map((loan) => {
+                  const isSettled = loan.status === 'settled';
+                  const progress = clampPct(loan.progress_pct);
 
-                    <div className="flex items-center gap-2">
-                      {!isSettled && (
-                        <button
-                          onClick={() => {
-                            setRepaymentTarget(loan);
-                            setRepaymentAmount('');
-                            setRepaymentDate(new Date().toISOString().split('T')[0]);
-                          }}
-                          className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] transition-colors cursor-pointer inline-flex items-center gap-1"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                          <span>Repay</span>
-                        </button>
-                      )}
-                      <button
-                        onClick={() => setDeleteTarget(loan)}
-                        className="p-1.5 rounded-lg text-[var(--color-text-dim)] hover:text-[var(--color-danger)] transition-colors cursor-pointer"
-                        title="Delete Loan"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+                  return (
+                    <li key={loan.id}>
+                      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-4 gap-y-3 px-4 py-4 sm:px-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,0.9fr)_minmax(0,1.1fr)_auto] lg:items-center lg:gap-4">
+                        {/* Person + direction/status */}
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Link
+                              href={`/loans/${loan.id}`}
+                              className="min-w-0 truncate text-card-title transition-colors duration-[var(--duration-fast)] hover:text-[var(--color-primary-text)] hover:underline"
+                            >
+                              {loan.person_name}
+                            </Link>
+                            <Badge tone="outline" dot>
+                              {loan.direction === 'lent' ? 'Lent' : 'Borrowed'}
+                            </Badge>
+                            <Badge tone={statusTone(loan.status)} dot>
+                              {statusLabel(loan.status)}
+                            </Badge>
+                          </div>
+                          <p className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-caption">
+                            {loan.person_contact && (
+                              <span className="truncate">{loan.person_contact}</span>
+                            )}
+                            <span className="tabular-nums">
+                              Loan {formatDate(loan.loan_date)}
+                            </span>
+                            <span>{PAYMENT_METHODS[loan.payment_method]}</span>
+                          </p>
+                        </div>
 
-        {/* Record Repayment Modal */}
+                        {/* Outstanding balance */}
+                        <div className="min-w-0 text-right">
+                          <p className="text-caption lg:hidden">
+                            {loan.direction === 'lent'
+                              ? 'Remaining to collect'
+                              : 'Remaining to repay'}
+                          </p>
+                          <p className="text-metric-sm tabular-nums">
+                            {formatMoney(loan.outstanding_balance, loan.currency)}
+                          </p>
+                          <p className="mt-0.5 hidden text-caption tabular-nums sm:block">
+                            of {formatMoney(loan.principal_amount, loan.currency)} · repaid{' '}
+                            {formatMoney(loan.total_repaid, loan.currency)}
+                          </p>
+                        </div>
+
+                        {/* Progress + due date */}
+                        <div className="col-span-2 min-w-0 lg:col-span-1">
+                          <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5 text-caption">
+                            <span className="tabular-nums">{progress}% repaid</span>
+                            <span
+                              className={
+                                loan.status === 'overdue'
+                                  ? 'font-medium text-[var(--color-warning)]'
+                                  : ''
+                              }
+                            >
+                              {loan.due_date
+                                ? `Due ${formatDate(loan.due_date)}`
+                                : 'No due date'}
+                            </span>
+                          </div>
+                          <div
+                            role="progressbar"
+                            aria-label={`${loan.person_name} repayment progress`}
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                            aria-valuenow={progress}
+                            className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-[var(--color-surface-sunken)]"
+                          >
+                            <div
+                              className={`h-full rounded-full transition-[width] duration-150 ${progressColor(loan.status)}`}
+                              style={{ width: `${progress}%` }}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Row actions */}
+                        <div className="col-span-2 flex items-center justify-end gap-1.5 lg:col-span-1">
+                          {!isSettled && (
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => openRepaymentDialog(loan)}
+                              leadingIcon={<Plus className="h-3.5 w-3.5" aria-hidden="true" />}
+                            >
+                              Repay
+                            </Button>
+                          )}
+                          <IconButton
+                            label={`Delete loan for ${loan.person_name}`}
+                            size="sm"
+                            onClick={() => setDeleteTarget(loan)}
+                            className="text-[var(--color-text-subtle)]! hover:bg-[var(--color-danger-subtle)]! hover:text-[var(--color-danger)]!"
+                          >
+                            <Trash2 className="h-4 w-4" aria-hidden="true" />
+                          </IconButton>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+        </section>
+
+        {/* Repayment dialog */}
         {repaymentTarget && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-base font-bold text-[var(--color-text)]">
-                  Record Repayment
-                </h3>
-                <button
-                  onClick={() => setRepaymentTarget(null)}
-                  className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] text-sm cursor-pointer"
+          <div
+            className="fixed inset-0 z-[80] flex animate-fade-in items-end justify-center bg-[var(--color-scrim)] sm:items-center sm:p-4"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget && !repaying) closeRepaymentDialog();
+            }}
+          >
+            <div
+              ref={repaymentDialogRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="repayment-dialog-title"
+              aria-describedby="repayment-dialog-context"
+              onMouseDown={(event) => event.stopPropagation()}
+              className="max-h-[calc(100dvh-1rem)] w-full max-w-md animate-slide-up overflow-y-auto rounded-t-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-elevated)] p-5 shadow-[var(--shadow-lg)] sm:rounded-[var(--radius-xl)] sm:p-6"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h2 id="repayment-dialog-title" className="text-section-title">
+                    Record repayment
+                  </h2>
+                  <p id="repayment-dialog-context" className="text-secondary mt-1">
+                    {repaymentTarget.direction === 'lent'
+                      ? `Payment from ${repaymentTarget.person_name}`
+                      : `Payment to ${repaymentTarget.person_name}`}
+                  </p>
+                </div>
+                <IconButton
+                  label="Close"
+                  size="sm"
+                  onClick={closeRepaymentDialog}
+                  disabled={repaying}
                 >
-                  <X className="w-4 h-4" />
-                </button>
+                  <X className="h-4 w-4" aria-hidden="true" />
+                </IconButton>
               </div>
 
-              <div className="bg-[var(--color-bg)] p-3.5 rounded-xl space-y-1 text-xs">
-                <div className="text-[var(--color-text-muted)]">
-                  Loan with: <strong className="text-[var(--color-text)]">{repaymentTarget.person_name}</strong> ({repaymentTarget.direction})
+              <div className="mt-4 rounded-[var(--radius-lg)] bg-[var(--color-surface-sunken)] px-3.5 py-3">
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="text-label">Remaining balance</span>
+                  <span className="text-metric-sm tabular-nums">
+                    {formatMoney(
+                      repaymentTarget.outstanding_balance,
+                      repaymentTarget.currency,
+                    )}
+                  </span>
                 </div>
-                <div className="text-[var(--color-text-muted)]">
-                  Current Balance:{' '}
-                  <strong className="text-[var(--color-text)]">
-                    {formatMoney(repaymentTarget.outstanding_balance, repaymentTarget.currency)}
-                  </strong>
-                </div>
+                {parseFloat(repaymentAmount) > 0 && (
+                  <div className="mt-2 flex items-baseline justify-between gap-3 border-t border-[var(--color-border)] pt-2">
+                    <span className="text-caption">After this payment</span>
+                    <span className="text-caption tabular-nums">
+                      {formatMoney(remainingAfterPayment, repaymentTarget.currency)}
+                    </span>
+                  </div>
+                )}
               </div>
 
-              <form onSubmit={handleRecordRepayment} className="space-y-4 text-xs sm:text-sm">
-                <div>
-                  <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1">
-                    Repayment Amount ({repaymentTarget.currency})
-                  </label>
-                  <input
+              <form onSubmit={handleRecordRepayment} noValidate className="mt-4 space-y-4">
+                <Field
+                  id="repayment-amount"
+                  label={`Amount (${repaymentTarget.currency})`}
+                  required
+                  error={repaymentErrors.amount}
+                  hint="Pay any amount up to the remaining balance."
+                >
+                  <Input
+                    id="repayment-amount"
                     type="number"
+                    inputMode="decimal"
                     step="0.01"
                     min="0.01"
                     max={Number(repaymentTarget.outstanding_balance)}
-                    required
+                    placeholder="0.00"
                     value={repaymentAmount}
-                    onChange={(e) => setRepaymentAmount(e.target.value)}
-                    placeholder="e.g. 500.00"
-                    className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl px-3.5 py-2.5 text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)]"
+                    invalid={Boolean(repaymentErrors.amount)}
+                    onChange={(e) => {
+                      setRepaymentAmount(e.target.value);
+                      if (repaymentErrors.amount) {
+                        setRepaymentErrors((prev) => ({ ...prev, amount: undefined }));
+                      }
+                    }}
                   />
-                </div>
+                </Field>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1">
-                      Payment Date
-                    </label>
-                    <input
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field
+                    id="repayment-date"
+                    label="Payment date"
+                    required
+                    error={repaymentErrors.date}
+                  >
+                    <Input
+                      id="repayment-date"
                       type="date"
-                      required
                       value={repaymentDate}
-                      onChange={(e) => setRepaymentDate(e.target.value)}
-                      className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl px-3 py-2 text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)]"
+                      invalid={Boolean(repaymentErrors.date)}
+                      onChange={(e) => {
+                        setRepaymentDate(e.target.value);
+                        if (repaymentErrors.date) {
+                          setRepaymentErrors((prev) => ({ ...prev, date: undefined }));
+                        }
+                      }}
                     />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1">
-                      Method
-                    </label>
-                    <select
+                  </Field>
+                  <Field id="repayment-method" label="Method">
+                    <Select
+                      id="repayment-method"
                       value={repaymentMethod}
-                      onChange={(e) => setRepaymentMethod(e.target.value as 'cash' | 'bkash' | 'nagad' | 'bank' | 'other')}
-                      className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl px-3 py-2 text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] capitalize cursor-pointer"
+                      onChange={(e) =>
+                        setRepaymentMethod(e.target.value as Loan['payment_method'])
+                      }
                     >
                       <option value="bkash">bKash</option>
                       <option value="nagad">Nagad</option>
                       <option value="cash">Cash</option>
                       <option value="bank">Bank</option>
                       <option value="other">Other</option>
-                    </select>
-                  </div>
+                    </Select>
+                  </Field>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1">
-                    Reference / Transaction ID (Optional)
-                  </label>
-                  <input
+                <Field
+                  id="repayment-reference"
+                  label="Reference"
+                  hint="Optional transaction ID or note."
+                >
+                  <Input
+                    id="repayment-reference"
                     type="text"
+                    placeholder="e.g. TRX123456"
                     value={repaymentReference}
                     onChange={(e) => setRepaymentReference(e.target.value)}
-                    placeholder="e.g. TRX123456"
-                    className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl px-3 py-2 text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)]"
                   />
-                </div>
+                </Field>
 
-                <div className="flex gap-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setRepaymentTarget(null)}
-                    className="w-1/2 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text-muted)] font-medium cursor-pointer"
-                  >
+                <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
+                  <Button variant="secondary" onClick={closeRepaymentDialog} disabled={repaying}>
                     Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={repaying}
-                    className="w-1/2 py-2.5 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] font-semibold transition-colors disabled:opacity-50 cursor-pointer"
-                  >
-                    {repaying ? 'Recording...' : 'Confirm Repayment'}
-                  </button>
+                  </Button>
+                  <Button type="submit" variant="primary" loading={repaying}>
+                    Record repayment
+                  </Button>
                 </div>
               </form>
             </div>
           </div>
         )}
 
-        {/* Delete Confirmation Dialog */}
+        {/* Delete confirmation */}
         <ConfirmDialog
-          open={!!deleteTarget}
-          title="Delete Loan Record"
-          message={`Are you sure you want to delete the loan with "${deleteTarget?.person_name}"? All repayment history for this loan will also be deleted.`}
-          confirmLabel="Delete Loan"
+          open={Boolean(deleteTarget)}
+          title="Delete loan"
+          message={`Delete the loan with ${deleteTarget?.person_name ?? 'this person'}? Its repayment history will be deleted too.`}
+          confirmLabel="Delete loan"
           onConfirm={handleDelete}
           onCancel={() => setDeleteTarget(null)}
         />

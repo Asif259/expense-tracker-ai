@@ -193,7 +193,10 @@ export function ResponsiveDataTable<T>({
         {/* =========================================================================
             VIEW 1: DESKTOP TABLE (Shown when container has sufficient breadth)
             ========================================================================= */}
-        <div className="table-desktop-view">
+        <div
+          className="table-desktop-view"
+          style={!loading && data.length === 0 ? { display: 'none' } : undefined}
+        >
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-left text-[13px]" aria-label={ariaLabel}>
               <thead className="select-none border-b border-[var(--color-border)]">
@@ -310,18 +313,20 @@ export function ResponsiveDataTable<T>({
                                             ? act.ariaLabel(row)
                                             : `${act.label} for ${getIdentityText(row, index)}`
                                         }
-                                        className={`inline-flex min-h-[36px] items-center gap-1.5 rounded-[var(--radius-md)] px-2 text-[13px] font-medium transition-colors duration-[var(--duration-fast)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)] ${
+                                        title={act.label}
+                                        className={`inline-flex h-8 min-w-8 cursor-pointer items-center justify-center gap-1.5 rounded-[var(--radius-md)] px-1.5 text-[13px] font-medium transition-colors duration-[var(--duration-fast)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)] ${
                                           isDanger
-                                            ? 'text-[var(--color-danger)] hover:bg-[var(--color-danger-subtle)]'
+                                            ? 'text-[var(--color-text-subtle)] hover:bg-[var(--color-danger-subtle)] hover:text-[var(--color-danger)]'
                                             : 'text-[var(--color-text-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text)]'
                                         }`}
                                       >
-                                        {act.icon && (
+                                        {act.icon ? (
                                           <span className="shrink-0" aria-hidden="true">
                                             {act.icon}
                                           </span>
+                                        ) : (
+                                          <span>{act.label}</span>
                                         )}
-                                        <span>{act.label}</span>
                                       </button>
                                     );
                                   })}
@@ -344,16 +349,20 @@ export function ResponsiveDataTable<T>({
         {/* =========================================================================
             VIEW 2: MOBILE COMPACT TABLE (Two visual lines per row, rank by use)
             ========================================================================= */}
-        <div className="table-mobile-view">
+        <div
+          className="table-mobile-view"
+          style={!loading && data.length === 0 ? { display: 'none' } : undefined}
+        >
           {/* Mobile header bar keeps sorting reachable when table headers are hidden */}
-          {sortableColumns.length > 0 && !loading && data.length > 0 && (
+          {(sortableColumns.length > 0 || tableTitle) && !loading && data.length > 0 && (
             <div className="flex items-center justify-between gap-2 border-b border-[var(--color-border)] px-4 py-2">
               <span className="text-caption truncate">
                 {tableTitle ||
                   `${data.length} ${data.length === 1 ? 'record' : 'records'}`}
               </span>
 
-              {/* Mobile sort control */}
+              {/* Mobile sort control (only when sorting is wired up) */}
+              {onSortChange && sortableColumns.length > 0 && (
               <div className="relative shrink-0">
                 <button
                   type="button"
@@ -406,6 +415,7 @@ export function ResponsiveDataTable<T>({
                   </div>
                 )}
               </div>
+              )}
             </div>
           )}
 
@@ -593,7 +603,9 @@ export function ResponsiveDataTable<T>({
         {/* =========================================================================
             FOOTER (pagination, counts) — inside the same surface as the table
             ========================================================================= */}
-        {footer && <div className="border-t border-[var(--color-border)]">{footer}</div>}
+        {footer && (loading || data.length > 0) && (
+          <div className="border-t border-[var(--color-border)]">{footer}</div>
+        )}
       </div>
 
       {/* =========================================================================

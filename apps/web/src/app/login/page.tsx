@@ -7,7 +7,8 @@ import { toast } from '@/components/toast';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { AlertCircle, ArrowLeft } from 'lucide-react';
+import { Alert, Button, Field, Input, Spinner } from '@/components/ui';
+import { ArrowLeft } from 'lucide-react';
 
 /** Google wordmark SVG — inline to avoid an extra network request. */
 function GoogleIcon() {
@@ -94,7 +95,7 @@ function LoginForm() {
           setErrorMsg(error);
           toast(error, 'error');
         } else {
-          toast('Successfully signed in!', 'success');
+          toast('Signed in', 'success');
           router.replace('/dashboard');
         }
       } else {
@@ -103,7 +104,7 @@ function LoginForm() {
           setErrorMsg(error);
           toast(error, 'error');
         } else {
-          toast('Account created! Please check your email or proceed.', 'success');
+          toast('Account created. Check your email to continue.', 'success');
           router.replace('/dashboard');
         }
       }
@@ -139,147 +140,164 @@ function LoginForm() {
     }
   };
 
+  const switchMode = (next: 'signin' | 'signup') => {
+    setMode(next);
+    setErrorMsg(null);
+  };
+
+  const activeTabClass =
+    'bg-[var(--color-surface)] text-[var(--color-text)] border-[var(--color-border)]';
+  const inactiveTabClass =
+    'border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text)]';
+
   return (
-    <div className="w-full max-w-md p-8 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-2xl">
-      {/* Brand header */}
-      <div className="flex flex-col items-center mb-8">
-        <Link href="/" className="flex items-center gap-2 mb-2 cursor-pointer">
-          <div className="relative h-10 w-10 shrink-0">
-            <Image src="/logo.webp" alt="Ledgerly Logo" fill sizes="40px" className="object-contain" priority />
-          </div>
-          <span className="text-xl font-bold tracking-tight text-[var(--color-text)]">
-            Ledgerly<span className="text-[var(--color-primary)]">.</span>
-          </span>
-        </Link>
-        <p className="text-xs text-[var(--color-text-muted)] mt-1">
-          {mode === 'signin'
-            ? 'Sign in to access your personal finance ledger'
-            : 'Create an account to start tracking expenses with clarity'}
-        </p>
-      </div>
-
-      {/* Mode Toggle */}
-      <div className="flex rounded-xl bg-[var(--color-surface-hover)] p-1 border border-[var(--color-border)] mb-6">
-        <button
-          type="button"
-          onClick={() => {
-            setMode('signin');
-            setErrorMsg(null);
-          }}
-          className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-            mode === 'signin'
-              ? 'bg-[var(--color-surface)] text-[var(--color-text)] shadow-xs'
-              : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
-          }`}
-        >
-          Sign In
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setMode('signup');
-            setErrorMsg(null);
-          }}
-          className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-            mode === 'signup'
-              ? 'bg-[var(--color-surface)] text-[var(--color-text)] shadow-xs'
-              : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
-          }`}
-        >
-          Create Account
-        </button>
-      </div>
-
-      {/* Error notification */}
-      {activeError && (
-        <div className="mb-6 p-3 rounded-xl border border-[var(--color-danger)]/50 bg-[var(--color-expense-bg)] text-xs text-[var(--color-expense)] flex items-start gap-2">
-          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-          <span>{activeError}</span>
-        </div>
-      )}
-
-      {/* Google Sign-In */}
-      <button
-        type="button"
-        onClick={handleGoogleSignIn}
-        disabled={googleLoading || loading}
-        aria-label="Continue with Google"
-        className="w-full flex items-center justify-center gap-3 px-4 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] hover:bg-[var(--color-surface-hover)] text-[var(--color-text)] text-sm font-medium transition-all cursor-pointer disabled:opacity-50 active:scale-[0.98] mb-4"
-      >
-        {googleLoading ? (
-          <div className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--color-text-dim)] border-t-transparent" />
-        ) : (
-          <GoogleIcon />
-        )}
-        <span>{googleLoading ? 'Redirecting…' : 'Continue with Google'}</span>
-      </button>
-
-      {/* Divider */}
-      <div className="relative flex items-center gap-3 mb-4">
-        <div className="flex-1 h-px bg-[var(--color-border)]" />
-        <span className="text-[11px] text-[var(--color-text-dim)] uppercase tracking-wider">or</span>
-        <div className="flex-1 h-px bg-[var(--color-border)]" />
-      </div>
-
-      {/* Auth form */}
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1.5">
-            Email Address
-          </label>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
-            className="w-full px-3.5 py-2 text-sm rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] placeholder-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none transition-colors"
-          />
-        </div>
-
-        <div>
-          <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1.5">
-            Password
-          </label>
-          <input
-            type="password"
-            required
-            minLength={6}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            className="w-full px-3.5 py-2 text-sm rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] placeholder-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none transition-colors"
-          />
-          {mode === 'signup' && (
-            <span className="text-[10px] text-[var(--color-text-dim)] mt-1 block">
-              Minimum 6 characters.
+    <div className="w-full max-w-[420px]">
+      <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-md sm:p-8">
+        {/* Brand + short product line */}
+        <div className="flex flex-col items-center text-center">
+          <Link
+            href="/"
+            className="flex items-center gap-2.5 rounded-[var(--radius-md)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)]"
+          >
+            <span className="relative h-8 w-8 shrink-0">
+              <Image
+                src="/logo.webp"
+                alt=""
+                fill
+                sizes="32px"
+                className="object-contain"
+                priority
+              />
             </span>
-          )}
+            <span className="text-lg font-semibold tracking-tight text-[var(--color-text)]">
+              Ledgerly<span className="text-[var(--color-primary)]">.</span>
+            </span>
+          </Link>
+
+          <h1 className="mt-5 font-display text-2xl font-normal tracking-tight text-[var(--color-text)]">
+            {mode === 'signin' ? 'Welcome back.' : 'Create your account.'}
+          </h1>
+          <p className="mt-1.5 text-sm text-[var(--color-text-muted)]">
+            {mode === 'signin'
+              ? 'Sign in to open your ledger.'
+              : 'Start with one transaction. It takes a minute.'}
+          </p>
         </div>
 
-        <button
-          type="submit"
-          disabled={loading || googleLoading}
-          className="w-full py-2.5 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-sm font-semibold transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 mt-2 shadow-sm hover:shadow-md active:scale-[0.98]"
+        {/* Mode switch */}
+        <div
+          role="group"
+          aria-label="Account mode"
+          className="mt-6 flex rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] p-1"
         >
-          {loading && (
-            <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
-          )}
-          <span>
-            {loading
-              ? 'Processing...'
-              : mode === 'signin'
-                ? 'Sign In to Ledgerly'
-                : 'Register Account'}
-          </span>
-        </button>
-      </form>
+          <button
+            type="button"
+            aria-pressed={mode === 'signin'}
+            onClick={() => switchMode('signin')}
+            className={`flex-1 cursor-pointer rounded-[var(--radius-sm)] border py-2 text-[13px] font-medium transition-colors duration-[var(--duration-fast)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)] ${
+              mode === 'signin' ? activeTabClass : inactiveTabClass
+            }`}
+          >
+            Sign in
+          </button>
+          <button
+            type="button"
+            aria-pressed={mode === 'signup'}
+            onClick={() => switchMode('signup')}
+            className={`flex-1 cursor-pointer rounded-[var(--radius-sm)] border py-2 text-[13px] font-medium transition-colors duration-[var(--duration-fast)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)] ${
+              mode === 'signup' ? activeTabClass : inactiveTabClass
+            }`}
+          >
+            Create account
+          </button>
+        </div>
 
-      <div className="mt-6 text-center text-xs text-[var(--color-text-dim)]">
-        <Link href="/" className="hover:text-[var(--color-text)] transition-colors inline-flex items-center gap-1 cursor-pointer">
-          <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Back to Homepage</span>
-        </Link>
+        {/* Error notification */}
+        {activeError && (
+          <Alert tone="danger" className="mt-5">
+            {activeError}
+          </Alert>
+        )}
+
+        {/* Google Sign-In */}
+        <Button
+          variant="secondary"
+          size="lg"
+          className="mt-5 w-full"
+          onClick={handleGoogleSignIn}
+          disabled={googleLoading || loading}
+          loading={googleLoading}
+          leadingIcon={<GoogleIcon />}
+        >
+          {googleLoading ? 'Redirecting…' : 'Continue with Google'}
+        </Button>
+
+        {/* Divider */}
+        <div className="my-5 flex items-center gap-3" aria-hidden="true">
+          <span className="h-px flex-1 bg-[var(--color-border)]" />
+          <span className="text-xs text-[var(--color-text-subtle)]">or</span>
+          <span className="h-px flex-1 bg-[var(--color-border)]" />
+        </div>
+
+        {/* Auth form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <Field id="email" label="Email" required>
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+            />
+          </Field>
+
+          <Field
+            id="password"
+            label="Password"
+            required
+            hint="At least 6 characters."
+          >
+            <Input
+              id="password"
+              type="password"
+              autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+              required
+              minLength={6}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+            />
+          </Field>
+
+          <Button
+            type="submit"
+            variant="primary"
+            size="lg"
+            className="mt-2 w-full"
+            loading={loading}
+            disabled={googleLoading}
+          >
+            {loading
+              ? mode === 'signin'
+                ? 'Signing in…'
+                : 'Creating account…'
+              : mode === 'signin'
+                ? 'Sign in'
+                : 'Create account'}
+          </Button>
+        </form>
+
+        <div className="mt-6 text-center">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 rounded-[var(--radius-sm)] text-xs text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)]"
+          >
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            <span>Back to homepage</span>
+          </Link>
+        </div>
       </div>
     </div>
   );
@@ -287,13 +305,15 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-[var(--color-bg)] text-[var(--color-text)] relative">
-      <div className="absolute top-4 right-4">
+    <div className="relative flex min-h-screen items-center justify-center bg-[var(--color-bg)] px-4 py-12 text-[var(--color-text)]">
+      <div className="absolute right-4 top-4">
         <ThemeToggle variant="compact" />
       </div>
       <Suspense
         fallback={
-          <div className="animate-spin h-8 w-8 border-2 border-[var(--color-primary)] border-t-transparent rounded-full" />
+          <div className="flex items-center justify-center">
+            <Spinner className="h-6 w-6" label="Loading sign-in form" />
+          </div>
         }
       >
         <LoginForm />

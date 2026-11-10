@@ -37,7 +37,7 @@ function applyTheme(newTheme: Theme) {
     metaThemeColor.setAttribute('name', 'theme-color');
     document.head.appendChild(metaThemeColor);
   }
-  metaThemeColor.setAttribute('content', newTheme === 'dark' ? '#0B0B0B' : '#F5F5F5');
+  metaThemeColor.setAttribute('content', newTheme === 'dark' ? '#0b0f17' : '#f7f9f8');
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {

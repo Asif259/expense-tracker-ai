@@ -2,13 +2,44 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import AppShell from '@/components/app-shell';
 import { useAuth } from '@/context/auth-context';
 import { createLoan } from '@/lib/api';
 import { SUPPORTED_CURRENCIES, formatMoney } from '@/lib/format';
 import { toast } from '@/components/toast';
-import Link from 'next/link';
-import { ArrowLeft, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
+import { ArrowDownLeft, ArrowLeft, ArrowUpRight } from 'lucide-react';
+import {
+  Button,
+  ButtonLink,
+  Card,
+  Field,
+  Input,
+  PageHeader,
+  SegmentedControl,
+  Select,
+  Textarea,
+} from '@/components/ui';
+
+type PaymentMethod = 'cash' | 'bkash' | 'nagad' | 'bank';
+
+const METHOD_LABELS: Record<PaymentMethod, string> = {
+  bkash: 'bKash',
+  nagad: 'Nagad',
+  cash: 'Cash',
+  bank: 'Bank',
+};
+
+const METHOD_OPTIONS = (Object.keys(METHOD_LABELS) as PaymentMethod[]).map((method) => ({
+  value: method,
+  label: METHOD_LABELS[method],
+}));
+
+interface FormErrors {
+  personName?: string;
+  amount?: string;
+  dueDate?: string;
+}
 
 export default function NewLoanPage() {
   const router = useRouter();
@@ -19,34 +50,37 @@ export default function NewLoanPage() {
   const [personContact, setPersonContact] = useState('');
   const [amount, setAmount] = useState('');
   const [currency, setCurrency] = useState('BDT');
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'bkash' | 'nagad' | 'bank' | 'other'>('bkash');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('bkash');
   const [loanDate, setLoanDate] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [notes, setNotes] = useState('');
+  const [errors, setErrors] = useState<FormErrors>({});
   const [submitting, setSubmitting] = useState(false);
 
+  // Resolved after mount so the server and client render the same empty value.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- client-only default date, read once after hydration
     setLoanDate(new Date().toISOString().split('T')[0]);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!personName.trim()) {
-      toast("Please enter the person's name", 'error');
-      return;
-    }
-
+    const nextErrors: FormErrors = {};
     const parsedAmount = parseFloat(amount);
+
+    if (!personName.trim()) {
+      nextErrors.personName = "Enter the person's name.";
+    }
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      toast('Please enter a valid principal amount greater than zero', 'error');
-      return;
+      nextErrors.amount = 'Enter an amount greater than zero.';
+    }
+    if (dueDate && loanDate && dueDate < loanDate) {
+      nextErrors.dueDate = 'The repayment date cannot be before the loan date.';
     }
 
-    if (dueDate && dueDate < loanDate) {
-      toast('Expected repayment date cannot be earlier than loan date', 'error');
-      return;
-    }
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) return;
 
     setSubmitting(true);
     try {
@@ -65,10 +99,13 @@ export default function NewLoanPage() {
         notes: notes.trim() || null,
       });
 
-      toast('Loan record created successfully!', 'success');
+      toast('Loan created', 'success');
       router.push('/loans');
     } catch (err: unknown) {
-      toast(err instanceof Error ? err.message : 'Failed to create loan', 'error');
+      toast(
+        err instanceof Error ? err.message : 'Could not create the loan. Try again.',
+        'error',
+      );
     } finally {
       setSubmitting(false);
     }
@@ -78,276 +115,273 @@ export default function NewLoanPage() {
 
   return (
     <AppShell>
-      <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
+      <div className="space-y-6">
         <div>
           <Link
             href="/loans"
-            className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors inline-flex items-center gap-1 mb-2 font-medium cursor-pointer"
+            className="inline-flex items-center gap-1.5 text-secondary transition-colors duration-[var(--duration-fast)] hover:text-[var(--color-text)]"
           >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Back to Debts & Loans</span>
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            Debts & loans
           </Link>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-[var(--color-text)] tracking-tight">
-            Record New Loan
-          </h1>
-          <p className="text-sm text-[var(--color-text-muted)] mt-1">
-            Log money given to or received from someone with repayment tracking.
-          </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-          {/* Main Form */}
-          <form
-            onSubmit={handleSubmit}
-            className="lg:col-span-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-6 sm:p-7 space-y-5 shadow-sm"
-          >
-            {/* Direction Selection */}
-            <div>
-              <span id="loan-direction-label" className="block text-xs font-semibold text-[var(--color-text-dim)] uppercase tracking-wider mb-2">
-                Loan Direction
-              </span>
-              <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-labelledby="loan-direction-label">
-                <button
-                  type="button"
-                  role="radio"
-                  aria-checked={direction === 'lent'}
-                  onClick={() => setDirection('lent')}
-                  className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
-                    direction === 'lent'
-                      ? 'border-[var(--color-mint)] bg-[var(--color-pale-mint)]/40 text-[var(--color-text)] font-semibold shadow-sm ring-1 ring-[var(--color-mint)]/30'
-                      : 'border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text-muted)] hover:border-[var(--color-border-hover)]'
-                  }`}
-                >
-                  <div className="text-sm font-bold mb-1 inline-flex items-center gap-1.5 text-[var(--color-text)]">
-                    <ArrowUpRight className="w-4 h-4 text-[var(--color-mint)]" />
-                    <span>I Lent Money</span>
-                  </div>
-                  <div className="text-xs text-[var(--color-text-muted)]">I expect to get this back</div>
-                </button>
+        <PageHeader
+          title="New loan"
+          description="Record money you lent or borrowed, then track repayments until the balance is clear."
+        />
 
-                <button
-                  type="button"
-                  role="radio"
-                  aria-checked={direction === 'borrowed'}
-                  onClick={() => setDirection('borrowed')}
-                  className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
-                    direction === 'borrowed'
-                      ? 'border-[var(--color-amber)] bg-[var(--color-pale-yellow)]/40 text-[var(--color-text)] font-semibold shadow-sm ring-1 ring-[var(--color-amber)]/30'
-                      : 'border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text-muted)] hover:border-[var(--color-border-hover)]'
-                  }`}
-                >
-                  <div className="text-sm font-bold mb-1 inline-flex items-center gap-1.5 text-[var(--color-text)]">
-                    <ArrowDownLeft className="w-4 h-4 text-[var(--color-amber)]" />
-                    <span>I Borrowed Money</span>
-                  </div>
-                  <div className="text-xs text-[var(--color-text-muted)]">I need to pay this back</div>
-                </button>
-              </div>
-            </div>
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(280px,320px)] lg:items-start">
+          <Card padding="lg">
+            <form onSubmit={handleSubmit} noValidate className="space-y-6">
+              {/* Direction */}
+              <fieldset>
+                <legend className="text-label">Direction</legend>
+                <div className="mt-2 grid gap-3 sm:grid-cols-2">
+                  {(
+                    [
+                      {
+                        value: 'lent',
+                        title: 'I lent money',
+                        description: 'Someone owes you this back.',
+                        icon: ArrowUpRight,
+                      },
+                      {
+                        value: 'borrowed',
+                        title: 'I borrowed money',
+                        description: 'You need to pay this back.',
+                        icon: ArrowDownLeft,
+                      },
+                    ] as const
+                  ).map((option) => {
+                    const Icon = option.icon;
+                    const selected = direction === option.value;
+                    return (
+                      <label
+                        key={option.value}
+                        className={`flex cursor-pointer items-start gap-3 rounded-[var(--radius-lg)] border p-3.5 transition-colors duration-[var(--duration-fast)] ${
+                          selected
+                            ? 'border-[var(--color-primary)] bg-[var(--color-primary-subtle)]'
+                            : 'border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-border-strong)]'
+                        }`}
+                      >
+                        <span
+                          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--radius-md)] ${
+                            selected
+                              ? 'bg-[var(--color-primary)] text-[var(--color-primary-contrast)]'
+                              : 'bg-[var(--color-surface-sunken)] text-[var(--color-text-muted)]'
+                          }`}
+                        >
+                          <Icon className="h-4 w-4" aria-hidden="true" />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-body font-medium">{option.title}</span>
+                          <span className="text-secondary block">{option.description}</span>
+                        </span>
+                        <input
+                          type="radio"
+                          name="loan-direction"
+                          value={option.value}
+                          checked={selected}
+                          onChange={() => setDirection(option.value)}
+                          className="mt-1 h-4 w-4 shrink-0 accent-[var(--color-primary)]"
+                        />
+                      </label>
+                    );
+                  })}
+                </div>
+              </fieldset>
 
-            {/* Person's details */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="loan-person-name" className="block text-xs font-medium text-[var(--color-text-muted)] mb-1.5">
-                  Person&apos;s Name <span className="text-[var(--color-danger)]">*</span>
-                </label>
-                <input
+              {/* Person */}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field
                   id="loan-person-name"
-                  type="text"
+                  label="Person's name"
                   required
-                  placeholder="e.g. Rahim, John, Sister"
-                  value={personName}
-                  onChange={(e) => setPersonName(e.target.value)}
-                  className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl px-4 py-2.5 text-sm text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] transition-colors"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="loan-person-contact" className="block text-xs font-medium text-[var(--color-text-muted)] mb-1.5">
-                  Contact Info (Phone / Email)
-                </label>
-                <input
-                  id="loan-person-contact"
-                  type="text"
-                  placeholder="e.g. +8801700000000"
-                  value={personContact}
-                  onChange={(e) => setPersonContact(e.target.value)}
-                  className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl px-4 py-2.5 text-sm text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] transition-colors"
-                />
-              </div>
-            </div>
-
-            {/* Principal & Currency */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="sm:col-span-2">
-                <label htmlFor="loan-amount" className="block text-xs font-medium text-[var(--color-text-muted)] mb-1.5">
-                  Principal Amount <span className="text-[var(--color-danger)]">*</span>
-                </label>
-                <input
-                  id="loan-amount"
-                  type="number"
-                  step="0.01"
-                  min="0.01"
-                  required
-                  placeholder="0.00"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl px-4 py-2.5 text-sm text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] transition-colors"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="loan-currency" className="block text-xs font-medium text-[var(--color-text-muted)] mb-1.5">
-                  Currency
-                </label>
-                <select
-                  id="loan-currency"
-                  value={currency}
-                  onChange={(e) => setCurrency(e.target.value)}
-                  className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl px-3 py-2.5 text-sm text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] transition-colors cursor-pointer"
+                  error={errors.personName}
                 >
-                  {SUPPORTED_CURRENCIES.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
+                  <Input
+                    id="loan-person-name"
+                    type="text"
+                    autoComplete="off"
+                    required
+                    placeholder="e.g. Rahim Ahmed"
+                    value={personName}
+                    invalid={Boolean(errors.personName)}
+                    onChange={(e) => {
+                      setPersonName(e.target.value);
+                      if (errors.personName) {
+                        setErrors((prev) => ({ ...prev, personName: undefined }));
+                      }
+                    }}
+                  />
+                </Field>
+                <Field id="loan-person-contact" label="Contact" hint="Optional phone or email.">
+                  <Input
+                    id="loan-person-contact"
+                    type="text"
+                    autoComplete="off"
+                    placeholder="e.g. +880 1700 000000"
+                    value={personContact}
+                    onChange={(e) => setPersonContact(e.target.value)}
+                  />
+                </Field>
               </div>
-            </div>
 
-            {/* Transfer method */}
-            <div>
-              <span id="loan-method-label" className="block text-xs font-medium text-[var(--color-text-muted)] mb-1.5">
-                Transfer Method
-              </span>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2" role="group" aria-labelledby="loan-method-label">
-                {(['bkash', 'nagad', 'cash', 'bank'] as const).map((m) => (
-                  <button
-                    key={m}
-                    type="button"
-                    aria-pressed={paymentMethod === m}
-                    onClick={() => setPaymentMethod(m)}
-                    className={`py-2 px-3 rounded-xl text-xs font-semibold capitalize border transition-all cursor-pointer ${
-                      paymentMethod === m
-                        ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-[var(--color-primary)] ring-1 ring-[var(--color-primary)]/30'
-                        : 'border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text-muted)] hover:border-[var(--color-border-hover)]'
-                    }`}
+              {/* Amount & currency */}
+              <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_140px]">
+                <Field id="loan-amount" label="Principal amount" required error={errors.amount}>
+                  <Input
+                    id="loan-amount"
+                    type="number"
+                    inputMode="decimal"
+                    step="0.01"
+                    min="0.01"
+                    required
+                    placeholder="0.00"
+                    value={amount}
+                    invalid={Boolean(errors.amount)}
+                    onChange={(e) => {
+                      setAmount(e.target.value);
+                      if (errors.amount) {
+                        setErrors((prev) => ({ ...prev, amount: undefined }));
+                      }
+                    }}
+                  />
+                </Field>
+                <Field id="loan-currency" label="Currency">
+                  <Select
+                    id="loan-currency"
+                    value={currency}
+                    onChange={(e) => setCurrency(e.target.value)}
                   >
-                    {m === 'bkash' ? 'bKash' : m === 'nagad' ? 'Nagad' : m}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Dates */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="loan-date" className="block text-xs font-medium text-[var(--color-text-muted)] mb-1.5">
-                  Loan Date <span className="text-[var(--color-danger)]">*</span>
-                </label>
-                <input
-                  id="loan-date"
-                  type="date"
-                  required
-                  value={loanDate}
-                  onChange={(e) => setLoanDate(e.target.value)}
-                  className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl px-4 py-2.5 text-sm text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] transition-colors"
-                />
+                    {SUPPORTED_CURRENCIES.map((code) => (
+                      <option key={code} value={code}>
+                        {code}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
               </div>
 
+              {/* Transfer method */}
               <div>
-                <label htmlFor="loan-due-date" className="block text-xs font-medium text-[var(--color-text-muted)] mb-1.5">
-                  Expected Repayment Date (Optional)
-                </label>
-                <input
+                <p className="text-label">Transfer method</p>
+                <div className="mt-1.5">
+                  <SegmentedControl
+                    options={METHOD_OPTIONS}
+                    value={paymentMethod}
+                    onChange={setPaymentMethod}
+                    label="Transfer method"
+                  />
+                </div>
+              </div>
+
+              {/* Dates */}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field id="loan-date" label="Loan date" required>
+                  <Input
+                    id="loan-date"
+                    type="date"
+                    required
+                    value={loanDate}
+                    onChange={(e) => setLoanDate(e.target.value)}
+                  />
+                </Field>
+                <Field
                   id="loan-due-date"
-                  type="date"
-                  min={loanDate}
-                  value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
-                  className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl px-4 py-2.5 text-sm text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] transition-colors"
+                  label="Expected repayment"
+                  hint="Optional."
+                  error={errors.dueDate}
+                >
+                  <Input
+                    id="loan-due-date"
+                    type="date"
+                    min={loanDate}
+                    value={dueDate}
+                    invalid={Boolean(errors.dueDate)}
+                    onChange={(e) => {
+                      setDueDate(e.target.value);
+                      if (errors.dueDate) {
+                        setErrors((prev) => ({ ...prev, dueDate: undefined }));
+                      }
+                    }}
+                  />
+                </Field>
+              </div>
+
+              {/* Notes */}
+              <Field id="loan-notes" label="Notes" hint="Optional terms, context, or reminders.">
+                <Textarea
+                  id="loan-notes"
+                  rows={3}
+                  placeholder="e.g. Repay before the end of the month."
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
                 />
-              </div>
-            </div>
+              </Field>
 
-            {/* Notes */}
+              <div className="flex flex-col-reverse gap-2 border-t border-[var(--color-border)] pt-5 sm:flex-row sm:justify-end">
+                <ButtonLink href="/loans" variant="secondary">
+                  Cancel
+                </ButtonLink>
+                <Button type="submit" variant="primary" loading={submitting}>
+                  Save loan
+                </Button>
+              </div>
+            </form>
+          </Card>
+
+          {/* Preview */}
+          <Card padding="lg" className="space-y-4 lg:sticky lg:top-6">
             <div>
-              <label htmlFor="loan-notes" className="block text-xs font-medium text-[var(--color-text-muted)] mb-1.5">
-                Notes & Terms (Optional)
-              </label>
-              <textarea
-                id="loan-notes"
-                rows={2}
-                placeholder="e.g. Due before salary or monthly installment agreement"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl px-4 py-2.5 text-sm text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] transition-colors resize-none"
-              />
-            </div>
-
-            {/* Submit */}
-            <div className="pt-2">
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-full py-3 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] text-sm font-semibold transition-colors disabled:opacity-50 shadow-sm active:scale-[0.99] cursor-pointer"
-              >
-                {submitting ? 'Creating Loan...' : 'Save Loan Record'}
-              </button>
-            </div>
-          </form>
-
-          {/* Real-time Preview Card */}
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-6 space-y-4 shadow-sm">
-            <h3 className="text-xs uppercase tracking-wider font-semibold text-[var(--color-text-dim)]">
-              Live Loan Preview
-            </h3>
-
-            <div className="space-y-1">
-              <div className="text-xs text-[var(--color-text-muted)]">
+              <p className="text-label text-[var(--color-text-muted)]">Summary</p>
+              <p className="text-secondary mt-1">
                 {direction === 'lent'
-                  ? `${personName || 'Person'} will owe you`
-                  : `You will owe ${personName || 'Person'}`}
-              </div>
-              <div className="text-2xl font-extrabold text-[var(--color-text)] tracking-tight">
+                  ? `${personName.trim() || 'This person'} will owe you`
+                  : `You will owe ${personName.trim() || 'this person'}`}
+              </p>
+              <p className="text-metric mt-1 tabular-nums">
                 {formatMoney(numericAmount, currency)}
-              </div>
+              </p>
             </div>
 
-            <div className="space-y-2 pt-2 border-t border-[var(--color-border)] text-xs">
-              <div className="flex justify-between text-[var(--color-text-muted)]">
-                <span>Direction</span>
-                <span className="font-semibold capitalize text-[var(--color-text)]">
-                  {direction}
-                </span>
+            <dl className="space-y-2 border-t border-[var(--color-border)] pt-4 text-secondary">
+              <div className="flex items-baseline justify-between gap-3">
+                <dt>Direction</dt>
+                <dd className="text-[var(--color-text)]">
+                  {direction === 'lent' ? 'Lent' : 'Borrowed'}
+                </dd>
               </div>
-              <div className="flex justify-between text-[var(--color-text-muted)]">
-                <span>Method</span>
-                <span className="font-semibold capitalize text-[var(--color-text)]">
-                  {paymentMethod}
-                </span>
+              <div className="flex items-baseline justify-between gap-3">
+                <dt>Method</dt>
+                <dd className="text-[var(--color-text)]">{METHOD_LABELS[paymentMethod]}</dd>
               </div>
-              <div className="flex justify-between text-[var(--color-text-muted)]">
-                <span>Loan Date</span>
-                <span className="font-semibold text-[var(--color-text)]">{loanDate}</span>
+              <div className="flex items-baseline justify-between gap-3">
+                <dt>Loan date</dt>
+                <dd className="tabular-nums text-[var(--color-text)]">
+                  {loanDate || 'Not set'}
+                </dd>
               </div>
               {dueDate && (
-                <div className="flex justify-between text-[var(--color-text-muted)]">
-                  <span>Due Date</span>
-                  <span className="font-semibold text-[var(--color-text)]">{dueDate}</span>
+                <div className="flex items-baseline justify-between gap-3">
+                  <dt>Repayment date</dt>
+                  <dd className="tabular-nums text-[var(--color-text)]">{dueDate}</dd>
                 </div>
               )}
-            </div>
+            </dl>
 
-            <div className="pt-2">
-              <div className="h-1.5 w-full bg-[var(--color-border)] rounded-full overflow-hidden">
-                <div className="h-full bg-[var(--color-primary)] w-0 rounded-full" />
+            <div className="border-t border-[var(--color-border)] pt-4">
+              <div className="flex items-baseline justify-between gap-3 text-caption">
+                <span>Repaid</span>
+                <span className="tabular-nums">0%</span>
               </div>
-              <div className="text-[11px] text-[var(--color-text-dim)] mt-1">
-                0.0% repaid • Initial state
+              <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-[var(--color-surface-sunken)]">
+                <div className="h-full w-0 rounded-full bg-[var(--color-primary)]" />
               </div>
+              <p className="text-caption mt-1.5">No repayments recorded yet.</p>
             </div>
-          </div>
+          </Card>
         </div>
       </div>
     </AppShell>

@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { BarChart3, RefreshCw, Table } from 'lucide-react';
-import Link from 'next/link';
 import { DateRangePreset } from '@/lib/chart-aggregation';
 import { ButtonLink, IconButton, SegmentedControl, Skeleton } from '@/components/ui';
 

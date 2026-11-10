@@ -1,6 +1,8 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, type FormEvent } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import AppShell from '@/components/app-shell';
 import { useAuth } from '@/context/auth-context';
 import {
@@ -33,20 +35,36 @@ import {
   LoanBalanceChart,
   RepaymentHistoryChart,
 } from '@/components/charts';
-import Link from 'next/link';
 import {
-  TrendingUp,
-  ArrowRight,
-  Sparkles,
+  Alert,
+  Badge,
+  Button,
+  ButtonLink,
+  Card,
+  EmptyState,
+  Field,
+  Input,
+  Metric,
+  PageHeader,
+  Section,
+  SegmentedControl,
+  Select,
+  Skeleton,
+} from '@/components/ui';
+import {
   ArrowDownLeft,
+  ArrowRight,
   ArrowUpRight,
-  Wallet,
+  ReceiptText,
+  Sparkles,
 } from 'lucide-react';
 
 export default function DashboardPage() {
   const { user, getToken } = useAuth();
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [drafts, setDrafts] = useState<AiDraft[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -56,20 +74,24 @@ export default function DashboardPage() {
   const [selectedRange, setSelectedRange] = useState<DateRangePreset>('30d');
   const [selectedCurrency, setSelectedCurrency] = useState<string>('BDT');
   const [aiAskInput, setAiAskInput] = useState('');
-  const [currentDateFormatted, setCurrentDateFormatted] = useState('');
-  const [nowDate, setNowDate] = useState<Date | null>(null);
+  const [today, setToday] = useState<{ date: Date; label: string } | null>(null);
 
+  // Resolved after mount so the server and client render the same empty meta.
   useEffect(() => {
     const now = new Date();
-    setNowDate(now);
-    setCurrentDateFormatted(
-      new Intl.DateTimeFormat('en-US', {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- client-only date, read once after hydration
+    setToday({
+      date: now,
+      label: new Intl.DateTimeFormat('en-US', {
         weekday: 'long',
         month: 'short',
         day: 'numeric',
-      }).format(now)
-    );
+      }).format(now),
+    });
   }, []);
+
+  const nowDate = today?.date ?? null;
+  const currentDateFormatted = today?.label ?? '';
 
   useEffect(() => {
     let mounted = true;
@@ -120,7 +142,10 @@ export default function DashboardPage() {
     return () => {
       mounted = false;
     };
-  }, [getToken]);
+    // `selectedCurrency` is only read to pick an initial value; adding it would
+    // refetch the whole dashboard every time the user switches currency.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [getToken, reloadToken]);
 
   const categoryMap = useMemo(() => {
     const map = new Map<string, Category>();
@@ -245,576 +270,635 @@ export default function DashboardPage() {
   const totalInflowNum = parseFloat(currentSummary.incomeTotal) || 0;
   const totalOutflowNum = parseFloat(currentSummary.expenseTotal) || 0;
   const netBalanceNum = parseFloat(currentSummary.netBalance) || 0;
-  const avgPerTx = currentSummary.count > 0 ? (totalOutflowNum / currentSummary.count).toFixed(2) : '0.00';
+  const avgPerTx =
+    currentSummary.count > 0 ? (totalOutflowNum / currentSummary.count).toFixed(2) : '0.00';
 
   // Savings / Retention rate
-  const retentionRate = totalInflowNum > 0
-    ? Math.max(0, Math.min(100, Math.round(((totalInflowNum - totalOutflowNum) / totalInflowNum) * 100)))
-    : 0;
+  const retentionRate =
+    totalInflowNum > 0
+      ? Math.max(
+          0,
+          Math.min(100, Math.round(((totalInflowNum - totalOutflowNum) / totalInflowNum) * 100)),
+        )
+      : 0;
 
   // Debt obligations ratio vs monthly inflow
-  const debtRatio = totalInflowNum > 0 && loanPortfolioSummary
-    ? Math.min(100, Math.round((Number(loanPortfolioSummary.outstandingPayables) / totalInflowNum) * 100))
-    : 0;
+  const debtRatio =
+    totalInflowNum > 0 && loanPortfolioSummary
+      ? Math.min(
+          100,
+          Math.round((Number(loanPortfolioSummary.outstandingPayables) / totalInflowNum) * 100),
+        )
+      : 0;
 
-  const userName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'Josh';
+  const topCategory = categoryBreakdownData[0];
+
+  // Use the real account name only when Supabase returns one — never invent one.
+  const rawMetaName = user?.user_metadata?.name;
+  const metaName =
+    typeof rawMetaName === 'string' && rawMetaName.trim() ? rawMetaName.trim() : null;
+
+  const handleRetry = () => {
+    setReloadToken((token) => token + 1);
+  };
+
+  const handleAskSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const prompt = aiAskInput.trim();
+    router.push(prompt ? `/ai-entry?prompt=${encodeURIComponent(prompt)}` : '/ai-entry');
+  };
+
+  const reportOptions: { value: 'flow' | 'breakdown' | 'loans'; label: string }[] = [
+    { value: 'flow', label: 'Cash flow' },
+    { value: 'breakdown', label: 'Categories' },
+    { value: 'loans', label: 'Loans' },
+  ];
+
+  const draftCountLabel = `${drafts.length} draft${drafts.length === 1 ? '' : 's'} to review`;
+
+  // Don't present failed loads as measured zero totals.
+  const totalsUnavailable = Boolean(error) && transactions.length === 0;
+
+  const atAGlanceCopy = totalsUnavailable
+    ? 'Totals are unavailable right now. Retry once your connection is back.'
+    : totalInflowNum > 0 && netBalanceNum >= 0
+      ? `You kept ${retentionRate}% of the ${formatMoney(
+          currentSummary.incomeTotal,
+          currentSummary.currency,
+        )} that came in across ${currentSummary.count} transaction${
+          currentSummary.count === 1 ? '' : 's'
+        }.`
+      : totalInflowNum > 0
+        ? `You spent ${formatMoney(
+            Math.abs(netBalanceNum).toFixed(2),
+            currentSummary.currency,
+          )} more than came in across ${currentSummary.count} transaction${
+            currentSummary.count === 1 ? '' : 's'
+          }.`
+        : currentSummary.count > 0
+          ? `No income recorded in ${currentSummary.currency} yet, and ${formatMoney(
+              currentSummary.expenseTotal,
+              currentSummary.currency,
+            )} has gone out.`
+          : `No transactions in ${currentSummary.currency} yet. Add one and this panel will fill in.`;
 
   return (
     <AppShell>
-      <div className="space-y-6">
-        {/* =========================================================================
-            HEADER & GREETING WITH CURRENCY SELECTOR
-            ========================================================================= */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl text-[var(--color-text)] font-semibold tracking-tight">
-              Good Day, {userName}
-            </h1>
-            <p className="text-xs sm:text-sm text-[var(--color-text-muted)] mt-1">
-              {currentDateFormatted} • Verified financial intelligence ledger
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2.5">
-            {/* Currency Selector */}
-            {allCurrencies.length > 1 && (
-              <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-xs">
-                <Wallet className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
-                <span className="text-[11px] font-semibold text-[var(--color-text-muted)]">Currency:</span>
-                <select
-                  value={selectedCurrency}
-                  onChange={(e) => setSelectedCurrency(e.target.value)}
-                  className="bg-transparent text-xs font-semibold text-[var(--color-text)] focus:outline-none cursor-pointer"
-                  aria-label="Select currency for charts and analytics"
-                >
-                  {allCurrencies.map((c) => (
-                    <option key={c} value={c} className="bg-[var(--color-surface)] text-[var(--color-text)]">
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            <Link
-              href="/ai-entry"
-              className="px-3.5 py-2 rounded-xl bg-[var(--color-pale-mint)] text-[var(--color-primary)] text-xs font-semibold hover:opacity-90 transition-all flex items-center gap-1.5 border border-[var(--color-primary)]/20"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>AI Quick Entry</span>
-            </Link>
-
-            <Link
-              href="/loans/new"
-              className="px-3.5 py-2 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] hover:bg-[var(--color-surface-hover)] text-[var(--color-text)] text-xs font-semibold transition-all flex items-center gap-1.5 shadow-xs"
-            >
-              <span>+ Record Loan</span>
-            </Link>
-
-            <Link
-              href="/transactions/new"
-              className="px-4 py-2 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm hover:shadow-md active:scale-[0.98]"
-            >
-              <span>+ Add Transaction</span>
-            </Link>
-          </div>
-        </div>
-
-        {/* Error Notification */}
-        {error && (
-          <div className="p-4 rounded-xl border border-[var(--color-danger)]/30 bg-[var(--color-pale-yellow)] text-xs text-[var(--color-text)] flex items-center justify-between">
-            <span>{error}</span>
-            <button
-              onClick={() => window.location.reload()}
-              className="underline font-semibold hover:opacity-80 transition-opacity cursor-pointer"
-            >
-              Retry
-            </button>
-          </div>
-        )}
-
-        {/* Pending AI Drafts Banner */}
-        {drafts.length > 0 && (
-          <div className="p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-[0_1px_2px_0_rgba(0,0,0,0.02)]">
-            <div className="flex items-center gap-3">
-              <span className="w-8 h-8 rounded-lg bg-[var(--color-pale-mint)] text-[var(--color-text)] flex items-center justify-center text-sm font-bold">
-                <Sparkles className="w-4 h-4" />
-              </span>
-              <div>
-                <h4 className="text-xs font-bold text-[var(--color-text)]">
-                  {drafts.length} Pending AI Draft{drafts.length > 1 ? 's' : ''} Awaiting Approval
-                </h4>
-                <p className="text-[11px] text-[var(--color-text-muted)]">
-                  Convert extracted notes into verified ledger entries.
-                </p>
-              </div>
-            </div>
-            <Link
-              href="/ai-entry"
-              className="px-3.5 py-1.5 rounded-lg bg-[var(--color-pale-cyan)] text-[var(--color-text)] text-xs font-semibold shrink-0 hover:opacity-90 transition-opacity text-center border border-[var(--color-border)]"
-            >
-              Review Drafts ({drafts.length}) →
-            </Link>
-          </div>
-        )}
-
-        {/* =========================================================================
-            KEY FINANCIAL METRICS (White Cards, Border #EDEFF3, Neutral Numbers)
-            ========================================================================= */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Net Cash Flow */}
-          <div className="p-5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] flex flex-col justify-between shadow-[var(--shadow-card)] hover:border-[var(--color-border-hover)] transition-all">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-[var(--color-text-muted)]">
-                Net Cash Flow
-              </span>
-              <span
-                className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                  netBalanceNum >= 0
-                    ? 'bg-[var(--color-pale-mint)] text-[var(--color-primary)] border border-[var(--color-primary)]/20'
-                    : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
-                }`}
+      <div className="space-y-8">
+        <PageHeader
+          title="Overview"
+          meta={
+            <span className="flex min-h-5 max-w-full flex-wrap items-center gap-x-2 gap-y-1 break-words">
+              {currentDateFormatted ? <span>{currentDateFormatted}</span> : null}
+              {currentDateFormatted && metaName ? (
+                <span aria-hidden="true" className="text-[var(--color-text-subtle)]">
+                  ·
+                </span>
+              ) : null}
+              {metaName ? <span>{metaName}</span> : null}
+            </span>
+          }
+          actions={
+            <>
+              <ButtonLink
+                href="/ai-entry"
+                variant="secondary"
+                leadingIcon={<Sparkles className="h-4 w-4" aria-hidden="true" />}
               >
-                {netBalanceNum >= 0 ? '+ Positive' : '- Deficit'}
-              </span>
-            </div>
-            <div className="mt-3">
-              <div className="text-metric">
-                {loading ? (
-                  <div className="h-8 w-32 bg-[var(--color-surface-hover)] animate-pulse rounded" />
+                Add with AI
+              </ButtonLink>
+
+              <ButtonLink href="/loans/new" variant="ghost">
+                Record a loan
+              </ButtonLink>
+
+              <ButtonLink
+                href="/transactions/new"
+                variant="primary"
+                className="order-first w-full sm:order-none sm:w-auto"
+              >
+                New transaction
+              </ButtonLink>
+            </>
+          }
+        />
+
+        {/* Load failure — plain language with a retry */}
+        {error && (
+          <Alert
+            tone="danger"
+            title="We couldn't load your dashboard"
+            action={
+              <Button variant="secondary" size="sm" onClick={handleRetry}>
+                Retry
+              </Button>
+            }
+          >
+            Check your connection and try again. Nothing has been changed or lost.
+          </Alert>
+        )}
+
+        {/* Drafts waiting for confirmation */}
+        {drafts.length > 0 && (
+          <Alert
+            tone="info"
+            title={draftCountLabel}
+            action={
+              <ButtonLink href="/ai-entry" variant="secondary" size="sm">
+                Review drafts
+              </ButtonLink>
+            }
+          >
+            Nothing is saved until you confirm each draft.
+          </Alert>
+        )}
+
+        {/* Net cash flow is the one dominant number; the rest are a quiet strip. */}
+        <section aria-labelledby="cash-flow-summary" className="surface-card p-5 sm:p-6">
+          <h2 id="cash-flow-summary" className="sr-only">
+            Cash flow summary
+          </h2>
+
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <Metric
+              label="Net cash flow"
+              size="lg"
+              className="min-w-0 break-words"
+              value={
+                loading ? (
+                  <Skeleton className="w-44" style={{ height: 36 }} />
+                ) : totalsUnavailable ? (
+                  <span aria-label="Totals unavailable">—</span>
                 ) : (
                   formatMoney(currentSummary.netBalance, currentSummary.currency)
-                )}
-              </div>
-              <span className="text-caption mt-1 block">
-                Inflow minus outflow in {currentSummary.currency}
-              </span>
-            </div>
-          </div>
+                )
+              }
+              hint={`Inflow minus outflow in ${currentSummary.currency}`}
+            />
 
-          {/* Total Income */}
-          <div className="p-5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] flex flex-col justify-between shadow-[var(--shadow-card)] hover:border-[var(--color-border-hover)] transition-all">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-[var(--color-text-muted)]">
-                Total Inflow
-              </span>
-              <span className="w-7 h-7 rounded-lg bg-[var(--color-pale-mint)] text-[var(--color-primary)] flex items-center justify-center text-xs font-bold">
-                <ArrowDownLeft className="w-4 h-4" />
-              </span>
-            </div>
-            <div className="mt-3">
-              <div className="text-metric">
-                {loading ? (
-                  <div className="h-8 w-32 bg-[var(--color-surface-hover)] animate-pulse rounded" />
-                ) : (
-                  formatMoney(currentSummary.incomeTotal, currentSummary.currency)
-                )}
-              </div>
-              <span className="text-caption mt-1 block">
-                Recorded earnings & deposits
-              </span>
-            </div>
-          </div>
-
-          {/* Total Expenses */}
-          <div className="p-5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] flex flex-col justify-between shadow-[var(--shadow-card)] hover:border-[var(--color-border-hover)] transition-all">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-[var(--color-text-muted)]">
-                Total Outflow
-              </span>
-              <span className="w-7 h-7 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center text-xs font-bold">
-                <ArrowUpRight className="w-4 h-4" />
-              </span>
-            </div>
-            <div className="mt-3">
-              <div className="text-metric">
-                {loading ? (
-                  <div className="h-8 w-32 bg-[var(--color-surface-hover)] animate-pulse rounded" />
-                ) : (
-                  formatMoney(currentSummary.expenseTotal, currentSummary.currency)
-                )}
-              </div>
-              <span className="text-caption mt-1 block">
-                Recorded expenses & payments
-              </span>
-            </div>
-          </div>
-
-          {/* Transactions Count */}
-          <div className="p-5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] flex flex-col justify-between shadow-[var(--shadow-card)] hover:border-[var(--color-border-hover)] transition-all">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-[var(--color-text-muted)]">
-                Ledger Records
-              </span>
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[var(--color-pale-cyan)] text-[var(--color-primary)] border border-[var(--color-primary)]/20 tabular-nums">
-                {currentSummary.currency}
-              </span>
-            </div>
-            <div className="mt-3">
-              <div className="text-metric">
-                {loading ? (
-                  <div className="h-8 w-20 bg-[var(--color-surface-hover)] animate-pulse rounded" />
-                ) : (
-                  currentSummary.count
-                )}
-              </div>
-              <span className="text-caption mt-1 block">
-                Audited ledger entries
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Additional Held Currencies */}
-        {otherCurrencies.length > 0 && (
-          <div className="p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[0_1px_2px_0_rgba(0,0,0,0.02)]">
-            <div className="flex items-center justify-between mb-2.5">
-              <h4 className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">
-                Additional Held Currencies
-              </h4>
-              <span className="text-[11px] text-[var(--color-text-muted)]">
-                Click a currency to switch analytics view
-              </span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
-              {otherCurrencies.map((c) => (
-                <button
-                  key={c.currency}
-                  type="button"
-                  onClick={() => setSelectedCurrency(c.currency)}
-                  className="p-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] hover:bg-[var(--color-surface-hover)] transition-all flex items-center justify-between text-left cursor-pointer"
-                >
-                  <span className="text-xs font-bold text-[var(--color-text)]">{c.currency}</span>
-                  <div className="text-right">
-                    <span className="text-xs tabular-nums font-bold text-[var(--color-text)] block">
-                      {formatMoney(c.netBalance, c.currency)}
-                    </span>
-                    <span className="block text-[10px] text-[var(--color-text-muted)]">
-                      {c.count} records • Click to view
-                    </span>
+            <div className="flex flex-wrap items-center gap-2">
+              {allCurrencies.length > 1 && (
+                <div className="flex items-center gap-2">
+                  <label
+                    htmlFor="dashboard-currency"
+                    className="text-label whitespace-nowrap text-[var(--color-text-muted)]"
+                  >
+                    Currency
+                  </label>
+                  <div className="w-24 shrink-0">
+                    <Select
+                      id="dashboard-currency"
+                      value={selectedCurrency}
+                      onChange={(e) => setSelectedCurrency(e.target.value)}
+                    >
+                      {allCurrencies.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </Select>
                   </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* =========================================================================
-            SPLIT LAYOUT: MAIN WORKSPACE (8 COLS) + CONTEXTUAL INSIGHTS (4 COLS)
-            ========================================================================= */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* LEFT 8 COLUMNS: MAIN CHART & REPORT WORKSPACE */}
-          <div className="lg:col-span-8 space-y-6">
-            {/* Visual Analytics Tab Navigation */}
-            <div className="border border-[var(--color-border)] bg-[var(--color-surface)] rounded-2xl p-4 shadow-[var(--shadow-card)] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <span className="text-xs font-bold tracking-tight text-[var(--color-text)]">
-                Analytics Domain
-              </span>
-              <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[var(--color-surface-hover)] text-xs font-semibold">
-                <button
-                  type="button"
-                  onClick={() => setActiveReportTab('flow')}
-                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                    activeReportTab === 'flow'
-                      ? 'bg-[var(--color-surface)] text-[var(--color-text)] shadow-xs'
-                      : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
-                  }`}
-                >
-                  Cash Flow & Trend
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveReportTab('breakdown')}
-                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                    activeReportTab === 'breakdown'
-                      ? 'bg-[var(--color-surface)] text-[var(--color-text)] shadow-xs'
-                      : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
-                  }`}
-                >
-                  Allocations & Budgets
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveReportTab('loans')}
-                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                    activeReportTab === 'loans'
-                      ? 'bg-[var(--color-surface)] text-[var(--color-text)] shadow-xs'
-                      : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
-                  }`}
-                >
-                  Debt & Loans
-                </button>
-              </div>
-            </div>
-
-            {/* TAB CONTENT 1: CASH FLOW & SPENDING TREND */}
-            {activeReportTab === 'flow' && (
-              <div className="space-y-6">
-                <IncomeExpenseChart
-                  data={monthlyCashFlowData}
-                  currency={selectedCurrency}
-                  loading={loading}
-                />
-
-                <SpendingTrendChart
-                  data={spendingTrendData}
-                  currency={selectedCurrency}
-                  selectedRange={selectedRange}
-                  onRangeChange={setSelectedRange}
-                  loading={loading}
-                />
-              </div>
-            )}
-
-            {/* TAB CONTENT 2: ALLOCATIONS & BUDGETS */}
-            {activeReportTab === 'breakdown' && (
-              <div className="space-y-6">
-                <CategoryBreakdownChart
-                  data={categoryBreakdownData}
-                  currency={selectedCurrency}
-                  loading={loading}
-                />
-
-                <BudgetProgressChart
-                  data={budgetProgressData}
-                  currency={selectedCurrency}
-                  loading={loading}
-                />
-              </div>
-            )}
-
-            {/* TAB CONTENT 3: DEBT & LOANS OBLIGATIONS */}
-            {activeReportTab === 'loans' && (
-              <div className="space-y-6">
-                <LoanBalanceChart
-                  summary={loanPortfolioSummary}
-                  currency={selectedCurrency}
-                  loading={loading}
-                />
-
-                <RepaymentHistoryChart
-                  data={repaymentHistoryData}
-                  currency={selectedCurrency}
-                  loading={loading}
-                />
-              </div>
-            )}
-
-            {/* Recent Ledger Activity Table */}
-            <div className="border border-[var(--color-border)] bg-[var(--color-surface)] rounded-2xl p-5 sm:p-6 shadow-[var(--shadow-card)]">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h2 className="text-sm font-bold text-[var(--color-text)] tracking-tight">
-                    Recent Ledger Activity
-                  </h2>
-                  <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
-                    Latest recorded entries.
-                  </p>
                 </div>
-                <Link
-                  href="/transactions"
-                  className="text-xs text-[var(--color-text)] hover:underline font-semibold"
-                >
-                  View All ({transactions.length}) →
-                </Link>
-              </div>
+              )}
 
               {loading ? (
-                <div className="space-y-2 py-2">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="h-12 bg-[var(--color-surface-hover)] animate-pulse rounded-lg" />
-                  ))}
-                </div>
-              ) : recentTransactions.length === 0 ? (
-                <div className="text-center py-8 text-xs text-[var(--color-text-muted)]">
-                  No transactions recorded yet.
-                </div>
+                <Skeleton className="h-5 w-20" />
+              ) : totalsUnavailable ? null : currentSummary.count === 0 ? (
+                <Badge tone="neutral" dot>
+                  No activity
+                </Badge>
+              ) : netBalanceNum === 0 ? (
+                <Badge tone="neutral" dot>
+                  Balanced
+                </Badge>
               ) : (
-                <div className="divide-y divide-[var(--color-border)]">
+                <Badge tone={netBalanceNum > 0 ? 'success' : 'danger'} dot>
+                  {netBalanceNum > 0 ? 'In surplus' : 'In deficit'}
+                </Badge>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-1 divide-y divide-[var(--color-border)] border-t border-[var(--color-border)] pt-3 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+            <div className="py-4 sm:py-0 sm:pr-5">
+              <Metric
+                label="Inflow"
+                className="min-w-0 break-words"
+                value={
+                  loading ? (
+                    <Skeleton className="w-32" style={{ height: 26 }} />
+                  ) : totalsUnavailable ? (
+                    <span aria-label="Totals unavailable">—</span>
+                  ) : (
+                    formatMoney(currentSummary.incomeTotal, currentSummary.currency)
+                  )
+                }
+                hint="Income and deposits"
+              />
+            </div>
+            <div className="py-4 sm:px-5 sm:py-0">
+              <Metric
+                label="Outflow"
+                className="min-w-0 break-words"
+                value={
+                  loading ? (
+                    <Skeleton className="w-32" style={{ height: 26 }} />
+                  ) : totalsUnavailable ? (
+                    <span aria-label="Totals unavailable">—</span>
+                  ) : (
+                    formatMoney(currentSummary.expenseTotal, currentSummary.currency)
+                  )
+                }
+                hint="Spending and payments"
+              />
+            </div>
+            <div className="py-4 sm:pl-5 sm:py-0">
+              <Metric
+                label="Transactions"
+                className="min-w-0 break-words"
+                value={
+                  loading ? (
+                    <Skeleton className="w-16" style={{ height: 26 }} />
+                  ) : totalsUnavailable ? (
+                    <span aria-label="Totals unavailable">—</span>
+                  ) : (
+                    currentSummary.count
+                  )
+                }
+                hint={
+                  loading ? (
+                    <Skeleton className="w-40" style={{ height: 12 }} />
+                  ) : currentSummary.count > 0 ? (
+                    `Average ${formatMoney(avgPerTx, currentSummary.currency)} per transaction`
+                  ) : (
+                    'Nothing recorded yet'
+                  )
+                }
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* Other currencies held in the account */}
+        {otherCurrencies.length > 0 && (
+          <Section
+            title="Other currencies"
+            description={`You also have activity in ${otherCurrencies.length} other ${
+              otherCurrencies.length === 1 ? 'currency' : 'currencies'
+            }.`}
+          >
+            <ul className="divide-y divide-[var(--color-border)] border-y border-[var(--color-border)]">
+              {otherCurrencies.map((c) => (
+                <li key={c.currency}>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCurrency(c.currency)}
+                    className="flex w-full cursor-pointer items-center justify-between gap-3 py-3 text-left transition-colors duration-[var(--duration-fast)] hover:bg-[var(--color-surface-hover)]"
+                  >
+                    <span className="flex min-w-0 items-center gap-3">
+                      <span className="text-card-title">{c.currency}</span>
+                      <span className="text-caption truncate">
+                        {c.count} transaction{c.count === 1 ? '' : 's'}
+                      </span>
+                    </span>
+                    <span className="flex shrink-0 items-center gap-2">
+                      <span className="text-card-title tabular-nums">
+                        {formatMoney(c.netBalance, c.currency)}
+                      </span>
+                      <ArrowRight
+                        className="h-4 w-4 text-[var(--color-text-subtle)]"
+                        aria-hidden="true"
+                      />
+                      <span className="sr-only">Show the dashboard in {c.currency}</span>
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </Section>
+        )}
+
+        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
+          {/* Main workspace: charts + recent activity */}
+          <div className="space-y-8 lg:col-span-8">
+            <Section
+              title="Charts"
+              actions={
+                <SegmentedControl
+                  label="Chart view"
+                  size="sm"
+                  value={activeReportTab}
+                  onChange={setActiveReportTab}
+                  options={reportOptions}
+                />
+              }
+            >
+              <div className="space-y-6">
+                {activeReportTab === 'flow' && (
+                  <>
+                    <IncomeExpenseChart
+                      data={monthlyCashFlowData}
+                      currency={selectedCurrency}
+                      loading={loading}
+                    />
+
+                    <SpendingTrendChart
+                      data={spendingTrendData}
+                      currency={selectedCurrency}
+                      selectedRange={selectedRange}
+                      onRangeChange={setSelectedRange}
+                      loading={loading}
+                    />
+                  </>
+                )}
+
+                {activeReportTab === 'breakdown' && (
+                  <>
+                    <CategoryBreakdownChart
+                      data={categoryBreakdownData}
+                      currency={selectedCurrency}
+                      loading={loading}
+                    />
+
+                    <BudgetProgressChart
+                      data={budgetProgressData}
+                      currency={selectedCurrency}
+                      loading={loading}
+                    />
+                  </>
+                )}
+
+                {activeReportTab === 'loans' && (
+                  <>
+                    <LoanBalanceChart
+                      summary={loanPortfolioSummary}
+                      currency={selectedCurrency}
+                      loading={loading}
+                    />
+
+                    <RepaymentHistoryChart
+                      data={repaymentHistoryData}
+                      currency={selectedCurrency}
+                      loading={loading}
+                    />
+                  </>
+                )}
+              </div>
+            </Section>
+
+            <Section
+              title="Recent activity"
+              actions={
+                <ButtonLink href="/transactions" variant="ghost" size="sm">
+                  View all transactions
+                </ButtonLink>
+              }
+            >
+              {loading ? (
+                <ul className="divide-y divide-[var(--color-border)] border-y border-[var(--color-border)]">
+                  {[0, 1, 2].map((i) => (
+                    <li key={i} className="flex items-center gap-3 py-3">
+                      <Skeleton className="h-8 w-8 shrink-0" />
+                      <div className="min-w-0 flex-1 space-y-2">
+                        <Skeleton className="w-32" style={{ height: 14 }} />
+                        <Skeleton className="w-48" style={{ height: 12 }} />
+                      </div>
+                      <Skeleton className="h-4 w-20 shrink-0" />
+                    </li>
+                  ))}
+                </ul>
+              ) : recentTransactions.length === 0 ? (
+                <EmptyState
+                  icon={<ReceiptText aria-hidden="true" />}
+                  title="No transactions yet"
+                  description="Add your first transaction and your cash flow, categories and recent activity will appear here."
+                  action={
+                    <ButtonLink href="/transactions/new" variant="primary" size="sm">
+                      Add your first transaction
+                    </ButtonLink>
+                  }
+                />
+              ) : (
+                <ul className="divide-y divide-[var(--color-border)] border-y border-[var(--color-border)]">
                   {recentTransactions.map((tx) => {
                     const cat = categoryMap.get(tx.category_id);
                     const isIncome = tx.type === 'income';
 
                     return (
-                      <div
+                      <li
                         key={tx.id}
-                        className="py-3 px-1 flex items-center justify-between hover:bg-[var(--color-surface-hover)] rounded-lg transition-colors"
+                        className="flex items-center justify-between gap-3 py-3 transition-colors duration-[var(--duration-fast)]"
                       >
-                        <div className="flex items-center gap-3 min-w-0">
+                        <div className="flex min-w-0 items-center gap-3">
                           <span
-                            className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-bold shrink-0 ${
+                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--radius-md)] ${
                               isIncome
-                                ? 'bg-[var(--color-pale-mint)] text-[var(--color-text)]'
-                                : 'bg-[var(--color-pale-yellow)] text-[var(--color-text)]'
+                                ? 'bg-[var(--color-income-subtle)] text-[var(--color-income)]'
+                                : 'bg-[var(--color-expense-subtle)] text-[var(--color-expense)]'
                             }`}
                           >
-                            {isIncome ? '↓' : '↑'}
+                            {isIncome ? (
+                              <ArrowDownLeft className="h-4 w-4" aria-hidden="true" />
+                            ) : (
+                              <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+                            )}
                           </span>
+
                           <div className="min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-xs font-semibold text-[var(--color-text)] truncate">
+                            <div className="flex min-w-0 items-center gap-2">
+                              <span className="text-card-title truncate">
                                 {cat ? cat.name : 'Uncategorized'}
                               </span>
-                              {tx.is_ai_generated && (
-                                <span className="px-1 py-0.2 rounded text-[9px] font-semibold bg-[var(--color-pale-cyan)] text-[var(--color-text)] border border-[var(--color-border)]">
-                                  AI
-                                </span>
-                              )}
+                              {tx.is_ai_generated && <Badge tone="outline">AI entry</Badge>}
                             </div>
-                            <span className="text-[11px] text-[var(--color-text-muted)] truncate block">
-                              {tx.description || '—'} • {formatDate(tx.transaction_date)}
-                            </span>
+                            <p className="text-caption truncate">
+                              {tx.description || 'No description'} ·{' '}
+                              <span className="tabular-nums">
+                                {formatDate(tx.transaction_date)}
+                              </span>
+                            </p>
                           </div>
                         </div>
 
-                        <div className="text-right shrink-0 pl-3">
-                          {/* Neutral financial figure */}
-                          <div className="text-xs sm:text-sm font-bold tabular-nums text-[var(--color-text)]">
-                            {isIncome ? '+' : '-'} {formatMoney(tx.amount, tx.currency)}
-                          </div>
+                        <div className="flex shrink-0 items-center gap-3">
+                          <span className="text-card-title tabular-nums">
+                            <span className="sr-only">{isIncome ? 'Inflow of' : 'Outflow of'}</span>{' '}
+                            {isIncome ? '+' : '−'}&nbsp;
+                            {formatMoney(tx.amount, tx.currency)}
+                          </span>
                           <Link
                             href={`/transactions/${tx.id}/edit`}
-                            className="text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
+                            className="link-quiet text-label whitespace-nowrap"
                           >
                             Edit
                           </Link>
                         </div>
-                      </div>
+                      </li>
                     );
                   })}
-                </div>
+                </ul>
               )}
-            </div>
+            </Section>
           </div>
 
-          {/* =========================================================================
-              RIGHT 4 COLUMNS: CONTEXTUAL INSIGHTS PANEL
-              ========================================================================= */}
-          <div className="lg:col-span-4 space-y-5">
-            {/* Contextual AI Summary Card */}
-            <div className="border border-[var(--color-border)] bg-[var(--color-surface)] rounded-2xl p-5 shadow-[var(--shadow-card)] space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)] flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5" /> AI Ledger Insights
-                </span>
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-[var(--color-pale-cyan)] text-[var(--color-text)]">
-                  Live
-                </span>
+          {/* Context column: a calm summary and question entry */}
+          <div className="space-y-8 lg:col-span-4">
+            <Card className="p-5">
+              <h2 className="text-card-title">At a glance</h2>
+
+              <div className="text-secondary mt-1.5">
+                {loading ? (
+                  <Skeleton lines={2} />
+                ) : (
+                  <p>{atAGlanceCopy}</p>
+                )}
               </div>
 
-              <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
-                {netBalanceNum >= 0
-                  ? `Strong retention: You have preserved ${retentionRate}% of your inflow this period in ${selectedCurrency}. Spending remains well-balanced against income.`
-                  : `Operating deficit: Outflow exceeds inflow by ${formatMoney(Math.abs(netBalanceNum).toFixed(2), selectedCurrency)}. Review discretionary categories.`}
-              </p>
-
-              {/* Progress Breakdown Bars */}
-              <div className="border-t border-[var(--color-border)] pt-3.5 space-y-3">
-                <div className="space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-[var(--color-text-muted)]">Inflow Retention</span>
-                    <span className="tabular-nums font-bold text-[var(--color-text)]">{retentionRate}%</span>
+              <dl className="mt-4 divide-y divide-[var(--color-border)] border-t border-[var(--color-border)]">
+                <div className="py-3">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <dt className="text-secondary">Kept from inflow</dt>
+                    <dd className="text-label tabular-nums text-[var(--color-text)]">
+                      {loading ? <Skeleton className="w-8" style={{ height: 12 }} /> : `${retentionRate}%`}
+                    </dd>
                   </div>
-                  <div className="h-1.5 w-full bg-[var(--color-bg)] rounded-full overflow-hidden">
+                  <div
+                    className="mt-2 h-1.5 overflow-hidden rounded-[var(--radius-full)] bg-[var(--color-surface-sunken)]"
+                    aria-hidden="true"
+                  >
                     <div
-                      className="h-full bg-[#6DD0A1] rounded-full transition-all"
-                      style={{ width: `${retentionRate}%` }}
+                      className="h-full rounded-[var(--radius-full)] bg-[var(--color-primary)]"
+                      style={{ width: `${loading ? 0 : retentionRate}%` }}
                     />
                   </div>
                 </div>
 
-                <div className="space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-[var(--color-text-muted)]">Debt Obligations</span>
-                    <span className="tabular-nums font-bold text-[var(--color-text)]">{debtRatio}%</span>
+                <div className="py-3">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <dt className="text-secondary">Outstanding debt vs inflow</dt>
+                    <dd className="text-label tabular-nums text-[var(--color-text)]">
+                      {loading ? <Skeleton className="w-8" style={{ height: 12 }} /> : `${debtRatio}%`}
+                    </dd>
                   </div>
-                  <div className="h-1.5 w-full bg-[var(--color-bg)] rounded-full overflow-hidden">
+                  <div
+                    className="mt-2 h-1.5 overflow-hidden rounded-[var(--radius-full)] bg-[var(--color-surface-sunken)]"
+                    aria-hidden="true"
+                  >
                     <div
-                      className="h-full bg-[#6CB3F9] rounded-full transition-all"
-                      style={{ width: `${debtRatio}%` }}
+                      className="h-full rounded-[var(--radius-full)] bg-[var(--color-warning)]"
+                      style={{ width: `${loading ? 0 : debtRatio}%` }}
                     />
                   </div>
+                  <p className="text-caption mt-1.5">
+                    {loading
+                      ? ''
+                      : loanPortfolioSummary && Number(loanPortfolioSummary.outstandingPayables) > 0
+                        ? `You owe ${formatMoney(
+                            loanPortfolioSummary.outstandingPayables,
+                            currentSummary.currency,
+                          )} in total.`
+                        : 'No outstanding loan balance.'}
+                  </p>
                 </div>
 
-                <div className="space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-[var(--color-text-muted)]">Top Expense Weight</span>
-                    <span className="tabular-nums font-bold text-[var(--color-text)]">
-                      {categoryBreakdownData[0]?.percentage || 0}%
-                    </span>
+                <div className="py-3">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <dt className="text-secondary">Top spending category</dt>
+                    <dd className="text-label tabular-nums text-[var(--color-text)]">
+                      {loading ? (
+                        <Skeleton className="w-8" style={{ height: 12 }} />
+                      ) : topCategory ? (
+                        `${topCategory.percentage}%`
+                      ) : (
+                        '—'
+                      )}
+                    </dd>
                   </div>
-                  <div className="h-1.5 w-full bg-[var(--color-bg)] rounded-full overflow-hidden">
+                  <div
+                    className="mt-2 h-1.5 overflow-hidden rounded-[var(--radius-full)] bg-[var(--color-surface-sunken)]"
+                    aria-hidden="true"
+                  >
                     <div
-                      className="h-full bg-[#F5C258] rounded-full transition-all"
-                      style={{ width: `${categoryBreakdownData[0]?.percentage || 0}%` }}
+                      className="h-full rounded-[var(--radius-full)] bg-[var(--color-expense)]"
+                      style={{ width: `${loading ? 0 : (topCategory?.percentage ?? 0)}%` }}
                     />
                   </div>
+                  <p className="text-caption mt-1.5 truncate">
+                    {loading
+                      ? ''
+                      : topCategory
+                        ? `${topCategory.categoryName} · ${formatMoney(
+                            topCategory.amount,
+                            currentSummary.currency,
+                          )}`
+                        : 'No expenses in this currency yet.'}
+                  </p>
                 </div>
-              </div>
+              </dl>
+            </Card>
 
-              {/* Lightly tinted badge callout */}
-              <div className="p-2.5 rounded-lg bg-[var(--color-pale-mint)] border border-[var(--color-border)] text-xs text-[var(--color-text)] flex items-center gap-1.5">
-                <TrendingUp className="w-3.5 h-3.5 text-[var(--color-primary)] shrink-0" />
-                <span>Cash balance verified across records in {selectedCurrency}.</span>
-              </div>
-            </div>
+            <Section title="Ask about your spending">
+              <ul className="divide-y divide-[var(--color-border)] border-y border-[var(--color-border)]">
+                <li>
+                  <Link
+                    href="/ai-entry?prompt=What%20caused%20the%20highest%20expense%20this%20month%3F"
+                    className="flex cursor-pointer items-center justify-between gap-3 py-2.5 text-secondary transition-colors duration-[var(--duration-fast)] hover:text-[var(--color-text)]"
+                  >
+                    <span>What was my biggest expense this month?</span>
+                    <ArrowRight
+                      className="h-4 w-4 shrink-0 text-[var(--color-text-subtle)]"
+                      aria-hidden="true"
+                    />
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/loans"
+                    className="flex cursor-pointer items-center justify-between gap-3 py-2.5 text-secondary transition-colors duration-[var(--duration-fast)] hover:text-[var(--color-text)]"
+                  >
+                    <span>Check my loan repayment schedule</span>
+                    <ArrowRight
+                      className="h-4 w-4 shrink-0 text-[var(--color-text-subtle)]"
+                      aria-hidden="true"
+                    />
+                  </Link>
+                </li>
+                {drafts.length > 0 && (
+                  <li>
+                    <Link
+                      href="/ai-entry"
+                      className="flex cursor-pointer items-center justify-between gap-3 py-2.5 text-secondary transition-colors duration-[var(--duration-fast)] hover:text-[var(--color-text)]"
+                    >
+                      <span>Review {drafts.length} draft entries</span>
+                      <ArrowRight
+                        className="h-4 w-4 shrink-0 text-[var(--color-text-subtle)]"
+                        aria-hidden="true"
+                      />
+                    </Link>
+                  </li>
+                )}
+              </ul>
 
-            {/* Quick interactive suggestion prompt chips */}
-            <div className="space-y-2">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)] block px-1">
-                Suggested Ledger Inquiries
-              </span>
-
-              <Link
-                href="/ai-entry?prompt=What%20caused%20the%20highest%20expense%20this%20month%3F"
-                className="flex items-center justify-between p-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] text-xs text-[var(--color-text)] transition-colors shadow-[0_1px_2px_0_rgba(0,0,0,0.02)] cursor-pointer"
-              >
-                <span>What caused my top expense this month?</span>
-                <ArrowRight className="w-3.5 h-3.5 text-[var(--color-text-muted)] shrink-0" />
-              </Link>
-
-              <Link
-                href="/loans"
-                className="flex items-center justify-between p-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] text-xs text-[var(--color-text)] transition-colors shadow-[0_1px_2px_0_rgba(0,0,0,0.02)] cursor-pointer"
-              >
-                <span>Review bilateral loan repayment schedules</span>
-                <ArrowRight className="w-3.5 h-3.5 text-[var(--color-text-muted)] shrink-0" />
-              </Link>
-
-              {drafts.length > 0 && (
-                <Link
-                  href="/ai-entry"
-                  className="flex items-center justify-between p-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] text-xs text-[var(--color-text)] transition-colors shadow-[0_1px_2px_0_rgba(0,0,0,0.02)] cursor-pointer"
+              <form onSubmit={handleAskSubmit} className="space-y-3">
+                <Field
+                  id="dashboard-question"
+                  label="Ask a question"
+                  hint="Opens the quick-add page with your question ready to send."
                 >
-                  <span>Verify {drafts.length} pending AI draft entries</span>
-                  <ArrowRight className="w-3.5 h-3.5 text-[var(--color-text-muted)] shrink-0" />
-                </Link>
-              )}
-            </div>
-
-            {/* Natural language AI Ask input box */}
-            <div className="border border-[var(--color-border)] bg-[var(--color-surface)] rounded-xl p-4 shadow-[0_1px_2px_0_rgba(0,0,0,0.02)] space-y-2.5">
-              <span className="text-xs font-semibold text-[var(--color-text)] block flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-[var(--color-secondary)]" />
-                Quick Ledger Query
-              </span>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="e.g. Spent 450 BDT on coffee..."
-                  value={aiAskInput}
-                  onChange={(e) => setAiAskInput(e.target.value)}
-                  className="flex-1 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-3 py-2 text-xs text-[var(--color-text)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-primary)]"
-                />
-                <Link
-                  href={aiAskInput ? `/ai-entry?prompt=${encodeURIComponent(aiAskInput)}` : '/ai-entry'}
-                  className="px-3 py-2 rounded-lg bg-[var(--color-primary)] text-[var(--color-primary-contrast)] text-xs font-semibold hover:bg-[var(--color-primary-hover)] transition-colors shrink-0 cursor-pointer flex items-center gap-1"
-                >
-                  <span>Submit</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
-            </div>
+                  <Input
+                    id="dashboard-question"
+                    type="text"
+                    name="prompt"
+                    value={aiAskInput}
+                    onChange={(e) => setAiAskInput(e.target.value)}
+                    placeholder="How much did I spend on transport last month?"
+                  />
+                </Field>
+                <Button type="submit" variant="primary" size="sm" className="w-full sm:w-auto">
+                  Ask
+                </Button>
+              </form>
+            </Section>
           </div>
         </div>
       </div>

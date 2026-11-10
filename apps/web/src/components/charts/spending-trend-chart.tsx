@@ -20,6 +20,22 @@ interface SpendingTrendChartProps {
   className?: string;
 }
 
+/** Chart.js canvases need concrete colours; alpha is derived from the palette value. */
+function withAlpha(hex: string, alpha: number) {
+  const value = hex.replace('#', '');
+  const full =
+    value.length === 3
+      ? value
+          .split('')
+          .map((char) => char + char)
+          .join('')
+      : value;
+  const r = parseInt(full.slice(0, 2), 16);
+  const g = parseInt(full.slice(2, 4), 16);
+  const b = parseInt(full.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 export function SpendingTrendChart({
   data,
   currency,
@@ -50,13 +66,13 @@ export function SpendingTrendChart({
         {
           label: 'Spending',
           data: data.map((d) => d.spending),
-          borderColor: palette.receivable,
-          backgroundColor: theme === 'dark' ? 'rgba(108, 179, 249, 0.12)' : 'rgba(108, 179, 249, 0.18)',
+          borderColor: palette.expense,
+          backgroundColor: withAlpha(palette.expense, theme === 'dark' ? 0.16 : 0.08),
           fill: true,
           tension: 0.35,
-          pointRadius: showPoints ? 3.5 : 0,
-          pointHoverRadius: 5.5,
-          pointBackgroundColor: palette.receivable,
+          pointRadius: showPoints ? 3 : 0,
+          pointHoverRadius: 5,
+          pointBackgroundColor: palette.expense,
           pointBorderColor: palette.cardBg,
           pointBorderWidth: 2,
           borderWidth: 2,
@@ -77,14 +93,14 @@ export function SpendingTrendChart({
 
   const tableColumns = [
     { key: 'label', label: 'Date' },
-    { key: 'spending', label: 'Spending Amount', isCurrency: true, align: 'right' as const },
+    { key: 'spending', label: 'Spending', isCurrency: true, align: 'right' as const },
     { key: 'count', label: 'Transactions', align: 'center' as const },
   ];
 
   return (
     <ChartCard
-      title="Spending Trend"
-      subtitle="Outflow trajectory over time"
+      title="Spending trend"
+      subtitle="How your spending moves over time"
       currency={currency}
       selectedRange={selectedRange}
       onRangeChange={onRangeChange}
@@ -93,10 +109,10 @@ export function SpendingTrendChart({
       error={error}
       onRetry={onRetry}
       isEmpty={data.length === 0}
-      emptyTitle="No spending records"
-      emptyDescription={`No expense activity found for the selected period in ${currency}.`}
+      emptyTitle="No spending yet"
+      emptyDescription={`No expenses recorded in ${currency} for this period.`}
       emptyActionHref="/transactions/new"
-      emptyActionLabel="+ Add Transaction"
+      emptyActionLabel="Add a transaction"
       accessibleTableView={
         <AccessibleChartTable
           caption={`Spending trend timeline in ${currency}`}
@@ -107,7 +123,11 @@ export function SpendingTrendChart({
       }
       className={className}
     >
-      <div role="img" aria-label={`Spending trend line chart in ${currency}`} className="w-full h-full">
+      <div
+        role="img"
+        aria-label={`Spending trend line chart in ${currency}`}
+        className="h-full w-full"
+      >
         <Line data={chartData} options={options} />
       </div>
     </ChartCard>

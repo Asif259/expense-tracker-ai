@@ -73,7 +73,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
               <span className="truncate">{item.label}</span>
             </span>
             {item.badge && (
-              <span className="rounded-[var(--radius-xs)] border border-[var(--color-border)] px-1 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-text-subtle)]">
+              <span className="rounded-[var(--radius-xs)] border border-[var(--color-border)] px-1 py-0.5 text-[11px] font-semibold text-[var(--color-text-subtle)]">
                 {item.badge}
               </span>
             )}
@@ -185,11 +185,6 @@ function ShellInner({ children }: { children: React.ReactNode }) {
     }
     prevOpenRef.current = mobileNavOpen;
   }, [mobileNavOpen]);
-
-  // Close the drawer whenever the route changes.
-  useEffect(() => {
-    setMobileNavOpen(false);
-  }, [pathname]);
 
   if (loading) return <ShellSkeleton />;
   if (!user) return null;
@@ -347,7 +342,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
                 key={item.href}
                 href={item.href}
                 aria-current={active ? 'page' : undefined}
-                className={`flex flex-col items-center justify-center gap-0.5 rounded-[var(--radius-md)] px-3 py-1.5 text-[10px] font-medium transition-colors ${
+                className={`flex flex-col items-center justify-center gap-0.5 rounded-[var(--radius-md)] px-3 py-1.5 text-[11px] font-medium transition-colors ${
                   active ? 'text-[var(--color-primary-text)]' : 'text-[var(--color-text-muted)]'
                 }`}
               >

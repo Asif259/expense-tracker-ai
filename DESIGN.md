@@ -1,69 +1,84 @@
 ---
 # Ledgerly Design System: Minimalist Analytics (Light + Dark)
-version: "3.0"
-updated: "2026-10-10"
+version: "4.0"
+updated: "2026-11-10"
 
 themes:
+  # Implemented in apps/web/src/app/globals.css — that file is the source of truth.
   light:
-    bg: "#F8FAF9"                 # Soft calm canvas matching homepage
-    surface-elevated: "#FFFFFF"   # Sidebar, topbars, elevated panels
-    surface: "#FFFFFF"            # Clean white cards, tables
-    surface-hover: "#F2F7F5"      # Subtle sage/mint-tinted hover
-    border: "#E8EEEB"             # Soft warm sage border matching homepage
-    border-hover: "#D5DFDC"       # Focused/hovered borders
-    text: "#171A1C"               # Deep charcoal text & neutral financial numbers
-    text-muted: "#747B80"         # Muted supporting text & subtitles
-    text-dim: "#9CA3AF"           # Tertiary text - timestamps, hints
-    primary: "#3CA995"            # Signature Ledgerly SaaS teal accent/CTA
-    primary-hover: "#329683"      # Deep teal hover
-    primary-contrast: "#FFFFFF"   # Crisp white text on teal CTA
-    secondary: "#5452CF"          # Indigo secondary accent
-    secondary-hover: "#4543B5"    # Indigo hover
-    secondary-bg: "rgba(60, 169, 149, 0.08)"
-    accent-blue: "#6CB3F9"        # Soft blue
-    accent-amber: "#F5C258"       # Amber
-    pale-mint: "#E6F7F1"          # Tinted mint badge
-    pale-cyan: "#D7F4EC"          # Tinted aqua badge
-    pale-yellow: "#FDF1B2"        # Tinted yellow badge
-    income: "#3CA995"             # Indicator direction only (icons/charts)
-    income-bg: "#E6F7F1"          # Mint badge background
-    expense: "#E11D48"            # Outgoing indicator direction only
-    expense-bg: "rgba(225, 29, 72, 0.08)"
-    warning: "#F5C258"            # Amber alerts
-    warning-bg: "#FDF1B2"
-    danger: "#DC2626"
-    danger-hover: "#B91C1C"
-    card-shadow: "0 1px 2px 0 rgba(0, 0, 0, 0.02)" # Modest/near-flat shadow
+    bg: "#F7F9F8"
+    surface-elevated: "#FFFFFF"
+    surface: "#FFFFFF"
+    surface-hover: "#F1F5F3"
+    surface-sunken: "#F2F6F4"
+    border: "#E1E7E4"
+    border-strong: "#C8D2CD"
+    border-hover: "#B4C1BB"
+    text: "#16201D"
+    text-secondary: "#4E5853"
+    text-muted: "#5A6560"
+    text-subtle: "#626D68"
+    primary: "#1F7F6E"            # Solid CTAs, active states, focus (4.86:1 with white)
+    primary-hover: "#1A6D5F"
+    primary-active: "#14594D"
+    primary-contrast: "#FFFFFF"
+    primary-subtle: "#E3F3EE"
+    primary-text: "#14695B"
+    brand: "#3CA995"             # Graphics only (logo, charts) — not for text on white
+    brand-soft: "#D7F4EC"
+    income: "#0F7A5C"
+    income-subtle: "#E0F3EA"
+    expense: "#C81E4B"
+    expense-subtle: "#FBE7EC"
+    warning: "#8A5A00"
+    warning-subtle: "#FBF0D4"
+    danger: "#C0272D"
+    danger-hover: "#A21D23"
+    danger-contrast: "#FFFFFF"
+    focus: "#1F7F6E"
+    scrim: "rgba(11, 22, 19, 0.52)"
+    shadow-xs: "0 1px 2px rgba(15, 23, 20, 0.04)"
+    shadow-sm: "0 1px 3px rgba(15, 23, 20, 0.06), 0 1px 2px rgba(15, 23, 20, 0.04)"
+    shadow-md: "0 8px 24px -14px rgba(15, 23, 20, 0.22)"
+    shadow-lg: "0 18px 48px -24px rgba(15, 23, 20, 0.3)"
+    card-shadow: "none"          # Cards use a hairline border, not elevation
 
   dark:
-    bg: "#0B0F17"                 # Midnight slate canvas matching homepage
-    surface-elevated: "#111726"   # Deep slate elevated sidebar & panels
-    surface: "#151D30"            # Deep slate cards & panels
-    surface-hover: "#1E293B"      # Interactive hover surface
-    border: "#1E293B"             # Subtle slate borders matching homepage
-    border-hover: "#2E3E57"
-    text: "#F1F5F9"               # Slate 100 primary text & neutral financial numbers
-    text-muted: "#94A3B8"         # Slate 400 supporting text
-    text-dim: "#64748B"           # Slate 500 tertiary hints
-    primary: "#3CA995"            # Signature Ledgerly teal accent
-    primary-hover: "#45B8A3"      # Luminous teal hover
-    primary-contrast: "#FFFFFF"   # High contrast text on teal
-    secondary: "#7A78E0"          # Indigo / violet accent
-    secondary-hover: "#6A68D5"
-    secondary-bg: "rgba(60, 169, 149, 0.12)"
-    accent-blue: "#6CB3F9"
-    accent-amber: "#F5C258"
-    pale-mint: "rgba(60, 169, 149, 0.15)"
-    pale-cyan: "rgba(84, 199, 178, 0.12)"
-    pale-yellow: "rgba(245, 194, 88, 0.15)"
-    income: "#45B8A3"
-    income-bg: "rgba(60, 169, 149, 0.15)"
-    expense: "#F43F5E"
-    expense-bg: "rgba(244, 63, 94, 0.15)"
+    bg: "#0B0F17"
+    surface-elevated: "#111726"
+    surface: "#151D30"
+    surface-hover: "#1E293B"
+    surface-sunken: "#0F1622"
+    border: "#263449"
+    border-strong: "#34455E"
+    border-hover: "#40536F"
+    text: "#EDF2F7"
+    text-secondary: "#C3CFDD"
+    text-muted: "#A3B1C2"
+    text-subtle: "#8B9BAE"
+    primary: "#45B8A3"            # Luminous teal CTA with dark text (6.33:1)
+    primary-hover: "#52C7B2"
+    primary-active: "#3AA48F"
+    primary-contrast: "#05231E"
+    primary-subtle: "rgba(69, 184, 163, 0.14)"
+    primary-text: "#7FD6C4"
+    brand: "#45B8A3"
+    brand-soft: "rgba(69, 184, 163, 0.18)"
+    income: "#4CC79F"
+    income-subtle: "rgba(76, 199, 159, 0.15)"
+    expense: "#FF7A93"
+    expense-subtle: "rgba(255, 122, 147, 0.14)"
     warning: "#F5C258"
-    warning-bg: "rgba(245, 194, 88, 0.15)"
-    danger: "#EF4444"
-    danger-hover: "#DC2626"
+    warning-subtle: "rgba(245, 194, 88, 0.14)"
+    danger: "#FF8A8A"
+    danger-hover: "#FFA3A3"
+    danger-contrast: "#2A0507"
+    focus: "#7FD6C4"
+    scrim: "rgba(2, 6, 12, 0.66)"
+    shadow-xs: "0 1px 2px rgba(0, 0, 0, 0.4)"
+    shadow-sm: "0 1px 3px rgba(0, 0, 0, 0.45), 0 1px 2px rgba(0, 0, 0, 0.35)"
+    shadow-md: "0 10px 28px -16px rgba(0, 0, 0, 0.7)"
+    shadow-lg: "0 22px 56px -26px rgba(0, 0, 0, 0.8)"
     card-shadow: "none"
 
 rules:
@@ -81,7 +96,7 @@ typography:
   serif: "var(--font-dm-serif), 'DM Serif Display', Georgia, Cambria, 'Times New Roman', Times, serif"
   display: "var(--font-dm-serif), 'DM Serif Display', Georgia, Cambria, 'Times New Roman', Times, serif"
   mono: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace"
-  heading-weight: 700
+  heading-weight: 600
   body-weight: 400
   stack_strategy:
     dashboard: "Inter for fintech dashboards, forms, and transaction tables"
@@ -89,64 +104,77 @@ typography:
     financial_figures: "tabular-nums for all currency amounts, metrics, and dates"
   scale:
     page-title:
-      size: "clamp(1.5rem, 2.5vw, 1.875rem)" # 24px - 30px
-      weight: 700
-      line-height: 1.2
-      tracking: "-0.025em"
-      role: "Main page headings"
+      size: "clamp(1.5rem, 2.2vw, 1.875rem)" # 24px - 30px
+      weight: 600
+      line-height: 1.18
+      tracking: "-0.022em"
+      role: "Page headings (.text-page-title)"
     section-title:
-      size: "clamp(1.125rem, 1.5vw, 1.25rem)" # 18px - 20px
+      size: "1.0625rem" # 17px
       weight: 600
       line-height: 1.3
-      tracking: "-0.015em"
-      role: "Secondary section headings, major card headers"
+      tracking: "-0.012em"
+      role: "Section headings (.text-section-title)"
     card-title:
-      size: "0.9375rem" # 15px
+      size: "0.875rem" # 14px
       weight: 600
       line-height: 1.35
-      role: "Widget & card titles"
+      role: "Card and widget titles (.text-card-title)"
+    metric-xl:
+      size: "clamp(1.75rem, 2.4vw, 2.25rem)" # 28px - 36px
+      weight: 600
+      line-height: 1.1
+      tracking: "-0.025em"
+      numeric: "tabular-nums lining-nums"
+      role: "The single dominant number on a screen (.text-metric-xl)"
     metric:
-      size: "clamp(1.5rem, 2vw, 1.875rem)" # 24px - 30px
-      weight: 700
+      size: "1.375rem" # 22px
+      weight: 600
       line-height: 1.2
       tracking: "-0.02em"
       numeric: "tabular-nums lining-nums"
-      role: "Primary dashboard financial amounts"
+      role: "Supporting metrics (.text-metric)"
     metric-sm:
-      size: "1.125rem" # 18px
+      size: "1.0625rem" # 17px
       weight: 600
       line-height: 1.25
       numeric: "tabular-nums lining-nums"
-      role: "Secondary balances, budget totals"
+      role: "Secondary balances, inline totals (.text-metric-sm)"
     body:
       size: "0.875rem" # 14px
       weight: 400
-      line-height: 1.5
-      role: "Standard reading text, inputs"
+      line-height: 1.55
+      role: "Reading text, inputs (.text-body)"
     secondary:
       size: "0.8125rem" # 13px
       weight: 400
-      line-height: 1.45
-      role: "Descriptions, secondary table cells"
+      line-height: 1.5
+      role: "Descriptions, supporting cells (.text-secondary)"
     label:
       size: "0.75rem" # 12px
-      weight: 600
+      weight: 500
       line-height: 1.4
-      tracking: "0.02em"
-      role: "Form labels, table headers, metadata badges"
+      role: "Field labels, compact metadata (.text-label)"
     caption:
-      size: "0.6875rem" # 11px
+      size: "0.75rem" # 12px
       weight: 400
-      line-height: 1.35
-      role: "Timestamps, tertiary hints, chart axis subtext"
+      line-height: 1.45
+      role: "Hints and timestamps (.text-caption) — 12px is the floor for real text"
+    eyebrow:
+      size: "0.6875rem" # 11px
+      weight: 600
+      tracking: "0.07em"
+      role: "Rare compact group labels only (.text-eyebrow)"
   unit: "4px"
-  scale: [0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24]
+  space-scale: [0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24]
 
 rounded:
+  xs: "4px"
   sm: "6px"
-  md: "8px"
-  lg: "12px"
-  xl: "16px"
+  md: "8px"    # controls: buttons, inputs, badges
+  lg: "10px"
+  xl: "12px"   # cards, panels, dialogs on mobile
+  2xl: "16px"  # sheets/hero previews only
   full: "9999px"
 
 components:
@@ -160,15 +188,24 @@ components:
     radius: "xl"
     padding: "6"
   button:
-    radius: "lg"
-    height: "38px"
-    font-weight: 600
+    radius: "md"        # 8px, sentence-case labels, no uppercase
+    height: "36px / 44px (mobile)"
+    font-weight: 500
   input:
     bg: "surface"
-    border: "border"
-    radius: "lg"
-    height: "42px"
+    border: "border-strong"
+    radius: "md"
+    height: "40px"
 ---
+
+> **Implementation note (2026-11-10).** The tokens above are mirrored in
+> `apps/web/src/app/globals.css` (light + dark) and consumed through the
+> `@theme inline` Tailwind bridge. Reusable components live in
+> `apps/web/src/components/ui/` — see its README for the component contract.
+> The previous indigo/purple secondary accent has been retired: the AI
+> features now use the single teal accent. The old "light beige" rationale
+> below is kept as history; the current values in this file and
+> `globals.css` take precedence.
 
 # Design Rationale: Dual-Theme Architecture
 

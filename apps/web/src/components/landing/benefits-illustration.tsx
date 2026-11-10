@@ -1,115 +1,131 @@
 'use client';
 
-import React from 'react';
-import { PieChart, CheckCircle2, ArrowRight, ShieldCheck } from 'lucide-react';
+import { PieChart, CheckCircle2 } from 'lucide-react';
 
+/**
+ * Category distribution plus a settled loan preview. Chart colors are a
+ * restrained set pulled from the app's chart palette; amounts stay neutral.
+ */
 export function BenefitsIllustration() {
   return (
     <div
-      className="relative w-full max-w-[480px] mx-auto select-none"
-      aria-label="Visual breakdown of category budgets and settled debt commitments"
+      className="relative mx-auto w-full max-w-[480px] select-none"
       role="img"
+      aria-label="Preview of October 2026 spending by category — housing, food and dining, savings, and utilities, totalling ৳28,550 — and a ৳2,500 trip-share loan to Tanvir marked as settled."
     >
-      {/* Background Soft Organic Glow */}
-      <div className="absolute inset-0 sm:-inset-6 -z-10 pointer-events-none opacity-80 overflow-hidden sm:overflow-visible">
-        <svg
-          viewBox="0 0 500 500"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className="w-full h-full transform scale-100 sm:scale-105"
-        >
-          <path
-            d="M380 140C440 210 420 340 350 410C280 480 160 460 90 390C20 320 30 200 100 130C170 60 320 70 380 140Z"
-            fill="var(--color-landing-mint)"
-            className="transition-colors duration-500"
-          />
-          <path
-            d="M340 180C390 230 380 330 320 380C260 430 170 410 120 360C70 310 80 220 130 170C180 120 290 130 340 180Z"
-            fill="var(--color-landing-aqua)"
-            opacity="0.5"
-            className="transition-colors duration-500"
-          />
-        </svg>
-      </div>
-
-      {/* Main Benefits Visual Card Stack */}
       <div className="space-y-4">
-        {/* Card 1: Category Budget Distribution */}
-        <div className="p-5 sm:p-6 rounded-2xl bg-landing-surface-card border border-landing-border shadow-xl shadow-teal-950/5 space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-landing-border">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-landing-mint text-landing-teal flex items-center justify-center">
-                <PieChart className="w-4 h-4" />
-              </div>
-              <span className="text-sm font-semibold text-landing-text">
-                Monthly Spending Distribution
+        {/* Category distribution */}
+        <div className="space-y-4 rounded-[var(--radius-xl)] border border-landing-border bg-landing-surface-card p-5 shadow-md sm:p-6">
+          <div className="flex items-center justify-between gap-3 border-b border-landing-border pb-3">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-primary-subtle)] text-[var(--color-primary-text)]">
+                <PieChart className="h-4 w-4" aria-hidden="true" />
+              </span>
+              <span className="truncate text-sm font-semibold text-landing-text">
+                Spending by category
               </span>
             </div>
-            <span className="text-xs text-landing-text-muted font-medium">
+            <span className="shrink-0 text-xs font-medium text-landing-text-muted">
               October 2026
             </span>
           </div>
 
-          {/* Segmented Distribution Visual Bar */}
-          <div className="w-full h-3 rounded-full bg-landing-border overflow-hidden flex gap-0.5">
-            <div className="h-full bg-landing-teal" style={{ width: '42%' }} title="Housing (42%)" />
-            <div className="h-full bg-amber-400" style={{ width: '28%' }} title="Food & Dining (28%)" />
-            <div className="h-full bg-emerald-500" style={{ width: '18%' }} title="Savings Reserve (18%)" />
-            <div className="h-full bg-rose-400" style={{ width: '12%' }} title="Utilities (12%)" />
+          {/* Segmented distribution bar */}
+          <div className="flex h-2.5 w-full gap-0.5 overflow-hidden rounded-full">
+            <div
+              className="h-full rounded-full"
+              style={{ width: '42%', backgroundColor: 'var(--color-primary)' }}
+            />
+            <div
+              className="h-full rounded-full"
+              style={{ width: '28%', backgroundColor: 'var(--color-accent-blue)' }}
+            />
+            <div
+              className="h-full rounded-full"
+              style={{ width: '18%', backgroundColor: 'var(--color-amber)' }}
+            />
+            <div
+              className="h-full rounded-full"
+              style={{ width: '12%', backgroundColor: 'var(--color-text-subtle)' }}
+            />
           </div>
 
-          {/* Category Breakdown Rows */}
-          <div className="grid grid-cols-2 gap-3 text-xs pt-1">
-            <div className="p-2.5 rounded-xl bg-landing-alt border border-landing-border/60">
-              <div className="flex items-center gap-1.5 mb-1">
-                <span className="w-2 h-2 rounded-full bg-landing-teal" />
-                <span className="text-landing-text-muted">Housing</span>
+          {/* Category rows */}
+          <div className="grid grid-cols-2 gap-3 pt-1">
+            <div className="rounded-[var(--radius-md)] border border-landing-border bg-landing-alt p-2.5">
+              <div className="mb-1 flex items-center gap-1.5">
+                <span
+                  className="h-2 w-2 shrink-0 rounded-full"
+                  style={{ backgroundColor: 'var(--color-primary)' }}
+                  aria-hidden="true"
+                />
+                <span className="text-xs text-landing-text-muted">Housing</span>
               </div>
-              <span className="font-bold text-landing-text tabular-nums">৳18,500.00</span>
+              <span className="text-[13px] font-semibold tabular-nums text-landing-text">
+                ৳12,000.00
+              </span>
             </div>
 
-            <div className="p-2.5 rounded-xl bg-landing-alt border border-landing-border/60">
-              <div className="flex items-center gap-1.5 mb-1">
-                <span className="w-2 h-2 rounded-full bg-amber-400" />
-                <span className="text-landing-text-muted">Food &amp; Dining</span>
+            <div className="rounded-[var(--radius-md)] border border-landing-border bg-landing-alt p-2.5">
+              <div className="mb-1 flex items-center gap-1.5">
+                <span
+                  className="h-2 w-2 shrink-0 rounded-full"
+                  style={{ backgroundColor: 'var(--color-accent-blue)' }}
+                  aria-hidden="true"
+                />
+                <span className="text-xs text-landing-text-muted">Food &amp; dining</span>
               </div>
-              <span className="font-bold text-landing-text tabular-nums">৳12,200.00</span>
+              <span className="text-[13px] font-semibold tabular-nums text-landing-text">
+                ৳8,000.00
+              </span>
             </div>
 
-            <div className="p-2.5 rounded-xl bg-landing-alt border border-landing-border/60">
-              <div className="flex items-center gap-1.5 mb-1">
-                <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                <span className="text-landing-text-muted">Savings Reserve</span>
+            <div className="rounded-[var(--radius-md)] border border-landing-border bg-landing-alt p-2.5">
+              <div className="mb-1 flex items-center gap-1.5">
+                <span
+                  className="h-2 w-2 shrink-0 rounded-full"
+                  style={{ backgroundColor: 'var(--color-amber)' }}
+                  aria-hidden="true"
+                />
+                <span className="text-xs text-landing-text-muted">Savings</span>
               </div>
-              <span className="font-bold text-landing-text tabular-nums">৳9,500.00</span>
+              <span className="text-[13px] font-semibold tabular-nums text-landing-text">
+                ৳5,100.00
+              </span>
             </div>
 
-            <div className="p-2.5 rounded-xl bg-landing-alt border border-landing-border/60">
-              <div className="flex items-center gap-1.5 mb-1">
-                <span className="w-2 h-2 rounded-full bg-rose-400" />
-                <span className="text-landing-text-muted">Utilities</span>
+            <div className="rounded-[var(--radius-md)] border border-landing-border bg-landing-alt p-2.5">
+              <div className="mb-1 flex items-center gap-1.5">
+                <span
+                  className="h-2 w-2 shrink-0 rounded-full"
+                  style={{ backgroundColor: 'var(--color-text-subtle)' }}
+                  aria-hidden="true"
+                />
+                <span className="text-xs text-landing-text-muted">Utilities</span>
               </div>
-              <span className="font-bold text-landing-text tabular-nums">৳4,800.00</span>
+              <span className="text-[13px] font-semibold tabular-nums text-landing-text">
+                ৳3,450.00
+              </span>
             </div>
           </div>
         </div>
 
-        {/* Card 2: Debt Settlement & Repayment Ledger Card */}
-        <div className="p-4 rounded-xl bg-landing-surface-card border border-landing-border shadow-md flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-              <CheckCircle2 className="w-4 h-4" />
-            </div>
-            <div>
-              <span className="text-xs font-semibold text-landing-text block">
-                Tanvir Ahmed • Trip Share
+        {/* Settled loan */}
+        <div className="flex items-center justify-between gap-3 rounded-[var(--radius-xl)] border border-landing-border bg-landing-surface-card p-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-primary-subtle)] text-[var(--color-primary-text)]">
+              <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <span className="block truncate text-[13px] font-semibold text-landing-text">
+                Tanvir Ahmed · Trip share
               </span>
-              <span className="text-[11px] text-landing-text-muted">
-                Settled in full via bKash • No balance remaining
+              <span className="block text-xs text-landing-text-muted">
+                Settled in full via bKash · No balance remaining
               </span>
             </div>
           </div>
-          <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+          <span className="shrink-0 text-[13px] font-semibold tabular-nums text-landing-text">
             ৳2,500.00
           </span>
         </div>

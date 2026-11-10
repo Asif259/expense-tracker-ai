@@ -397,32 +397,34 @@ describe('Chart.js Financial Data Aggregation', () => {
   });
 
   describe('Chart Theme & Strict Financial Number Styling', () => {
-    it('uses strictly neutral primary text color #111111 for light mode', () => {
+    it('uses the light theme neutral text and surface tokens', () => {
       const lightPalette = getChartPalette('light');
-      expect(lightPalette.textPrimary).toBe('#111111');
+      expect(lightPalette.textPrimary).toBe('#16201D');
       expect(lightPalette.cardBg).toBe('#FFFFFF');
-      expect(lightPalette.canvasBg).toBe('#F9FBFC');
-      expect(lightPalette.income).toBe('#6DD0A1');
-      expect(lightPalette.expense).toBe('#F5C258');
+      expect(lightPalette.canvasBg).toBe('#F7F9F8');
+      expect(lightPalette.income).toBe('#0F7A5C');
+      expect(lightPalette.expense).toBe('#C81E4B');
     });
 
-    it('uses strictly neutral primary text color #F4F4F4 for dark mode', () => {
+    it('uses the dark theme neutral text and surface tokens', () => {
       const darkPalette = getChartPalette('dark');
-      expect(darkPalette.textPrimary).toBe('#F4F4F4');
-      expect(darkPalette.cardBg).toBe('#1C1C1F');
-      expect(darkPalette.canvasBg).toBe('#0B0B0B');
-      expect(darkPalette.income).toBe('#6DD0A1');
-      expect(darkPalette.expense).toBe('#F5C258');
+      expect(darkPalette.textPrimary).toBe('#EDF2F7');
+      expect(darkPalette.cardBg).toBe('#151D30');
+      expect(darkPalette.canvasBg).toBe('#0B0F17');
+      expect(darkPalette.income).toBe('#4CC79F');
+      expect(darkPalette.expense).toBe('#FF7A93');
     });
 
     it('configures tooltip to render body and title in neutral text tokens', () => {
+      const lightPalette = getChartPalette('light');
       const lightOpts = getBaseChartOptions('light', 'BDT');
-      expect(lightOpts.plugins?.tooltip?.titleColor).toBe('#111111');
-      expect(lightOpts.plugins?.tooltip?.bodyColor).toBe('#111111');
+      expect(lightOpts.plugins?.tooltip?.titleColor).toBe(lightPalette.textPrimary);
+      expect(lightOpts.plugins?.tooltip?.bodyColor).toBe(lightPalette.textPrimary);
 
+      const darkPalette = getChartPalette('dark');
       const darkOpts = getBaseChartOptions('dark', 'BDT');
-      expect(darkOpts.plugins?.tooltip?.titleColor).toBe('#F4F4F4');
-      expect(darkOpts.plugins?.tooltip?.bodyColor).toBe('#F4F4F4');
+      expect(darkOpts.plugins?.tooltip?.titleColor).toBe(darkPalette.textPrimary);
+      expect(darkOpts.plugins?.tooltip?.bodyColor).toBe(darkPalette.textPrimary);
     });
   });
 });

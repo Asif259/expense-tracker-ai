@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { Suspense, useEffect, useState, useMemo, useCallback } from 'react';
 import AppShell from '@/components/app-shell';
 import { useAuth } from '@/context/auth-context';
 import {
@@ -21,22 +21,15 @@ import { toast } from '@/components/toast';
 import {
   Sparkles,
   Plus,
-  X,
   ReceiptText,
   Pencil,
   Trash2,
   ChevronLeft,
   ChevronRight,
-  TrendingUp,
-  TrendingDown,
-  ArrowLeftRight,
-  Hash,
+  ChevronDown,
   SendHorizonal,
   RotateCcw,
-  Loader2,
   MessageSquare,
-  ChevronDown,
-  ChevronUp,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -46,6 +39,23 @@ import {
   RowAction,
   MobileTableConfig,
 } from '@/components/responsive-table';
+import {
+  Alert,
+  Badge,
+  Button,
+  ButtonLink,
+  Field,
+  IconButton,
+  Input,
+  Metric,
+  PageHeader,
+  Section,
+  Select,
+  Skeleton,
+  Spinner,
+  StatStrip,
+  Textarea,
+} from '@/components/ui';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -90,36 +100,9 @@ const SUGGESTED_QUESTIONS = [
   'Summarize my financial activity',
 ];
 
-// ── Summary Card ─────────────────────────────────────────────────────────────
-
-interface SummaryCardProps {
-  label: string;
-  subLabel: string;
-  icon: React.ReactNode;
-  loading: boolean;
-  children: React.ReactNode;
-}
-
-function SummaryCard({ label, subLabel, icon, loading, children }: SummaryCardProps) {
-  return (
-    <div className="p-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-card)] space-y-1">
-      <div className="flex items-center gap-2 text-[var(--color-text-muted)]">
-        {icon}
-        <span className="text-[11px] font-semibold uppercase tracking-wider">{label}</span>
-      </div>
-      {loading ? (
-        <div className="h-7 w-32 rounded-md bg-[var(--color-border)] animate-pulse mt-1" />
-      ) : (
-        <div className="tabular-nums font-bold text-xl text-[var(--color-text)]">{children}</div>
-      )}
-      <p className="text-[11px] text-[var(--color-text-dim)]">{subLabel}</p>
-    </div>
-  );
-}
-
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
-export default function TransactionsPage() {
+function TransactionsPageContent() {
   const router = useRouter();
   const { getToken } = useAuth();
 
@@ -156,7 +139,6 @@ export default function TransactionsPage() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiResult, setAiResult] = useState<AnalysisResult | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // ── Category map ──
   const categoryMap = useMemo(() => {
@@ -184,8 +166,8 @@ export default function TransactionsPage() {
   // ── Load summary whenever month changes ──
   useEffect(() => {
     let mounted = true;
-    setSummaryLoading(true);
     (async () => {
+      setSummaryLoading(true);
       try {
         const token = await getToken();
         if (!token || !mounted) return;
@@ -203,8 +185,8 @@ export default function TransactionsPage() {
   // ── Load transactions whenever month or filters change ──
   useEffect(() => {
     let mounted = true;
-    setListLoading(true);
     (async () => {
+      setListLoading(true);
       try {
         const token = await getToken();
         if (!token || !mounted) return;
@@ -267,6 +249,8 @@ export default function TransactionsPage() {
     return isFutureMonth(n.month, n.year);
   }, [selectedMonth, selectedYear]);
 
+  const monthLabel = `${MONTH_NAMES[selectedMonth - 1]} ${selectedYear}`;
+
   // ── Delete handler ──
   const handleDelete = useCallback(async () => {
     if (!deleteTarget) return;
@@ -274,7 +258,7 @@ export default function TransactionsPage() {
       const token = await getToken();
       if (!token) return;
       await deleteTransaction(token, deleteTarget.id);
-      toast('Transaction deleted successfully', 'success');
+      toast('Transaction deleted', 'success');
       setDeleteTarget(null);
       // Refresh both list and summary
       setOffset(0);
@@ -303,7 +287,7 @@ export default function TransactionsPage() {
     setQuestion('');
 
     // Optimistically add user message to conversation
-    const userMsg: ConversationMessage = { role: 'user', content: questionText };
+    const userMsg: ConversationMessage = { role: 'user' as const, content: questionText };
     const updatedHistory = [...conversation, userMsg];
 
     // Keep history capped at 6 messages (3 exchanges) for token control
@@ -324,7 +308,7 @@ export default function TransactionsPage() {
       setConversation(prev => [
         ...prev,
         userMsg,
-        { role: 'assistant', content: result.answer },
+        { role: 'assistant' as const, content: result.answer },
       ].slice(-6));
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Analysis failed. Please try again.';
@@ -371,6 +355,18 @@ export default function TransactionsPage() {
     );
   }, [transactions, filterSearch]);
 
+  // ── Summary values (formatting preserved) ──
+  const netValue = summaryFirstCurrency
+    ? formatMoney(summaryFirstCurrency[1].net.replace('-', ''), summaryFirstCurrency[0])
+    : '—';
+  const incomeValue = summaryFirstCurrency
+    ? formatMoney(summaryFirstCurrency[1].income, summaryFirstCurrency[0])
+    : '—';
+  const expensesValue = summaryFirstCurrency
+    ? formatMoney(summaryFirstCurrency[1].expenses, summaryFirstCurrency[0])
+    : '—';
+  const countValue = summary ? summary.transactionCount.toLocaleString() : '—';
+
   // ── Table columns ──
   const columns: ResponsiveColumn<Transaction>[] = useMemo(
     () => [
@@ -385,14 +381,12 @@ export default function TransactionsPage() {
         cell: (tx) => {
           const cat = categoryMap.get(tx.category_id);
           return (
-            <div>
-              <span className="font-semibold text-[var(--color-text)]">
+            <div className="min-w-0">
+              <span className="block truncate font-medium text-[var(--color-text)]">
                 {cat ? cat.name : 'Uncategorized'}
               </span>
               {tx.description && (
-                <p className="text-[11px] text-[var(--color-text-dim)] truncate max-w-[180px]">
-                  {tx.description}
-                </p>
+                <p className="max-w-[220px] truncate text-caption">{tx.description}</p>
               )}
             </div>
           );
@@ -411,7 +405,7 @@ export default function TransactionsPage() {
         cell: (tx) => {
           const isIncome = tx.type === 'income';
           return (
-            <span className="font-bold tabular-nums text-[var(--color-text)]">
+            <span className="font-medium tabular-nums text-[var(--color-text)]">
               {isIncome ? '+' : '−'} {formatMoney(tx.amount, tx.currency)}
             </span>
           );
@@ -422,30 +416,15 @@ export default function TransactionsPage() {
         header: 'Type',
         role: 'state',
         priority: 3,
-        label: 'Status & Type',
+        label: 'Type',
         cell: (tx) => {
           const isIncome = tx.type === 'income';
           return (
-            <div className="flex items-center gap-1.5">
-              <span
-                className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase inline-flex items-center gap-1 ${
-                  isIncome
-                    ? 'bg-[var(--color-pale-mint)] text-[var(--color-text)]'
-                    : 'bg-[var(--color-pale-yellow)] text-[var(--color-text)]'
-                }`}
-              >
-                <span
-                  className={`h-1.5 w-1.5 rounded-full ${
-                    isIncome ? 'bg-[var(--color-income)]' : 'bg-[var(--color-warning)]'
-                  }`}
-                />
-                {tx.type}
-              </span>
-              {tx.is_ai_generated && (
-                <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[var(--color-primary)]/20 text-[var(--color-primary)]">
-                  AI
-                </span>
-              )}
+            <div className="flex flex-wrap items-center gap-1.5">
+              <Badge tone={isIncome ? 'success' : 'neutral'} dot>
+                {isIncome ? 'Income' : 'Expense'}
+              </Badge>
+              {tx.is_ai_generated && <Badge tone="neutral">AI</Badge>}
             </div>
           );
         },
@@ -474,22 +453,23 @@ export default function TransactionsPage() {
           const cat = categoryMap.get(tx.category_id);
           const categoryName = cat ? cat.name : 'Uncategorized';
           return (
-            <div className="space-x-2 text-right">
+            <div className="flex items-center justify-end gap-0.5">
               <Link
                 href={`/transactions/${tx.id}/edit`}
                 aria-label={`Edit ${categoryName} transaction of ${formatMoney(tx.amount, tx.currency)}`}
-                className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:underline transition-colors px-1 py-1"
+                title="Edit transaction"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-[var(--radius-md)] text-[var(--color-text-subtle)] transition-colors duration-[var(--duration-fast)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text)]"
               >
-                Edit
+                <Pencil className="h-4 w-4" aria-hidden="true" />
               </Link>
-              <button
-                type="button"
+              <IconButton
+                label={`Delete ${categoryName} transaction of ${formatMoney(tx.amount, tx.currency)}`}
+                size="sm"
                 onClick={() => setDeleteTarget(tx)}
-                aria-label={`Delete ${categoryName} transaction of ${formatMoney(tx.amount, tx.currency)}`}
-                className="text-[var(--color-danger)] hover:underline cursor-pointer px-1 py-1"
+                className="text-[var(--color-text-subtle)]! hover:bg-[var(--color-danger-subtle)]! hover:text-[var(--color-danger)]!"
               >
-                Delete
-              </button>
+                <Trash2 className="h-4 w-4" aria-hidden="true" />
+              </IconButton>
             </div>
           );
         },
@@ -499,17 +479,17 @@ export default function TransactionsPage() {
   );
 
   const rowActions = useCallback(
-    (_tx: Transaction): RowAction<Transaction>[] => [
+    (): RowAction<Transaction>[] => [
       {
         id: 'edit',
-        label: 'Edit Transaction',
-        icon: <Pencil className="w-3.5 h-3.5" />,
+        label: 'Edit transaction',
+        icon: <Pencil className="h-3.5 w-3.5" aria-hidden="true" />,
         onClick: (t) => router.push(`/transactions/${t.id}/edit`),
       },
       {
         id: 'delete',
-        label: 'Delete Transaction',
-        icon: <Trash2 className="w-3.5 h-3.5" />,
+        label: 'Delete transaction',
+        icon: <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />,
         variant: 'danger',
         onClick: (t) => setDeleteTarget(t),
       },
@@ -528,252 +508,258 @@ export default function TransactionsPage() {
     [],
   );
 
-  const hasActiveFilters = filterType || filterCategory || filterSearch;
+  const hasActiveFilters = Boolean(filterType || filterCategory || filterSearch);
+
+  // ── Pagination footer (lives inside the table surface) ──
+  const paginationFooter = (
+    <div className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-caption" aria-live="polite">
+        {displayedTransactions.length > 0
+          ? `Showing ${offset + 1}–${Math.min(offset + displayedTransactions.length, total)} of ${total} ${
+              total === 1 ? 'transaction' : 'transactions'
+            }`
+          : 'No transactions to show'}
+      </p>
+      <div className="flex items-center gap-2">
+        <Button
+          variant="secondary"
+          size="md"
+          className="min-h-[40px]"
+          disabled={offset === 0 || listLoading}
+          onClick={() => setOffset(Math.max(0, offset - limit))}
+        >
+          Previous
+        </Button>
+        <Button
+          variant="secondary"
+          size="md"
+          className="min-h-[40px]"
+          disabled={offset + limit >= total || listLoading}
+          onClick={() => setOffset(offset + limit)}
+        >
+          Next
+        </Button>
+      </div>
+    </div>
+  );
 
   return (
     <AppShell>
-      <div className="space-y-6">
-        {/* ── Page Header ── */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-page-title">Transactions</h1>
-            <p className="text-secondary mt-1">
-              {MONTH_NAMES[selectedMonth - 1]} {selectedYear}
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/ai-entry"
-              className="px-3.5 py-2 rounded-xl bg-[var(--color-secondary)]/15 border border-[var(--color-secondary)]/30 hover:bg-[var(--color-secondary)]/25 text-[var(--color-secondary)] text-xs font-semibold transition-all flex items-center gap-2 cursor-pointer"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>AI Quick Entry</span>
-            </Link>
-            <Link
-              href="/transactions/new"
-              className="px-4 py-2 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] text-xs font-semibold transition-all flex items-center gap-1.5 shadow-md shadow-[var(--color-primary)]/15 cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Add Transaction</span>
-            </Link>
-          </div>
-        </div>
+      <div className="space-y-8">
+        {/* ── Page header: one primary action ── */}
+        <PageHeader
+          title="Transactions"
+          description="Every income and expense entry, month by month. Filter the list, open a row for details, or ask a question about the month."
+          actions={
+            <>
+              <ButtonLink
+                href="/ai-entry"
+                variant="secondary"
+                className="min-h-[40px]"
+                leadingIcon={<Sparkles className="h-4 w-4" aria-hidden="true" />}
+              >
+                Add with AI
+              </ButtonLink>
+              <ButtonLink
+                href="/transactions/new"
+                variant="primary"
+                className="order-first min-h-[40px] w-full sm:order-none sm:w-auto"
+                leadingIcon={<Plus className="h-4 w-4" aria-hidden="true" />}
+              >
+                New transaction
+              </ButtonLink>
+            </>
+          }
+        />
 
-        {/* ── Month Navigator ── */}
-        <div className="flex items-center justify-between p-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]">
-          <div className="flex items-center gap-1">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-dim)] mr-2">
-              Monthly activity
-            </span>
+        {/* ── Month context + summary ── */}
+        <Section>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-card-title">{monthLabel}</h2>
+            <div className="flex items-center gap-1.5">
+              {!isCurrentMonth && (
+                <Button variant="ghost" size="sm" className="min-h-[40px]" onClick={goToCurrentMonth}>
+                  This month
+                </Button>
+              )}
+              <IconButton
+                variant="secondary"
+                size="lg"
+                label="Previous month"
+                onClick={goToPrevMonth}
+              >
+                <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+              </IconButton>
+              <IconButton
+                variant="secondary"
+                size="lg"
+                label="Next month"
+                onClick={goToNextMonth}
+                disabled={isNextDisabled}
+              >
+                <ChevronRight className="h-4 w-4" aria-hidden="true" />
+              </IconButton>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            {!isCurrentMonth && (
+
+          <StatStrip>
+            <Metric
+              size="lg"
+              label="Net balance"
+              hint="Income minus expenses"
+              className="py-3.5 sm:px-4 sm:first:pl-0"
+              value={
+                summaryLoading ? (
+                  <Skeleton className="h-7 w-28" />
+                ) : (
+                  <span className="tabular-nums">{netValue}</span>
+                )
+              }
+            />
+            <Metric
+              label="Income"
+              className="py-3.5 sm:px-4 sm:first:pl-0"
+              value={
+                summaryLoading ? <Skeleton className="h-6 w-24" /> : <span className="tabular-nums">{incomeValue}</span>
+              }
+            />
+            <Metric
+              label="Expenses"
+              className="py-3.5 sm:px-4 sm:first:pl-0"
+              value={
+                summaryLoading ? <Skeleton className="h-6 w-24" /> : <span className="tabular-nums">{expensesValue}</span>
+              }
+            />
+            <Metric
+              label="Transactions"
+              className="py-3.5 sm:px-4 sm:first:pl-0"
+              value={
+                summaryLoading ? <Skeleton className="h-6 w-12" /> : <span className="tabular-nums">{countValue}</span>
+              }
+            />
+          </StatStrip>
+
+          {hasMultipleCurrencies && summary && (
+            <p className="text-caption border-t border-[var(--color-border)] pt-3">
+              <span className="text-[var(--color-text-secondary)]">Multiple currencies this month: </span>
+              {Object.entries(summary.currencies).map(([cur, totals], idx) => (
+                <span key={cur}>
+                  {idx > 0 && ', '}
+                  <span className="tabular-nums text-[var(--color-text-secondary)]">{cur}</span>{' '}
+                  income {formatMoney(totals.income, cur)}, expenses {formatMoney(totals.expenses, cur)}
+                </span>
+              ))}
+            </p>
+          )}
+        </Section>
+
+        {/* ── AI analyst: a section with a disclosure header, not a card ── */}
+        <Section>
+          <div className="border-y border-[var(--color-border)]">
+            <h2 className="m-0">
               <button
                 type="button"
-                onClick={goToCurrentMonth}
-                aria-label="Go to current month"
-                className="px-2.5 py-1.5 text-[11px] font-medium rounded-lg border border-[var(--color-border)] hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer text-[var(--color-text-muted)]"
+                onClick={() => setAiOpen((v) => !v)}
+                aria-expanded={aiOpen}
+                aria-controls="ai-analyst-panel"
+                className="flex w-full cursor-pointer items-center justify-between gap-3 py-3 text-left"
               >
-                Today
+                <span className="min-w-0">
+                  <span className="text-section-title block">Ask about these transactions</span>
+                  <span className="text-secondary mt-0.5 block">
+                    Answers come from the records in {monthLabel}.
+                  </span>
+                </span>
+                <ChevronDown
+                  className={`h-4 w-4 shrink-0 text-[var(--color-text-muted)] transition-transform duration-[var(--duration-base)] ease-[var(--ease-standard)] ${
+                    aiOpen ? 'rotate-180' : ''
+                  }`}
+                  aria-hidden="true"
+                />
               </button>
-            )}
-            <button
-              type="button"
-              onClick={goToPrevMonth}
-              aria-label="Previous month"
-              className="p-1.5 rounded-lg border border-[var(--color-border)] hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer"
-            >
-              <ChevronLeft className="w-4 h-4 text-[var(--color-text-muted)]" />
-            </button>
-            <span className="text-sm font-semibold text-[var(--color-text)] min-w-[130px] text-center tabular-nums">
-              {MONTH_NAMES[selectedMonth - 1]} {selectedYear}
-            </span>
-            <button
-              type="button"
-              onClick={goToNextMonth}
-              disabled={isNextDisabled}
-              aria-label="Next month"
-              className="p-1.5 rounded-lg border border-[var(--color-border)] hover:bg-[var(--color-surface-hover)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
-            >
-              <ChevronRight className="w-4 h-4 text-[var(--color-text-muted)]" />
-            </button>
+            </h2>
           </div>
-        </div>
 
-        {/* ── Summary Cards ── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <SummaryCard
-            label="Total Income"
-            subLabel={`${MONTH_NAMES[selectedMonth - 1]} ${selectedYear}`}
-            icon={<TrendingUp className="w-3.5 h-3.5" />}
-            loading={summaryLoading}
-          >
-            {summaryFirstCurrency
-              ? formatMoney(summaryFirstCurrency[1].income, summaryFirstCurrency[0])
-              : '—'}
-          </SummaryCard>
-
-          <SummaryCard
-            label="Total Expenses"
-            subLabel={`${MONTH_NAMES[selectedMonth - 1]} ${selectedYear}`}
-            icon={<TrendingDown className="w-3.5 h-3.5" />}
-            loading={summaryLoading}
-          >
-            {summaryFirstCurrency
-              ? formatMoney(summaryFirstCurrency[1].expenses, summaryFirstCurrency[0])
-              : '—'}
-          </SummaryCard>
-
-          <SummaryCard
-            label="Net Balance"
-            subLabel="Income − Expenses"
-            icon={<ArrowLeftRight className="w-3.5 h-3.5" />}
-            loading={summaryLoading}
-          >
-            {summaryFirstCurrency
-              ? formatMoney(
-                  summaryFirstCurrency[1].net.replace('-', ''),
-                  summaryFirstCurrency[0],
-                )
-              : '—'}
-          </SummaryCard>
-
-          <SummaryCard
-            label="Transactions"
-            subLabel={`Recorded in ${MONTH_NAMES[selectedMonth - 1]}`}
-            icon={<Hash className="w-3.5 h-3.5" />}
-            loading={summaryLoading}
-          >
-            {summary ? summary.transactionCount.toLocaleString() : '—'}
-          </SummaryCard>
-        </div>
-
-        {/* Multi-currency notice */}
-        {hasMultipleCurrencies && summary && (
-          <div className="p-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-xs text-[var(--color-text-muted)]">
-            <span className="font-medium text-[var(--color-text)]">Multi-currency account · </span>
-            {Object.entries(summary.currencies).map(([cur, totals], idx) => (
-              <span key={cur}>
-                {idx > 0 && ' · '}
-                <span className="tabular-nums font-medium text-[var(--color-text)]">{cur}</span>
-                {' '}Income: {formatMoney(totals.income, cur)} / Expenses: {formatMoney(totals.expenses, cur)}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* ── AI Analyst Panel ── */}
-        <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] overflow-hidden">
-          {/* Panel header — always visible */}
-          <button
-            type="button"
-            onClick={() => setAiOpen((v) => !v)}
-            className="w-full flex items-center justify-between p-4 hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer"
-            aria-expanded={aiOpen}
-            aria-controls="ai-analyst-panel"
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-1.5 rounded-lg bg-[var(--color-primary)]/10">
-                <Sparkles className="w-4 h-4 text-[var(--color-primary)]" />
-              </div>
-              <div className="text-left">
-                <p className="text-sm font-semibold text-[var(--color-text)]">Ask about your transactions</p>
-                <p className="text-[11px] text-[var(--color-text-muted)]">
-                  Get answers based on your actual financial records
-                </p>
-              </div>
-            </div>
-            {aiOpen ? (
-              <ChevronUp className="w-4 h-4 text-[var(--color-text-muted)] shrink-0" />
-            ) : (
-              <ChevronDown className="w-4 h-4 text-[var(--color-text-muted)] shrink-0" />
-            )}
-          </button>
-
-          {/* Collapsible panel body */}
           {aiOpen && (
-            <div id="ai-analyst-panel" className="border-t border-[var(--color-border)] p-4 space-y-4">
-              {/* Question chips */}
+            <div id="ai-analyst-panel" className="space-y-4">
+              {/* Suggestion chips */}
               <div className="flex flex-wrap gap-2">
                 {SUGGESTED_QUESTIONS.map((q) => (
-                  <button
+                  <Button
                     key={q}
-                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="min-h-[40px]"
                     onClick={() => handleAskAI(q)}
                     disabled={aiLoading}
-                    className="px-3 py-1.5 rounded-full text-[11px] font-medium border border-[var(--color-border)] bg-[var(--color-bg)] hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer text-[var(--color-text-muted)] disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {q}
-                  </button>
+                  </Button>
                 ))}
               </div>
 
-              {/* Input row */}
-              <div className="flex gap-2 items-end">
-                <div className="flex-1">
-                  <label htmlFor="ai-question" className="sr-only">
-                    Ask about your transactions
-                  </label>
-                  <textarea
+              {/* Question input */}
+              <div className="space-y-2">
+                <Field id="ai-question" label="Your question">
+                  <Textarea
                     id="ai-question"
-                    ref={textareaRef}
                     value={question}
                     onChange={(e) => setQuestion(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Ask something about your spending..."
+                    placeholder="e.g. What did I spend the most on?"
                     rows={2}
                     maxLength={500}
                     disabled={aiLoading}
-                    className="w-full px-3 py-2 text-sm rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none resize-none disabled:opacity-60 transition-colors"
                   />
+                </Field>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-caption">
+                    Press Enter to send, Shift + Enter for a new line.
+                  </p>
+                  <Button
+                    variant="primary"
+                    onClick={() => handleAskAI()}
+                    disabled={!question.trim()}
+                    loading={aiLoading}
+                    className="min-h-[40px]"
+                    leadingIcon={<SendHorizonal className="h-4 w-4" aria-hidden="true" />}
+                  >
+                    Ask
+                  </Button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => handleAskAI()}
-                  disabled={!question.trim() || aiLoading}
-                  aria-label="Ask AI"
-                  className="px-4 py-2 h-[66px] rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] text-xs font-semibold transition-all flex items-center gap-1.5 shadow-md shadow-[var(--color-primary)]/15 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shrink-0"
-                >
-                  {aiLoading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <SendHorizonal className="w-4 h-4" />
-                  )}
-                  <span>Ask AI</span>
-                </button>
               </div>
 
               {/* Error state */}
               {aiError && (
-                <div className="p-3 rounded-xl border border-[var(--color-danger)]/30 bg-[var(--color-danger)]/5 text-sm text-[var(--color-text)]">
-                  <span className="font-medium">Error: </span>
+                <Alert tone="danger" title="The question couldn't be answered">
                   {aiError}
-                </div>
+                </Alert>
               )}
 
               {/* Loading state */}
               {aiLoading && (
-                <div className="flex items-center gap-2 text-sm text-[var(--color-text-muted)]">
-                  <Loader2 className="w-4 h-4 animate-spin shrink-0" />
-                  <span>Analyzing your {MONTH_NAMES[selectedMonth - 1]} transactions…</span>
+                <div className="flex items-center gap-2 text-secondary">
+                  <Spinner label="Analyzing transactions" />
+                  <span>Reading the {monthLabel} transactions…</span>
                 </div>
               )}
 
-              {/* AI Response */}
+              {/* Answer */}
               {aiResult && !aiLoading && (
                 <div className="space-y-3">
-                  {/* Answer */}
-                  <div className="p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] space-y-3">
-                    <div className="flex items-start gap-2">
-                      <MessageSquare className="w-4 h-4 text-[var(--color-primary)] shrink-0 mt-0.5" />
-                      <p className="text-sm text-[var(--color-text)] leading-relaxed">{aiResult.answer}</p>
+                  <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] p-4">
+                    <div className="flex items-start gap-2.5">
+                      <MessageSquare
+                        className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-primary-text)]"
+                        aria-hidden="true"
+                      />
+                      <p className="text-body">{aiResult.answer}</p>
                     </div>
 
-                    {/* Insights */}
                     {aiResult.insights.length > 0 && (
-                      <ul className="space-y-1 pl-6">
+                      <ul className="mt-3 list-disc space-y-1.5 border-t border-[var(--color-border)] pl-5 pt-3 marker:text-[var(--color-text-subtle)]">
                         {aiResult.insights.map((ins, i) => (
-                          <li key={i} className="text-xs text-[var(--color-text-muted)] list-disc">
+                          <li key={i} className="text-secondary">
                             {ins}
                           </li>
                         ))}
@@ -781,89 +767,59 @@ export default function TransactionsPage() {
                     )}
                   </div>
 
-                  {/* Suggested follow-up chips */}
                   {aiResult.suggestedQuestions.length > 0 && (
-                    <div className="space-y-1">
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-dim)]">
-                        Follow-up questions
-                      </p>
+                    <div className="space-y-2">
+                      <p className="text-label">Follow-up questions</p>
                       <div className="flex flex-wrap gap-2">
                         {aiResult.suggestedQuestions.map((q) => (
-                          <button
+                          <Button
                             key={q}
-                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            className="min-h-[40px]"
                             onClick={() => handleAskAI(q)}
                             disabled={aiLoading}
-                            className="px-3 py-1.5 rounded-full text-[11px] font-medium border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/5 hover:bg-[var(--color-primary)]/10 transition-colors cursor-pointer text-[var(--color-primary)] disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             {q}
-                          </button>
+                          </Button>
                         ))}
                       </div>
                     </div>
                   )}
 
-                  {/* Conversation actions */}
                   <div className="flex justify-end">
-                    <button
-                      type="button"
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="min-h-[40px]"
                       onClick={handleClearConversation}
-                      className="text-[11px] text-[var(--color-text-dim)] hover:text-[var(--color-text)] transition-colors flex items-center gap-1 cursor-pointer"
+                      leadingIcon={<RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />}
                     >
-                      <RotateCcw className="w-3 h-3" />
                       Start new conversation
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}
             </div>
           )}
-        </div>
+        </Section>
 
-        {/* ── Transaction List ── */}
-        <div className="space-y-4">
-          {/* List header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-sm font-semibold text-[var(--color-text)]">
-                {MONTH_NAMES[selectedMonth - 1]} Transactions
-              </h2>
-              <p className="text-[11px] text-[var(--color-text-muted)]">
-                {total > 0 ? `${total} record${total !== 1 ? 's' : ''}` : 'No records found'}
-              </p>
-            </div>
-          </div>
-
-          {/* Filters */}
-          <div className="p-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {/* Search */}
-              <div>
-                <label
-                  htmlFor="filter-search"
-                  className="block text-[11px] font-medium text-[var(--color-text-dim)] uppercase tracking-wider mb-1"
-                >
-                  Search
-                </label>
-                <input
+        {/* ── List: filters toolbar + one table surface with its footer ── */}
+        <Section>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div className="flex flex-wrap items-end gap-3">
+              <Field id="filter-search" label="Search" className="w-full sm:w-56">
+                <Input
                   id="filter-search"
-                  type="text"
+                  type="search"
                   value={filterSearch}
                   onChange={(e) => setFilterSearch(e.target.value)}
-                  placeholder="Search description…"
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
+                  placeholder="Description"
                 />
-              </div>
+              </Field>
 
-              {/* Type filter */}
-              <div>
-                <label
-                  htmlFor="filter-type"
-                  className="block text-[11px] font-medium text-[var(--color-text-dim)] uppercase tracking-wider mb-1"
-                >
-                  Type
-                </label>
-                <select
+              <Field id="filter-type" label="Type" className="w-full sm:w-40">
+                <Select
                   id="filter-type"
                   value={filterType}
                   onChange={(e) => {
@@ -871,56 +827,44 @@ export default function TransactionsPage() {
                     setFilterCategory('');
                     setOffset(0);
                   }}
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
                 >
-                  <option value="">All Types</option>
-                  <option value="income">Income Only</option>
-                  <option value="expense">Expense Only</option>
-                </select>
-              </div>
+                  <option value="">All types</option>
+                  <option value="income">Income</option>
+                  <option value="expense">Expense</option>
+                </Select>
+              </Field>
 
-              {/* Category filter */}
-              <div>
-                <label
-                  htmlFor="filter-category"
-                  className="block text-[11px] font-medium text-[var(--color-text-dim)] uppercase tracking-wider mb-1"
-                >
-                  Category
-                </label>
-                <select
+              <Field id="filter-category" label="Category" className="w-full sm:w-52">
+                <Select
                   id="filter-category"
                   value={filterCategory}
                   onChange={(e) => {
                     setFilterCategory(e.target.value);
                     setOffset(0);
                   }}
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
                 >
-                  <option value="">All Categories</option>
+                  <option value="">All categories</option>
                   {filteredCategories.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {c.name} ({c.type})
+                      {c.name}
                     </option>
                   ))}
-                </select>
-              </div>
+                </Select>
+              </Field>
             </div>
 
             {hasActiveFilters && (
-              <div className="mt-3 pt-3 border-t border-[var(--color-border)] flex justify-end">
-                <button
-                  type="button"
-                  onClick={handleClearFilters}
-                  className="text-xs text-[var(--color-text-dim)] hover:text-[var(--color-text)] transition-colors cursor-pointer p-1 flex items-center gap-1"
-                >
-                  <span>Reset all filters</span>
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleClearFilters}
+                className="min-h-[40px] self-start"
+              >
+                Clear filters
+              </Button>
             )}
           </div>
 
-          {/* Table */}
           <ResponsiveDataTable<Transaction>
             data={displayedTransactions}
             columns={columns}
@@ -929,66 +873,79 @@ export default function TransactionsPage() {
             actions={rowActions}
             mobileConfig={mobileConfig}
             breakpoint="md"
-            ariaLabel="Transactions ledger"
-            tableTitle={`${MONTH_NAMES[selectedMonth - 1]} ${selectedYear} Transactions`}
-            emptyTitle={`No transactions in ${MONTH_NAMES[selectedMonth - 1]} ${selectedYear}`}
+            ariaLabel={`Transactions for ${monthLabel}`}
+            emptyTitle={hasActiveFilters ? 'No matching transactions' : 'No transactions yet'}
             emptyDescription={
               hasActiveFilters
-                ? 'No transactions matched your filters. Try clearing some filters.'
-                : `You haven't recorded any transactions for ${MONTH_NAMES[selectedMonth - 1]} ${selectedYear} yet.`
+                ? 'No transactions match these filters. Try another type or category, or clear the filters.'
+                : `Nothing has been recorded for ${monthLabel}. Add your first transaction to get started.`
             }
-            emptyIcon={<ReceiptText className="w-5 h-5 opacity-70" />}
+            emptyIcon={<ReceiptText aria-hidden="true" />}
             emptyAction={
-              <Link
+              <ButtonLink
                 href="/transactions/new"
-                className="px-4 py-2 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] text-xs font-semibold transition-colors inline-block shadow-md shadow-[var(--color-primary)]/15 cursor-pointer"
+                variant="primary"
+                className="min-h-[40px]"
+                leadingIcon={<Plus className="h-4 w-4" aria-hidden="true" />}
               >
-                Add a Transaction
-              </Link>
+                New transaction
+              </ButtonLink>
             }
+            footer={paginationFooter}
           />
-
-          {/* Pagination */}
-          <div className="p-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[var(--color-text-muted)] shadow-[var(--shadow-card)]">
-            <span>
-              Showing {displayedTransactions.length > 0 ? offset + 1 : 0} to{' '}
-              {Math.min(offset + displayedTransactions.length, total)} of {total} records
-            </span>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                disabled={offset === 0 || listLoading}
-                onClick={() => setOffset(Math.max(0, offset - limit))}
-                className="px-3.5 py-2 min-h-[38px] rounded-lg border border-[var(--color-border)] hover:bg-[var(--color-surface-hover)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer text-xs font-medium"
-              >
-                Previous
-              </button>
-              <button
-                type="button"
-                disabled={offset + limit >= total || listLoading}
-                onClick={() => setOffset(offset + limit)}
-                className="px-3.5 py-2 min-h-[38px] rounded-lg border border-[var(--color-border)] hover:bg-[var(--color-surface-hover)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer text-xs font-medium"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        </div>
+        </Section>
       </div>
 
-      {/* Delete confirmation dialog */}
+      {/* Delete confirmation */}
       <ConfirmDialog
         open={!!deleteTarget}
-        title="Delete Transaction"
+        title="Delete transaction"
         message={
           deleteTarget
-            ? `Are you sure you want to permanently delete this ${deleteTarget.type} transaction of ${formatMoney(deleteTarget.amount, deleteTarget.currency)}? This action cannot be undone.`
+            ? `This permanently deletes the ${deleteTarget.type} transaction of ${formatMoney(deleteTarget.amount, deleteTarget.currency)}. This can't be undone.`
             : ''
         }
-        confirmLabel="Confirm Delete"
+        confirmLabel="Delete transaction"
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
       />
     </AppShell>
+  );
+}
+
+function TransactionsFallback() {
+  return (
+    <AppShell>
+      <div className="space-y-6" aria-busy="true">
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-4 w-80 max-w-full" />
+        </div>
+        <Skeleton className="h-9 w-full max-w-md" />
+        <div className="grid grid-cols-1 border-y border-[var(--color-border)] sm:grid-cols-2 lg:grid-cols-4">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="space-y-2 px-4 py-5">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-7 w-32" />
+            </div>
+          ))}
+        </div>
+        <Skeleton className="h-12 w-full" />
+        <div className="space-y-3">
+          <Skeleton className="h-11 w-full" />
+          {[0, 1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-14 w-full" />
+          ))}
+        </div>
+      </div>
+    </AppShell>
+  );
+}
+
+export default function TransactionsPage() {
+  return (
+    <Suspense fallback={<TransactionsFallback />}>
+      <TransactionsPageContent />
+    </Suspense>
   );
 }

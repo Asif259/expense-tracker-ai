@@ -8,7 +8,70 @@ import { getTransaction, updateTransaction } from '@/lib/api';
 import { fetchCategories, Category } from '@/lib/categories';
 import { SUPPORTED_CURRENCIES } from '@/lib/format';
 import { toast } from '@/components/toast';
-import Link from 'next/link';
+import { ArrowDownLeft, ArrowUpRight } from 'lucide-react';
+import {
+  Alert,
+  Badge,
+  Button,
+  ButtonLink,
+  Card,
+  Field,
+  Input,
+  PageHeader,
+  Select,
+  Skeleton,
+} from '@/components/ui';
+
+function FormSkeleton() {
+  return (
+    <div className="mx-auto max-w-2xl space-y-6" aria-busy="true">
+      <p role="status" className="sr-only">
+        Loading transaction…
+      </p>
+      <div className="space-y-2">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-4 w-64" />
+      </div>
+      <Card padding="lg">
+        <div className="space-y-5">
+          <div className="space-y-2">
+            <Skeleton className="h-3 w-10" />
+            <div className="grid grid-cols-2 gap-2">
+              <Skeleton className="h-11" />
+              <Skeleton className="h-11" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="space-y-2 sm:col-span-2">
+              <Skeleton className="h-3 w-16" />
+              <Skeleton className="h-10" />
+            </div>
+            <div className="space-y-2">
+              <Skeleton className="h-3 w-16" />
+              <Skeleton className="h-10" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-3 w-16" />
+            <Skeleton className="h-10" />
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-3 w-12" />
+            <Skeleton className="h-10" />
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-10" />
+          </div>
+          <div className="flex flex-col-reverse gap-2 border-t border-[var(--color-border)] pt-4 sm:flex-row sm:justify-end">
+            <Skeleton className="h-11 w-24" />
+            <Skeleton className="h-11 w-36" />
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+}
 
 function EditTransactionForm() {
   const router = useRouter();
@@ -20,6 +83,9 @@ function EditTransactionForm() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Field-level validation messages (same rules and wording as before)
+  const [amountError, setAmountError] = useState<string | null>(null);
 
   // Form fields
   const [type, setType] = useState<'income' | 'expense'>('expense');
@@ -82,30 +148,32 @@ function EditTransactionForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
+    setAmountError(null);
 
+    // Validation — same rules and messages, now shown next to the field
     const cleanAmount = amount.trim();
     if (!cleanAmount) {
-      setErrorMsg('Amount is required.');
+      setAmountError('Amount is required.');
       return;
     }
 
     if (!/^\d+(\.\d+)?$/.test(cleanAmount)) {
-      setErrorMsg('Amount must be a valid positive decimal number.');
+      setAmountError('Amount must be a valid positive decimal number.');
       return;
     }
 
     const parts = cleanAmount.split('.');
     if (parts[0].length > 13) {
-      setErrorMsg('Amount cannot exceed 13 integer digits.');
+      setAmountError('Amount cannot exceed 13 integer digits.');
       return;
     }
     if (parts[1] && parts[1].length > 2) {
-      setErrorMsg('Amount cannot have more than 2 decimal places.');
+      setAmountError('Amount cannot have more than 2 decimal places.');
       return;
     }
     const num = parseFloat(cleanAmount);
     if (num <= 0) {
-      setErrorMsg('Amount must be greater than zero.');
+      setAmountError('Amount must be greater than zero.');
       return;
     }
 
@@ -123,7 +191,7 @@ function EditTransactionForm() {
         description: description.trim() || null,
       });
 
-      toast('Transaction updated successfully!', 'success');
+      toast('Transaction updated', 'success');
       router.push('/transactions');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to update transaction';
@@ -135,203 +203,172 @@ function EditTransactionForm() {
   };
 
   if (loading) {
-    return (
-      <div className="max-w-2xl mx-auto py-12 flex justify-center">
-        <div className="animate-spin h-8 w-8 border-2 border-[var(--color-primary)] border-t-transparent rounded-full" />
-      </div>
-    );
+    return <FormSkeleton />;
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Edit Transaction</h1>
-        <p className="text-xs text-[var(--color-text-muted)] mt-1">
-          Update existing verified ledger record.
-        </p>
-      </div>
+    <div className="mx-auto max-w-2xl space-y-6">
+      <PageHeader title="Edit transaction" description="Update this transaction's details." />
 
+      {/* Load / API errors */}
       {errorMsg && (
-        <div className="p-3.5 rounded-lg border border-[var(--color-danger)]/50 bg-[var(--color-expense-bg)] text-xs text-[var(--color-expense)] flex items-start gap-2">
-          <span>⚠️</span>
-          <span>{errorMsg}</span>
-        </div>
+        <Alert tone="danger" title="The transaction wasn't saved">
+          {errorMsg}
+        </Alert>
       )}
 
-      <form
-        onSubmit={handleSubmit}
-        className="p-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] space-y-5"
-      >
-        {/* Type Toggle */}
-        <div>
-          <label className="block text-xs font-medium text-[var(--color-text-dim)] uppercase tracking-wider mb-2">
-            Transaction Type
-          </label>
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => handleTypeChange('expense')}
-              className={`py-2 text-xs font-semibold rounded-lg border transition-colors cursor-pointer flex items-center justify-center gap-2 ${
-                type === 'expense'
-                  ? 'border-[var(--color-expense)] bg-[var(--color-expense-bg)] text-[var(--color-expense)]'
-                  : 'border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-border-hover)]'
-              }`}
-            >
-              <span>↑</span>
-              <span>Expense (Outgoing)</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleTypeChange('income')}
-              className={`py-2 text-xs font-semibold rounded-lg border transition-colors cursor-pointer flex items-center justify-center gap-2 ${
-                type === 'income'
-                  ? 'border-[var(--color-income)] bg-[var(--color-income-bg)] text-[var(--color-income)]'
-                  : 'border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-border-hover)]'
-              }`}
-            >
-              <span>↓</span>
-              <span>Income (Incoming)</span>
-            </button>
+      <Card padding="lg">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Type */}
+          <div role="group" aria-label="Transaction type" className="space-y-1.5">
+            <p className="text-label" aria-hidden="true">
+              Type
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                aria-pressed={type === 'expense'}
+                onClick={() => handleTypeChange('expense')}
+                className={`inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-[var(--radius-md)] border px-3 text-[13px] font-medium transition-colors duration-[var(--duration-fast)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)] ${
+                  type === 'expense'
+                    ? 'border-[var(--color-primary)] bg-[var(--color-primary-subtle)] text-[var(--color-primary-text)]'
+                    : 'border-[var(--color-border-strong)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text)]'
+                }`}
+              >
+                <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+                Expense
+              </button>
+              <button
+                type="button"
+                aria-pressed={type === 'income'}
+                onClick={() => handleTypeChange('income')}
+                className={`inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-[var(--radius-md)] border px-3 text-[13px] font-medium transition-colors duration-[var(--duration-fast)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)] ${
+                  type === 'income'
+                    ? 'border-[var(--color-primary)] bg-[var(--color-primary-subtle)] text-[var(--color-primary-text)]'
+                    : 'border-[var(--color-border-strong)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text)]'
+                }`}
+              >
+                <ArrowDownLeft className="h-4 w-4" aria-hidden="true" />
+                Income
+              </button>
+            </div>
           </div>
-        </div>
 
-        {/* Amount & Currency Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="sm:col-span-2">
-            <label htmlFor="edit-amount" className="block text-xs font-medium text-[var(--color-text-muted)] mb-1.5">
-              Amount <span className="text-[var(--color-danger)]">*</span>
-            </label>
-            <input
+          {/* Amount + Currency */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <Field
               id="edit-amount"
-              name="amount"
-              type="text"
+              label="Amount"
               required
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className="w-full px-3.5 py-2.5 text-sm tabular-nums rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="edit-currency" className="block text-xs font-medium text-[var(--color-text-muted)] mb-1.5">
-              Currency
-            </label>
-            <select
-              id="edit-currency"
-              name="currency"
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value)}
-              className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
+              error={amountError ?? undefined}
+              hint="Up to 2 decimal places."
+              className="sm:col-span-2"
             >
-              {SUPPORTED_CURRENCIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
+              <Input
+                id="edit-amount"
+                name="amount"
+                type="text"
+                inputMode="decimal"
+                autoComplete="off"
+                required
+                value={amount}
+                invalid={Boolean(amountError)}
+                onChange={(e) => {
+                  setAmount(e.target.value);
+                  if (amountError) setAmountError(null);
+                }}
+                className="tabular-nums"
+              />
+            </Field>
+
+            <Field id="edit-currency" label="Currency">
+              <Select
+                id="edit-currency"
+                name="currency"
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+              >
+                {SUPPORTED_CURRENCIES.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </Select>
+            </Field>
           </div>
-        </div>
 
-        {/* Category */}
-        <div>
-          <label htmlFor="edit-category" className="block text-xs font-medium text-[var(--color-text-muted)] mb-1.5">
-            Category <span className="text-[var(--color-danger)]">*</span>
-          </label>
-          <select
-            id="edit-category"
-            name="categoryId"
-            required
-            disabled={filteredCategories.length === 0}
-            value={categoryId}
-            onChange={(e) => setCategoryId(e.target.value)}
-            className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none disabled:opacity-50"
-          >
-            {filteredCategories.length === 0 ? (
-              <option value="">No {type} categories available in database</option>
-            ) : (
-              filteredCategories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))
-            )}
-          </select>
-          {categories.length === 0 && (
-            <span className="text-xs text-[var(--color-warning)] mt-1 block">
-              ⚠️ Categories unavailable from database. Connect live database and run migrations to create categories.
-            </span>
-          )}
-        </div>
+          {/* Category */}
+          <Field id="edit-category" label="Category" required>
+            <Select
+              id="edit-category"
+              name="categoryId"
+              required
+              disabled={filteredCategories.length === 0}
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+            >
+              {filteredCategories.length === 0 ? (
+                <option value="">No categories available</option>
+              ) : (
+                filteredCategories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))
+              )}
+            </Select>
+          </Field>
 
-        {/* Date */}
-        <div>
-          <label htmlFor="edit-date" className="block text-xs font-medium text-[var(--color-text-muted)] mb-1.5">
-            Transaction Date <span className="text-[var(--color-danger)]">*</span>
-          </label>
-          <input
-            id="edit-date"
-            name="transactionDate"
-            type="date"
-            required
-            value={transactionDate}
-            onChange={(e) => setTransactionDate(e.target.value)}
-            className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
-          />
-        </div>
+          {/* Date */}
+          <Field id="edit-date" label="Date" required>
+            <Input
+              id="edit-date"
+              name="transactionDate"
+              type="date"
+              required
+              value={transactionDate}
+              onChange={(e) => setTransactionDate(e.target.value)}
+            />
+          </Field>
 
-        {/* Description */}
-        <div>
-          <label htmlFor="edit-description" className="block text-xs font-medium text-[var(--color-text-muted)] mb-1.5">
-            Description
-          </label>
-          <input
-            id="edit-description"
-            name="description"
-            type="text"
-            maxLength={500}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
-          />
-        </div>
+          {/* Description */}
+          <Field id="edit-description" label="Description" hint="Optional, up to 500 characters.">
+            <Input
+              id="edit-description"
+              name="description"
+              type="text"
+              maxLength={500}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </Field>
 
-        {/* Live Preview */}
-        {amount && !isNaN(parseFloat(amount)) && parseFloat(amount) > 0 && (
-          <div className="p-3.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] flex items-center justify-between text-xs">
-            <div className="flex items-center gap-2">
-              <span className={`w-2 h-2 rounded-full ${type === 'income' ? 'bg-[var(--color-income)]' : 'bg-[var(--color-expense)]'}`} />
-              <span className="text-[var(--color-text-muted)]">Updated Value:</span>
-              <span className="font-semibold text-[var(--color-text)] capitalize">{type}</span>
-            </div>
-            <div className="tabular-nums font-bold text-sm text-[var(--color-text)] flex items-center gap-1.5">
-              <span className={`text-[10px] px-1.5 py-0.5 rounded font-sans font-semibold ${type === 'income' ? 'bg-[var(--color-pale-mint)] text-[var(--color-text)]' : 'bg-[var(--color-pale-yellow)] text-[var(--color-text)]'}`}>
-                {type === 'income' ? '↑ Inflow' : '↓ Outflow'}
+          {/* Entry preview */}
+          {amount && !isNaN(parseFloat(amount)) && parseFloat(amount) > 0 && (
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[var(--color-border)] pt-4">
+              <span className="text-secondary">This transaction</span>
+              <span className="flex items-center gap-2">
+                <Badge tone={type === 'income' ? 'success' : 'neutral'} dot>
+                  {type === 'income' ? 'Income' : 'Expense'}
+                </Badge>
+                <span className="text-metric-sm tabular-nums">
+                  {amount} {currency}
+                </span>
               </span>
-              <span>{amount} {currency}</span>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Actions */}
-        <div className="pt-3 border-t border-[var(--color-border)] flex items-center justify-end gap-3">
-          <Link
-            href="/transactions"
-            className="px-4 py-2 text-xs font-medium rounded-lg border border-[var(--color-border)] hover:bg-[var(--color-surface-hover)] text-[var(--color-text-muted)] transition-colors"
-          >
-            Cancel
-          </Link>
-          <button
-            type="submit"
-            disabled={saving}
-            className="px-5 py-2.5 text-xs font-semibold rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)] transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-2 shadow-md shadow-[var(--color-primary)]/15"
-          >
-            {saving && (
-              <div className="animate-spin h-3.5 w-3.5 border-2 border-[var(--color-primary-contrast)] border-t-transparent rounded-full" />
-            )}
-            <span>{saving ? 'Updating...' : 'Save Changes'}</span>
-          </button>
-        </div>
-      </form>
+          {/* Actions */}
+          <div className="flex flex-col-reverse gap-2 border-t border-[var(--color-border)] pt-4 sm:flex-row sm:justify-end">
+            <ButtonLink href="/transactions" variant="secondary" size="lg">
+              Cancel
+            </ButtonLink>
+            <Button type="submit" variant="primary" size="lg" loading={saving}>
+              Save changes
+            </Button>
+          </div>
+        </form>
+      </Card>
     </div>
   );
 }
@@ -339,13 +376,7 @@ function EditTransactionForm() {
 export default function EditTransactionPage() {
   return (
     <AppShell>
-      <Suspense
-        fallback={
-          <div className="max-w-2xl mx-auto py-12 flex justify-center">
-            <div className="animate-spin h-8 w-8 border-2 border-[var(--color-primary)] border-t-transparent rounded-full" />
-          </div>
-        }
-      >
+      <Suspense fallback={<FormSkeleton />}>
         <EditTransactionForm />
       </Suspense>
     </AppShell>
