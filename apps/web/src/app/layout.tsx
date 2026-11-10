@@ -33,11 +33,11 @@ export const metadata: Metadata = {
     process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000',
   ),
   title: {
-    default: 'Ledgerly — Expense tracker',
+    default: 'Ledgerly | Make Sense of Your Money',
     template: '%s · Ledgerly',
   },
   description:
-    'Record daily income and expenses, review spending by category, and keep track of money lent or borrowed. Your records stay private to your account.',
+    'Track expenses, manage budgets, understand spending patterns, and organize debts with Ledgerly, your personal finance companion.',
 };
 
 export const viewport: Viewport = {
