@@ -414,7 +414,11 @@ export default function DashboardPage() {
         )}
 
         {/* Net cash flow is the one dominant number; the rest are a quiet strip. */}
-        <section aria-labelledby="cash-flow-summary" className="surface-card p-5 sm:p-6">
+        <div className="rounded-[var(--radius-2xl)] border border-[var(--color-border-sky)] bg-gradient-to-b from-[#f2f8ff] to-[var(--color-surface)] p-1.5 shadow-[var(--shadow-sm)] dark:border-sky-900/40 dark:from-slate-900 dark:to-slate-950">
+          <section
+            aria-labelledby="cash-flow-summary"
+            className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 sm:p-6"
+          >
           <h2 id="cash-flow-summary" className="sr-only">
             Cash flow summary
           </h2>
@@ -537,7 +541,8 @@ export default function DashboardPage() {
               />
             </div>
           </div>
-        </section>
+          </section>
+        </div>
 
         {/* Other currencies held in the account */}
         {otherCurrencies.length > 0 && (
@@ -743,8 +748,9 @@ export default function DashboardPage() {
 
           {/* Context column: a calm summary and question entry */}
           <div className="space-y-8 lg:col-span-4">
-            <Card className="p-5">
-              <h2 className="text-card-title">At a glance</h2>
+            <div className="rounded-[var(--radius-2xl)] border border-[var(--color-border-sky)] bg-gradient-to-b from-[#f2f8ff] to-[var(--color-surface)] p-1.5 shadow-[var(--shadow-sm)] dark:border-sky-900/40 dark:from-slate-900 dark:to-slate-950">
+              <Card className="rounded-[var(--radius-xl)] p-5">
+                <h2 className="text-card-title">At a glance</h2>
 
               <div className="text-secondary mt-1.5">
                 {loading ? (
@@ -835,7 +841,8 @@ export default function DashboardPage() {
                   </p>
                 </div>
               </dl>
-            </Card>
+              </Card>
+            </div>
 
             <Section title="Ask about your spending">
               <ul className="divide-y divide-[var(--color-border)] border-y border-[var(--color-border)]">

@@ -399,20 +399,20 @@ describe('Chart.js Financial Data Aggregation', () => {
   describe('Chart Theme & Strict Financial Number Styling', () => {
     it('uses the light theme neutral text and surface tokens', () => {
       const lightPalette = getChartPalette('light');
-      expect(lightPalette.textPrimary).toBe('#16201D');
+      expect(lightPalette.textPrimary).toBe('#0F172A');
       expect(lightPalette.cardBg).toBe('#FFFFFF');
-      expect(lightPalette.canvasBg).toBe('#F7F9F8');
-      expect(lightPalette.income).toBe('#0F7A5C');
-      expect(lightPalette.expense).toBe('#C81E4B');
+      expect(lightPalette.canvasBg).toBe('#F8FAFC');
+      expect(lightPalette.income).toBe('#059669');
+      expect(lightPalette.expense).toBe('#E11D48');
     });
 
     it('uses the dark theme neutral text and surface tokens', () => {
       const darkPalette = getChartPalette('dark');
-      expect(darkPalette.textPrimary).toBe('#EDF2F7');
-      expect(darkPalette.cardBg).toBe('#151D30');
-      expect(darkPalette.canvasBg).toBe('#0B0F17');
-      expect(darkPalette.income).toBe('#4CC79F');
-      expect(darkPalette.expense).toBe('#FF7A93');
+      expect(darkPalette.textPrimary).toBe('#F8FAFC');
+      expect(darkPalette.cardBg).toBe('#0F172A');
+      expect(darkPalette.canvasBg).toBe('#090F1C');
+      expect(darkPalette.income).toBe('#34D399');
+      expect(darkPalette.expense).toBe('#FB7185');
     });
 
     it('configures tooltip to render body and title in neutral text tokens', () => {

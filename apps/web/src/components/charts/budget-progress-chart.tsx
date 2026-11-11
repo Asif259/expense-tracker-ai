@@ -56,7 +56,12 @@ export function BudgetProgressChart({
         {
           label: 'Spent',
           data: data.map((d) => d.spent),
-          backgroundColor: data.map((d) => (d.isOverBudget ? palette.expense : palette.income)),
+          backgroundColor: data.map((d) => {
+            const usedPercent = d.limit > 0 ? (d.spent / d.limit) * 100 : 0;
+            if (d.isOverBudget || usedPercent >= 100) return palette.expense;
+            if (usedPercent >= 80) return palette.amber;
+            return palette.primary;
+          }),
           borderRadius: 4,
           borderSkipped: false,
           barPercentage: 0.6,

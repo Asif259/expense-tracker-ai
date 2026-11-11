@@ -650,10 +650,6 @@ export default function HomePage() {
               {/* Top Split Headline & Right CTA Block (Matches Video 00:00) */}
               <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
                 <Reveal className="lg:col-span-7">
-                  <span className="inline-flex items-center gap-2 rounded-full border border-[#2B75B6]/20 bg-white/70 px-3.5 py-1 text-xs font-medium text-[#1E3A5F] shadow-2xs backdrop-blur-sm dark:border-sky-400/20 dark:bg-slate-900/70 dark:text-sky-300">
-                    <Sparkles className="h-3.5 w-3.5 text-[#2B75B6] dark:text-sky-400" />
-                    Personal finance, made clear
-                  </span>
                   <h1 className="mt-4 font-display text-[2.75rem] leading-[1.06] font-normal tracking-[-0.025em] text-[var(--color-text)] sm:text-[3.75rem] lg:text-[4.4rem]">
                     <span className="block">Make Sense of</span>
                     <span className="block">Your Money.</span>

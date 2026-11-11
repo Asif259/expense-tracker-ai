@@ -231,8 +231,9 @@ function AiEntryInner() {
         />
 
         {/* Input */}
-        <Card className="p-5 sm:p-6">
-          <form onSubmit={handleParse} className="space-y-5">
+        <div className="rounded-[var(--radius-2xl)] border border-[var(--color-border-sky)] bg-gradient-to-b from-[#f2f8ff] to-[var(--color-surface)] p-1.5 shadow-[var(--shadow-sm)] dark:border-sky-900/40 dark:from-slate-900 dark:to-slate-950">
+          <Card className="p-5 sm:p-6">
+            <form onSubmit={handleParse} className="space-y-5">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
               <Field
                 id="transaction-description-input"
@@ -309,6 +310,7 @@ function AiEntryInner() {
             </div>
           </form>
         </Card>
+      </div>
 
         {/* Parse failure */}
         {parseError && (

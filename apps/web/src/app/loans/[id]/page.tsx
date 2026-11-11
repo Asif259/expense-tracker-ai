@@ -394,82 +394,84 @@ function LoanDetailContent() {
         />
 
         {/* Balance summary */}
-        <Card padding="lg" className="space-y-5">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="min-w-0">
-              <p className="text-label text-[var(--color-text-muted)]">
-                {isLent ? 'Remaining to collect' : 'Remaining to repay'}
-              </p>
-              <p className="text-metric-xl mt-1 tabular-nums">
-                {formatMoney(loan.outstanding_balance, loan.currency)}
-              </p>
-              <p className="text-secondary mt-1.5 tabular-nums">
-                {formatMoney(loan.principal_amount, loan.currency)} original
-                <span aria-hidden="true"> · </span>
-                {formatMoney(loan.total_repaid, loan.currency)} repaid
-              </p>
+        <div className="rounded-[var(--radius-2xl)] border border-[var(--color-border-sky)] bg-gradient-to-b from-[#f2f8ff] to-[var(--color-surface)] p-1.5 shadow-[var(--shadow-sm)] dark:border-sky-900/40 dark:from-slate-900 dark:to-slate-950">
+          <Card padding="lg" className="space-y-5">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
+                <p className="text-label text-[var(--color-text-muted)]">
+                  {isLent ? 'Remaining to collect' : 'Remaining to repay'}
+                </p>
+                <p className="text-metric-xl mt-1 tabular-nums">
+                  {formatMoney(loan.outstanding_balance, loan.currency)}
+                </p>
+                <p className="text-secondary mt-1.5 tabular-nums">
+                  {formatMoney(loan.principal_amount, loan.currency)} original
+                  <span aria-hidden="true"> · </span>
+                  {formatMoney(loan.total_repaid, loan.currency)} repaid
+                </p>
+              </div>
+              <div className="sm:text-right">
+                <p className="text-label text-[var(--color-text-muted)]">Progress</p>
+                <p className="text-metric-sm mt-1 tabular-nums">{progress}% repaid</p>
+                <p className="text-caption mt-0.5">
+                  {isSettled ? 'Fully settled' : `${formatMoney(loan.outstanding_balance, loan.currency)} left`}
+                </p>
+              </div>
             </div>
-            <div className="sm:text-right">
-              <p className="text-label text-[var(--color-text-muted)]">Progress</p>
-              <p className="text-metric-sm mt-1 tabular-nums">{progress}% repaid</p>
-              <p className="text-caption mt-0.5">
-                {isSettled ? 'Fully settled' : `${formatMoney(loan.outstanding_balance, loan.currency)} left`}
-              </p>
-            </div>
-          </div>
 
-          <div>
-            <div
-              role="progressbar"
-              aria-label="Loan repayment progress"
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={progress}
-              className="h-2 w-full overflow-hidden rounded-full bg-[var(--color-surface-sunken)]"
-            >
+            <div>
               <div
-                className={`h-full rounded-full transition-[width] duration-150 ${progressColor(loan.status)}`}
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-            <div className="mt-1.5 flex flex-wrap justify-between gap-2 text-caption tabular-nums">
-              <span>{formatMoney(loan.total_repaid, loan.currency)} repaid</span>
-              <span>{formatMoney(loan.outstanding_balance, loan.currency)} remaining</span>
-            </div>
-          </div>
-
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-4 border-t border-[var(--color-border)] pt-5 sm:grid-cols-4">
-            <div>
-              <dt className="text-caption">Loan date</dt>
-              <dd className="text-body mt-0.5 tabular-nums">{formatDate(loan.loan_date)}</dd>
-            </div>
-            <div>
-              <dt className="text-caption">Due date</dt>
-              <dd
-                className={`text-body mt-0.5 tabular-nums ${
-                  isOverdue ? 'text-[var(--color-warning)]' : ''
-                }`}
+                role="progressbar"
+                aria-label="Loan repayment progress"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={progress}
+                className="h-2 w-full overflow-hidden rounded-full bg-[var(--color-surface-sunken)]"
               >
-                {loan.due_date ? formatDate(loan.due_date) : 'No due date'}
-              </dd>
+                <div
+                  className={`h-full rounded-full transition-[width] duration-150 ${progressColor(loan.status)}`}
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+              <div className="mt-1.5 flex flex-wrap justify-between gap-2 text-caption tabular-nums">
+                <span>{formatMoney(loan.total_repaid, loan.currency)} repaid</span>
+                <span>{formatMoney(loan.outstanding_balance, loan.currency)} remaining</span>
+              </div>
             </div>
-            <div>
-              <dt className="text-caption">Method</dt>
-              <dd className="text-body mt-0.5">{METHOD_LABELS[loan.payment_method]}</dd>
-            </div>
-            <div>
-              <dt className="text-caption">Currency</dt>
-              <dd className="text-body mt-0.5">{loan.currency}</dd>
-            </div>
-          </dl>
 
-          {loan.notes && (
-            <div className="border-t border-[var(--color-border)] pt-4">
-              <p className="text-caption">Notes</p>
-              <p className="text-body mt-1 whitespace-pre-line">{loan.notes}</p>
-            </div>
-          )}
-        </Card>
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-4 border-t border-[var(--color-border)] pt-5 sm:grid-cols-4">
+              <div>
+                <dt className="text-caption">Loan date</dt>
+                <dd className="text-body mt-0.5 tabular-nums">{formatDate(loan.loan_date)}</dd>
+              </div>
+              <div>
+                <dt className="text-caption">Due date</dt>
+                <dd
+                  className={`text-body mt-0.5 tabular-nums ${
+                    isOverdue ? 'text-[var(--color-warning)]' : ''
+                  }`}
+                >
+                  {loan.due_date ? formatDate(loan.due_date) : 'No due date'}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-caption">Method</dt>
+                <dd className="text-body mt-0.5">{METHOD_LABELS[loan.payment_method]}</dd>
+              </div>
+              <div>
+                <dt className="text-caption">Currency</dt>
+                <dd className="text-body mt-0.5">{loan.currency}</dd>
+              </div>
+            </dl>
+
+            {loan.notes && (
+              <div className="border-t border-[var(--color-border)] pt-4">
+                <p className="text-caption">Notes</p>
+                <p className="text-body mt-1 whitespace-pre-line">{loan.notes}</p>
+              </div>
+            )}
+          </Card>
+        </div>
 
         {/* Repayment history */}
         <Section

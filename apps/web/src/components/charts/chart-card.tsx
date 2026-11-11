@@ -52,7 +52,7 @@ export function ChartCard({
 
   return (
     <section
-      className={`surface-card flex flex-col p-4 sm:p-5 ${className}`.trim()}
+      className={`surface-card flex flex-col border-[var(--color-border-sky)] p-4 sm:p-5 ${className}`.trim()}
       aria-label={title}
     >
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">

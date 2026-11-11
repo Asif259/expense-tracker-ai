@@ -590,102 +590,112 @@ function TransactionsPageContent() {
           }
         />
 
-        {/* ── Month context + summary ── */}
-        <Section>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-card-title">{monthLabel}</h2>
-            <div className="flex items-center gap-1.5">
-              {!isCurrentMonth && (
-                <Button variant="ghost" size="sm" className="min-h-[40px]" onClick={goToCurrentMonth}>
-                  This month
-                </Button>
-              )}
-              <IconButton
-                variant="secondary"
-                size="lg"
-                label="Previous month"
-                onClick={goToPrevMonth}
-              >
-                <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-              </IconButton>
-              <IconButton
-                variant="secondary"
-                size="lg"
-                label="Next month"
-                onClick={goToNextMonth}
-                disabled={isNextDisabled}
-              >
-                <ChevronRight className="h-4 w-4" aria-hidden="true" />
-              </IconButton>
+        {/* ── Month context + summary (Bento KPI Container) ── */}
+        <div className="rounded-[var(--radius-2xl)] border border-[var(--color-border-sky)] bg-gradient-to-b from-[#f2f8ff] to-[var(--color-surface)] p-1.5 shadow-[var(--shadow-sm)] dark:border-sky-900/40 dark:from-slate-900 dark:to-slate-950">
+          <section
+            aria-labelledby="month-activity-heading"
+            className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 sm:p-5 space-y-4"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 id="month-activity-heading" className="text-card-title">{monthLabel}</h2>
+              <div className="flex items-center gap-1.5">
+                {!isCurrentMonth && (
+                  <Button variant="ghost" size="sm" className="min-h-[40px]" onClick={goToCurrentMonth}>
+                    This month
+                  </Button>
+                )}
+                <IconButton
+                  variant="secondary"
+                  size="lg"
+                  label="Previous month"
+                  onClick={goToPrevMonth}
+                >
+                  <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                </IconButton>
+                <IconButton
+                  variant="secondary"
+                  size="lg"
+                  label="Next month"
+                  onClick={goToNextMonth}
+                  disabled={isNextDisabled}
+                >
+                  <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                </IconButton>
+              </div>
             </div>
-          </div>
 
-          <StatStrip>
-            <Metric
-              size="lg"
-              label="Net balance"
-              hint="Income minus expenses"
-              className="py-3.5 sm:px-4 sm:first:pl-0"
-              value={
-                summaryLoading ? (
-                  <Skeleton className="h-7 w-28" />
-                ) : (
-                  <span className="tabular-nums">{netValue}</span>
-                )
-              }
-            />
-            <Metric
-              label="Income"
-              className="py-3.5 sm:px-4 sm:first:pl-0"
-              value={
-                summaryLoading ? <Skeleton className="h-6 w-24" /> : <span className="tabular-nums">{incomeValue}</span>
-              }
-            />
-            <Metric
-              label="Expenses"
-              className="py-3.5 sm:px-4 sm:first:pl-0"
-              value={
-                summaryLoading ? <Skeleton className="h-6 w-24" /> : <span className="tabular-nums">{expensesValue}</span>
-              }
-            />
-            <Metric
-              label="Transactions"
-              className="py-3.5 sm:px-4 sm:first:pl-0"
-              value={
-                summaryLoading ? <Skeleton className="h-6 w-12" /> : <span className="tabular-nums">{countValue}</span>
-              }
-            />
-          </StatStrip>
+            <StatStrip>
+              <Metric
+                size="lg"
+                label="Net balance"
+                hint="Income minus expenses"
+                className="py-3.5 sm:px-4 sm:first:pl-0"
+                value={
+                  summaryLoading ? (
+                    <Skeleton className="h-7 w-28" />
+                  ) : (
+                    <span className="tabular-nums">{netValue}</span>
+                  )
+                }
+              />
+              <Metric
+                label="Income"
+                className="py-3.5 sm:px-4 sm:first:pl-0"
+                value={
+                  summaryLoading ? <Skeleton className="h-6 w-24" /> : <span className="tabular-nums">{incomeValue}</span>
+                }
+              />
+              <Metric
+                label="Expenses"
+                className="py-3.5 sm:px-4 sm:first:pl-0"
+                value={
+                  summaryLoading ? <Skeleton className="h-6 w-24" /> : <span className="tabular-nums">{expensesValue}</span>
+                }
+              />
+              <Metric
+                label="Transactions"
+                className="py-3.5 sm:px-4 sm:first:pl-0"
+                value={
+                  summaryLoading ? <Skeleton className="h-6 w-12" /> : <span className="tabular-nums">{countValue}</span>
+                }
+              />
+            </StatStrip>
 
-          {hasMultipleCurrencies && summary && (
-            <p className="text-caption border-t border-[var(--color-border)] pt-3">
-              <span className="text-[var(--color-text-secondary)]">Multiple currencies this month: </span>
-              {Object.entries(summary.currencies).map(([cur, totals], idx) => (
-                <span key={cur}>
-                  {idx > 0 && ', '}
-                  <span className="tabular-nums text-[var(--color-text-secondary)]">{cur}</span>{' '}
-                  income {formatMoney(totals.income, cur)}, expenses {formatMoney(totals.expenses, cur)}
-                </span>
-              ))}
-            </p>
-          )}
-        </Section>
+            {hasMultipleCurrencies && summary && (
+              <p className="text-caption border-t border-[var(--color-border)] pt-3">
+                <span className="text-[var(--color-text-secondary)]">Multiple currencies this month: </span>
+                {Object.entries(summary.currencies).map(([cur, totals], idx) => (
+                  <span key={cur}>
+                    {idx > 0 && ', '}
+                    <span className="tabular-nums text-[var(--color-text-secondary)]">{cur}</span>{' '}
+                    income {formatMoney(totals.income, cur)}, expenses {formatMoney(totals.expenses, cur)}
+                  </span>
+                ))}
+              </p>
+            )}
+          </section>
+        </div>
 
-        {/* ── AI analyst: a section with a disclosure header, not a card ── */}
-        <Section>
-          <div className="border-y border-[var(--color-border)]">
+        {/* ── AI analyst: structured container with sky border & sparkle badge ── */}
+        <section aria-label="AI Transaction Analyst">
+          <div className="overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border-sky)] bg-[var(--color-surface)] shadow-[var(--shadow-sm)]">
             <h2 className="m-0">
               <button
                 type="button"
                 onClick={() => setAiOpen((v) => !v)}
                 aria-expanded={aiOpen}
                 aria-controls="ai-analyst-panel"
-                className="flex w-full cursor-pointer items-center justify-between gap-3 py-3 text-left"
+                className="flex w-full cursor-pointer items-center justify-between gap-3 px-4 py-3.5 text-left transition-colors duration-[var(--duration-fast)] hover:bg-[var(--color-surface-hover)]"
               >
-                <span className="min-w-0">
-                  <span className="text-section-title block">Ask about these transactions</span>
-                  <span className="text-secondary mt-0.5 block">
-                    Answers come from the records in {monthLabel}.
+                <span className="flex items-center gap-3 min-w-0">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-primary-subtle)] text-[var(--color-primary)]">
+                    <Sparkles className="h-4 w-4" aria-hidden="true" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="text-section-title block">Ask about these transactions</span>
+                    <span className="text-secondary mt-0.5 block">
+                      Answers come from verified records in {monthLabel}.
+                    </span>
                   </span>
                 </span>
                 <ChevronDown
@@ -696,131 +706,131 @@ function TransactionsPageContent() {
                 />
               </button>
             </h2>
-          </div>
 
-          {aiOpen && (
-            <div id="ai-analyst-panel" className="space-y-4">
-              {/* Suggestion chips */}
-              <div className="flex flex-wrap gap-2">
-                {SUGGESTED_QUESTIONS.map((q) => (
-                  <Button
-                    key={q}
-                    variant="secondary"
-                    size="sm"
-                    className="min-h-[40px]"
-                    onClick={() => handleAskAI(q)}
-                    disabled={aiLoading}
-                  >
-                    {q}
-                  </Button>
-                ))}
-              </div>
-
-              {/* Question input */}
-              <div className="space-y-2">
-                <Field id="ai-question" label="Your question">
-                  <Textarea
-                    id="ai-question"
-                    value={question}
-                    onChange={(e) => setQuestion(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="e.g. What did I spend the most on?"
-                    rows={2}
-                    maxLength={500}
-                    disabled={aiLoading}
-                  />
-                </Field>
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-caption">
-                    Press Enter to send, Shift + Enter for a new line.
-                  </p>
-                  <Button
-                    variant="primary"
-                    onClick={() => handleAskAI()}
-                    disabled={!question.trim()}
-                    loading={aiLoading}
-                    className="min-h-[40px]"
-                    leadingIcon={<SendHorizonal className="h-4 w-4" aria-hidden="true" />}
-                  >
-                    Ask
-                  </Button>
-                </div>
-              </div>
-
-              {/* Error state */}
-              {aiError && (
-                <Alert tone="danger" title="The question couldn't be answered">
-                  {aiError}
-                </Alert>
-              )}
-
-              {/* Loading state */}
-              {aiLoading && (
-                <div className="flex items-center gap-2 text-secondary">
-                  <Spinner label="Analyzing transactions" />
-                  <span>Reading the {monthLabel} transactions…</span>
-                </div>
-              )}
-
-              {/* Answer */}
-              {aiResult && !aiLoading && (
-                <div className="space-y-3">
-                  <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] p-4">
-                    <div className="flex items-start gap-2.5">
-                      <MessageSquare
-                        className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-primary-text)]"
-                        aria-hidden="true"
-                      />
-                      <p className="text-body">{formatAiText(aiResult.answer)}</p>
-                    </div>
-
-                    {aiResult.insights.length > 0 && (
-                      <ul className="mt-3 list-disc space-y-1.5 border-t border-[var(--color-border)] pl-5 pt-3 marker:text-[var(--color-text-subtle)]">
-                        {aiResult.insights.map((ins, i) => (
-                          <li key={i} className="text-secondary">
-                            {formatAiText(ins)}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-
-                  {aiResult.suggestedQuestions.length > 0 && (
-                    <div className="space-y-2">
-                      <p className="text-label">Follow-up questions</p>
-                      <div className="flex flex-wrap gap-2">
-                        {aiResult.suggestedQuestions.map((q) => (
-                          <Button
-                            key={q}
-                            variant="secondary"
-                            size="sm"
-                            className="min-h-[40px]"
-                            onClick={() => handleAskAI(q)}
-                            disabled={aiLoading}
-                          >
-                            {q}
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="flex justify-end">
+            {aiOpen && (
+              <div id="ai-analyst-panel" className="border-t border-[var(--color-border)] space-y-4 p-4 sm:p-5">
+                {/* Suggestion chips */}
+                <div className="flex flex-wrap gap-2">
+                  {SUGGESTED_QUESTIONS.map((q) => (
                     <Button
-                      variant="ghost"
+                      key={q}
+                      variant="secondary"
                       size="sm"
-                      className="min-h-[40px]"
-                      onClick={handleClearConversation}
-                      leadingIcon={<RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />}
+                      className="min-h-[36px]"
+                      onClick={() => handleAskAI(q)}
+                      disabled={aiLoading}
                     >
-                      Start new conversation
+                      {q}
+                    </Button>
+                  ))}
+                </div>
+
+                {/* Question input */}
+                <div className="space-y-2">
+                  <Field id="ai-question" label="Your question">
+                    <Textarea
+                      id="ai-question"
+                      value={question}
+                      onChange={(e) => setQuestion(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder="e.g. What did I spend the most on?"
+                      rows={2}
+                      maxLength={500}
+                      disabled={aiLoading}
+                    />
+                  </Field>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-caption">
+                      Press Enter to send, Shift + Enter for a new line.
+                    </p>
+                    <Button
+                      variant="primary"
+                      onClick={() => handleAskAI()}
+                      disabled={!question.trim()}
+                      loading={aiLoading}
+                      className="min-h-[40px]"
+                      leadingIcon={<SendHorizonal className="h-4 w-4" aria-hidden="true" />}
+                    >
+                      Ask
                     </Button>
                   </div>
                 </div>
-              )}
-            </div>
-          )}
-        </Section>
+
+                {/* Error state */}
+                {aiError && (
+                  <Alert tone="danger" title="The question couldn't be answered">
+                    {aiError}
+                  </Alert>
+                )}
+
+                {/* Loading state */}
+                {aiLoading && (
+                  <div className="flex items-center gap-2 text-secondary">
+                    <Spinner label="Analyzing transactions" />
+                    <span>Reading the {monthLabel} transactions…</span>
+                  </div>
+                )}
+
+                {/* Answer */}
+                {aiResult && !aiLoading && (
+                  <div className="space-y-3">
+                    <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] p-4">
+                      <div className="flex items-start gap-2.5">
+                        <MessageSquare
+                          className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-primary-text)]"
+                          aria-hidden="true"
+                        />
+                        <p className="text-body">{formatAiText(aiResult.answer)}</p>
+                      </div>
+
+                      {aiResult.insights.length > 0 && (
+                        <ul className="mt-3 list-disc space-y-1.5 border-t border-[var(--color-border)] pl-5 pt-3 marker:text-[var(--color-text-subtle)]">
+                          {aiResult.insights.map((ins, i) => (
+                            <li key={i} className="text-secondary">
+                              {formatAiText(ins)}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+
+                    {aiResult.suggestedQuestions.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-label">Follow-up questions</p>
+                        <div className="flex flex-wrap gap-2">
+                          {aiResult.suggestedQuestions.map((q) => (
+                            <Button
+                              key={q}
+                              variant="secondary"
+                              size="sm"
+                              className="min-h-[36px]"
+                              onClick={() => handleAskAI(q)}
+                              disabled={aiLoading}
+                            >
+                              {formatAiText(q)}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex justify-end pt-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="min-h-[36px]"
+                        onClick={handleClearConversation}
+                        leadingIcon={<RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />}
+                      >
+                        Start new conversation
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </section>
 
         {/* ── List: filters toolbar + one table surface with its footer ── */}
         <Section>

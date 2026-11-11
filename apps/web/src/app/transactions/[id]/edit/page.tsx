@@ -76,7 +76,8 @@ function FormSkeleton() {
 function EditTransactionForm() {
   const router = useRouter();
   const params = useParams();
-  const id = params?.id as string;
+  const rawId = params?.id;
+  const id = (Array.isArray(rawId) ? rawId[0] : (rawId as string)) || '';
   const { getToken } = useAuth();
 
   const [categories, setCategories] = useState<Category[]>([]);

@@ -9,84 +9,90 @@
    the surfaces they are used on.
    ========================================================================== */
 
+/* ==========================================================================
+   LEDGERLY DESIGN TOKENS — Sky-Blue & Deep-Navy Fintech
+   Navy/cerulean carries brand UI; emerald is reserved for income and positive
+   cash flow. Text tokens are checked for WCAG AA on the surfaces they sit on.
+   ========================================================================== */
+
 :root,
 [data-theme="light"],
 .light {
   color-scheme: light;
 
   /* Surfaces & neutrals */
-  --color-bg: #f7f9f8;
+  --color-bg: #f8fafc;
   --color-surface: #ffffff;
   --color-surface-elevated: #ffffff;
-  --color-surface-hover: #f1f5f3;
-  --color-surface-sunken: #f2f6f4;
-  --color-border: #e1e7e4;
-  --color-border-strong: #c8d2cd;
-  --color-border-hover: #b4c1bb;
-  --color-scrim: rgba(11, 22, 19, 0.52);
+  --color-surface-hover: #f1f7fe;
+  --color-surface-sunken: #f4f9ff;
+  --color-border: #e2e8f0;
+  --color-border-sky: #cfe6fc;
+  --color-border-strong: #cbd5e1;
+  --color-border-hover: #5ba6ea;
+  --color-scrim: rgba(15, 23, 42, 0.52);
 
   /* Text */
-  --color-text: #16201d;
-  --color-text-secondary: #4e5853;
-  --color-text-muted: #5a6560;
-  --color-text-subtle: #626d68;
+  --color-text: #0f172a;
+  --color-text-secondary: #334155;
+  --color-text-muted: #475569;
+  --color-text-subtle: #5c6b7f;
   --color-text-inverse: #ffffff;
 
-  /* Brand accent (single accent used for actions, active states, focus) */
-  --color-primary: #1f7f6e;
-  --color-primary-hover: #1a6d5f;
-  --color-primary-active: #14594d;
+  /* Brand: deep navy primary with cerulean accents */
+  --color-primary: #1e3a5f;
+  --color-primary-hover: #162c49;
+  --color-primary-active: #11233b;
   --color-primary-contrast: #ffffff;
-  --color-primary-subtle: #e3f3ee;
-  --color-primary-subtle-hover: #d5ede6;
-  --color-primary-text: #14695b;
-  --color-focus: #1f7f6e;
-  --color-focus-ring: rgba(31, 127, 110, 0.32);
+  --color-primary-subtle: #ebf5ff;
+  --color-primary-subtle-hover: #d8ecff;
+  --color-primary-text: #2b75b6;
+  --color-focus: #2b75b6;
+  --color-focus-ring: rgba(43, 117, 182, 0.32);
+  --color-brand: #2b75b6;
+  --color-brand-soft: #ebf5ff;
+  --color-accent-blue: #3b82f6;
+  --color-sky-tint: #bce1fa;
 
-  /* Brand graphics (charts, logo marks, decorative accents only) */
-  --color-brand: #3ca995;
-  --color-brand-soft: #d7f4ec;
-  --color-accent-blue: #2c6ba8;
-
-  /* Semantic states */
-  --color-income: #0f7a5c;
-  --color-income-subtle: #e0f3ea;
-  --color-expense: #c81e4b;
-  --color-expense-subtle: #fbe7ec;
-  --color-expense-bg: #fbe7ec;
-  --color-warning: #8a5a00;
-  --color-warning-subtle: #fbf0d4;
-  --color-amber: #b7791f;
-  --color-danger: #c0272d;
-  --color-danger-hover: #a21d23;
+  /* Semantic states — green only for income / positive flow */
+  --color-income: #059669;
+  --color-income-subtle: #ecfdf5;
+  --color-expense: #e11d48;
+  --color-expense-subtle: #fff1f2;
+  --color-expense-bg: #fff1f2;
+  --color-warning: #b45309;
+  --color-warning-subtle: #fffbeb;
+  --color-amber: #d97706;
+  --color-amber-subtle: #fffbeb;
+  --color-danger: #e11d48;
+  --color-danger-hover: #be123c;
   --color-danger-contrast: #ffffff;
-  --color-danger-subtle: #fbe8e9;
-  --color-mint: #0f7a5c;
-  --color-soft-blue: #2c6ba8;
+  --color-danger-subtle: #fff1f2;
+  --color-mint: #059669;
+  --color-soft-blue: #3b82f6;
 
-  /* Deprecated aliases kept for compatibility — the AI feature now uses the
-     single brand accent instead of a separate purple. */
+  /* Compatibility aliases */
   --color-secondary: var(--color-primary);
   --color-secondary-hover: var(--color-primary-hover);
-  --color-secondary-bg: rgba(31, 127, 110, 0.08);
+  --color-secondary-bg: rgba(59, 130, 246, 0.1);
   --color-pale-mint: var(--color-income-subtle);
   --color-pale-cyan: var(--color-brand-soft);
   --color-pale-yellow: var(--color-warning-subtle);
 
-  /* Elevation — borders do the work; these are for floating layers only */
-  --shadow-xs: 0 1px 2px rgba(15, 23, 20, 0.04);
-  --shadow-sm: 0 1px 3px rgba(15, 23, 20, 0.06), 0 1px 2px rgba(15, 23, 20, 0.04);
-  --shadow-md: 0 8px 24px -14px rgba(15, 23, 20, 0.22);
-  --shadow-lg: 0 18px 48px -24px rgba(15, 23, 20, 0.3);
+  /* Elevation — soft navy-tinted shadows for floating surfaces */
+  --shadow-xs: 0 1px 2px rgba(30, 58, 95, 0.04);
+  --shadow-sm: 0 4px 16px rgba(30, 58, 95, 0.05);
+  --shadow-md: 0 12px 36px rgba(30, 58, 95, 0.08);
+  --shadow-lg: 0 24px 60px -24px rgba(30, 58, 95, 0.16);
   --shadow-card: none;
 
-  /* Radii */
-  --radius-xs: 4px;
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 10px;
-  --radius-xl: 12px;
-  --radius-2xl: 16px;
+  /* Radii — softer, bento-friendly scale */
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.75rem;
   --radius-full: 9999px;
 }
 
@@ -94,62 +100,64 @@
 .dark {
   color-scheme: dark;
 
-  --color-bg: #0b0f17;
-  --color-surface: #151d30;
-  --color-surface-elevated: #111726;
-  --color-surface-hover: #1e293b;
-  --color-surface-sunken: #0f1622;
-  --color-border: #263449;
-  --color-border-strong: #34455e;
-  --color-border-hover: #40536f;
+  --color-bg: #090f1c;
+  --color-surface: #0f172a;
+  --color-surface-elevated: #1e293b;
+  --color-surface-hover: #162238;
+  --color-surface-sunken: #0b1324;
+  --color-border: #1e293b;
+  --color-border-sky: rgba(56, 189, 248, 0.22);
+  --color-border-strong: #334155;
+  --color-border-hover: #38bdf8;
   --color-scrim: rgba(2, 6, 12, 0.66);
 
-  --color-text: #edf2f7;
-  --color-text-secondary: #c3cfdd;
-  --color-text-muted: #a3b1c2;
-  --color-text-subtle: #8b9bae;
-  --color-text-inverse: #0b0f17;
+  --color-text: #f8fafc;
+  --color-text-secondary: #cbd5e1;
+  --color-text-muted: #94a3b8;
+  --color-text-subtle: #7e90a6;
+  --color-text-inverse: #090f1c;
 
-  --color-primary: #45b8a3;
-  --color-primary-hover: #52c7b2;
-  --color-primary-active: #3aa48f;
-  --color-primary-contrast: #05231e;
-  --color-primary-subtle: rgba(69, 184, 163, 0.14);
-  --color-primary-subtle-hover: rgba(69, 184, 163, 0.2);
-  --color-primary-text: #7fd6c4;
-  --color-focus: #7fd6c4;
-  --color-focus-ring: rgba(127, 214, 196, 0.36);
+  --color-primary: #38bdf8;
+  --color-primary-hover: #7dd3fc;
+  --color-primary-active: #0ea5e9;
+  --color-primary-contrast: #090f1c;
+  --color-primary-subtle: rgba(56, 189, 248, 0.12);
+  --color-primary-subtle-hover: rgba(56, 189, 248, 0.2);
+  --color-primary-text: #60a5fa;
+  --color-focus: #38bdf8;
+  --color-focus-ring: rgba(56, 189, 248, 0.36);
+  --color-brand: #38bdf8;
+  --color-brand-soft: rgba(56, 189, 248, 0.14);
+  --color-accent-blue: #60a5fa;
+  --color-sky-tint: #122b4a;
 
-  --color-brand: #45b8a3;
-  --color-brand-soft: rgba(69, 184, 163, 0.18);
-  --color-accent-blue: #7db8f0;
-
-  --color-income: #4cc79f;
-  --color-income-subtle: rgba(76, 199, 159, 0.15);
-  --color-expense: #ff7a93;
-  --color-expense-subtle: rgba(255, 122, 147, 0.14);
-  --color-expense-bg: rgba(255, 122, 147, 0.14);
-  --color-warning: #f5c258;
-  --color-warning-subtle: rgba(245, 194, 88, 0.14);
-  --color-amber: #f5c258;
-  --color-danger: #ff8a8a;
-  --color-danger-hover: #ffa3a3;
+  --color-income: #34d399;
+  --color-income-subtle: rgba(16, 185, 129, 0.14);
+  --color-expense: #fb7185;
+  --color-expense-subtle: rgba(244, 63, 94, 0.14);
+  --color-expense-bg: rgba(244, 63, 94, 0.14);
+  --color-warning: #fbbf24;
+  --color-warning-subtle: rgba(245, 158, 11, 0.14);
+  --color-amber: #fbbf24;
+  --color-amber-subtle: rgba(245, 158, 11, 0.14);
+  --color-danger: #fb7185;
+  --color-danger-hover: #fda4af;
   --color-danger-contrast: #2a0507;
-  --color-danger-subtle: rgba(255, 138, 138, 0.14);
-  --color-mint: #4cc79f;
-  --color-soft-blue: #7db8f0;
+  --color-danger-subtle: rgba(244, 63, 94, 0.14);
+  --color-mint: #34d399;
+  --color-soft-blue: #60a5fa;
 
   --color-secondary: var(--color-primary);
   --color-secondary-hover: var(--color-primary-hover);
-  --color-secondary-bg: rgba(69, 184, 163, 0.12);
+  --color-secondary-bg: rgba(56, 189, 248, 0.1);
   --color-pale-mint: var(--color-income-subtle);
   --color-pale-cyan: var(--color-brand-soft);
   --color-pale-yellow: var(--color-warning-subtle);
 
   --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.45), 0 1px 2px rgba(0, 0, 0, 0.35);
-  --shadow-md: 0 10px 28px -16px rgba(0, 0, 0, 0.7);
-  --shadow-lg: 0 22px 56px -26px rgba(0, 0, 0, 0.8);
+  --shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 12px 36px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 24px 60px -24px rgba(0, 0, 0, 0.6);
   --shadow-card: none;
 }
 
@@ -182,14 +190,14 @@
   --color-landing-border: var(--color-border);
 
   --radius-*: initial;
-  --radius-xs: 4px;
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 10px;
-  --radius-xl: 12px;
-  --radius-2xl: 16px;
-  --radius-3xl: 20px;
-  --radius-4xl: 24px;
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.75rem;
+  --radius-3xl: 2rem;
+  --radius-4xl: 2.5rem;
   --radius-full: 9999px;
 
   --animate-fade-in: fade-in 160ms var(--ease-standard) both;

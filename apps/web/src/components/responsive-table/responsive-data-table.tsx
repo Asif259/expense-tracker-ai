@@ -199,7 +199,7 @@ export function ResponsiveDataTable<T>({
         >
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-left text-[13px]" aria-label={ariaLabel}>
-              <thead className="select-none border-b border-[var(--color-border)]">
+              <thead className="select-none border-b border-[var(--color-border)] bg-[var(--color-surface-sunken)]">
                 <tr>
                   {columns.map((col) => {
                     const isSorted = sortColumnId === col.id;

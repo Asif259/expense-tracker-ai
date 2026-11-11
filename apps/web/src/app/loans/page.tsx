@@ -385,119 +385,123 @@ export default function LoansPage() {
         {/* Portfolio summary + charts */}
         {(loading || currenciesList.length > 0) && (
           <section aria-labelledby="portfolio-heading" className="space-y-4">
-            <div className="flex flex-wrap items-end justify-between gap-3">
-              <div className="min-w-0">
-                <h2 id="portfolio-heading" className="text-section-title">
-                  Portfolio
-                </h2>
-                <p className="text-secondary mt-0.5">
-                  Outstanding balances and repayment activity in {chartCurrency}.
-                </p>
-              </div>
-              {currenciesList.length > 1 && (
-                <div className="flex items-center gap-2">
-                  <label htmlFor="chart-currency" className="text-label">
-                    Currency
-                  </label>
-                  <div className="w-24">
-                    <Select
-                      id="chart-currency"
-                      value={chartCurrency}
-                      onChange={(e) => setSelectedCurrencyState(e.target.value)}
-                    >
-                      {currenciesList.map((currency) => (
-                        <option key={currency} value={currency}>
-                          {currency}
-                        </option>
-                      ))}
-                    </Select>
+            <div className="rounded-[var(--radius-2xl)] border border-[var(--color-border-sky)] bg-gradient-to-b from-[#f2f8ff] to-[var(--color-surface)] p-1.5 shadow-[var(--shadow-sm)] dark:border-sky-900/40 dark:from-slate-900 dark:to-slate-950">
+              <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 sm:p-5 space-y-4">
+                <div className="flex flex-wrap items-end justify-between gap-3">
+                  <div className="min-w-0">
+                    <h2 id="portfolio-heading" className="text-section-title">
+                      Portfolio
+                    </h2>
+                    <p className="text-secondary mt-0.5">
+                      Outstanding balances and repayment activity in {chartCurrency}.
+                    </p>
                   </div>
+                  {currenciesList.length > 1 && (
+                    <div className="flex items-center gap-2">
+                      <label htmlFor="chart-currency" className="text-label">
+                        Currency
+                      </label>
+                      <div className="w-24">
+                        <Select
+                          id="chart-currency"
+                          value={chartCurrency}
+                          onChange={(e) => setSelectedCurrencyState(e.target.value)}
+                        >
+                          {currenciesList.map((currency) => (
+                            <option key={currency} value={currency}>
+                              {currency}
+                            </option>
+                          ))}
+                        </Select>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
 
-            {loading && currenciesList.length === 0 ? (
-              <div
-                className="grid grid-cols-1 gap-4 border-y border-[var(--color-border)] py-4 sm:grid-cols-2 lg:grid-cols-4"
-                aria-hidden="true"
-              >
-                {[0, 1, 2, 3].map((i) => (
-                  <div key={i} className="space-y-2 px-4">
-                    <div className="skeleton h-3 w-20" />
-                    <div className="skeleton h-7 w-32 max-w-full" />
-                    <div className="skeleton h-3 w-24" />
+                {loading && currenciesList.length === 0 ? (
+                  <div
+                    className="grid grid-cols-1 gap-4 border-y border-[var(--color-border)] py-4 sm:grid-cols-2 lg:grid-cols-4"
+                    aria-hidden="true"
+                  >
+                    {[0, 1, 2, 3].map((i) => (
+                      <div key={i} className="space-y-2 px-4">
+                        <div className="skeleton h-3 w-20" />
+                        <div className="skeleton h-7 w-32 max-w-full" />
+                        <div className="skeleton h-3 w-24" />
+                      </div>
+                    ))}
                   </div>
-                ))}
+                ) : (
+                  <StatStrip>
+                    <div className="p-4 sm:px-5">
+                      <Metric
+                        label="To collect"
+                        value={formatMoney(activeLoanSummary.outstandingReceivables, chartCurrency)}
+                        hint={
+                          overdueReceivables > 0 ? (
+                            <span className="text-[var(--color-warning)]">
+                              {formatMoney(overdueReceivables, chartCurrency)} overdue
+                            </span>
+                          ) : (
+                            'Nothing overdue'
+                          )
+                        }
+                        icon={<ArrowDownLeft aria-hidden="true" />}
+                      />
+                    </div>
+                    <div className="p-4 sm:px-5">
+                      <Metric
+                        label="To repay"
+                        value={formatMoney(activeLoanSummary.outstandingPayables, chartCurrency)}
+                        hint={
+                          overduePayables > 0 ? (
+                            <span className="text-[var(--color-warning)]">
+                              {formatMoney(overduePayables, chartCurrency)} overdue
+                            </span>
+                          ) : (
+                            'Nothing overdue'
+                          )
+                        }
+                        icon={<ArrowUpRight aria-hidden="true" />}
+                      />
+                    </div>
+                    <div className="p-4 sm:px-5">
+                      <p className="text-label text-[var(--color-text-muted)]">Active loans</p>
+                      <p className="text-metric-sm mt-1.5 tabular-nums">
+                        {activeLoanSummary.activeCount}
+                      </p>
+                      <p className="text-caption mt-1">
+                        {activeLoanSummary.overdueCount} overdue · {activeLoanSummary.settledCount}{' '}
+                        settled
+                      </p>
+                    </div>
+                    <div className="p-4 sm:px-5">
+                      <p className="text-label text-[var(--color-text-muted)]">Totals</p>
+                      <dl className="mt-1.5 space-y-1 text-secondary">
+                        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+                          <dt>Lent</dt>
+                          <dd className="tabular-nums text-[var(--color-text)]">
+                            {formatMoney(activeLoanSummary.totalLent, chartCurrency)}
+                          </dd>
+                        </div>
+                        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+                          <dt>Borrowed</dt>
+                          <dd className="tabular-nums text-[var(--color-text)]">
+                            {formatMoney(activeLoanSummary.totalBorrowed, chartCurrency)}
+                          </dd>
+                        </div>
+                        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+                          <dt>Repaid</dt>
+                          <dd className="tabular-nums text-[var(--color-text)]">
+                            {formatMoney(repaidTotal, chartCurrency)}
+                          </dd>
+                        </div>
+                      </dl>
+                    </div>
+                  </StatStrip>
+                )}
               </div>
-            ) : (
-              <StatStrip>
-                <div className="p-4 sm:px-5">
-                  <Metric
-                    label="To collect"
-                    value={formatMoney(activeLoanSummary.outstandingReceivables, chartCurrency)}
-                    hint={
-                      overdueReceivables > 0 ? (
-                        <span className="text-[var(--color-warning)]">
-                          {formatMoney(overdueReceivables, chartCurrency)} overdue
-                        </span>
-                      ) : (
-                        'Nothing overdue'
-                      )
-                    }
-                    icon={<ArrowDownLeft aria-hidden="true" />}
-                  />
-                </div>
-                <div className="p-4 sm:px-5">
-                  <Metric
-                    label="To repay"
-                    value={formatMoney(activeLoanSummary.outstandingPayables, chartCurrency)}
-                    hint={
-                      overduePayables > 0 ? (
-                        <span className="text-[var(--color-warning)]">
-                          {formatMoney(overduePayables, chartCurrency)} overdue
-                        </span>
-                      ) : (
-                        'Nothing overdue'
-                      )
-                    }
-                    icon={<ArrowUpRight aria-hidden="true" />}
-                  />
-                </div>
-                <div className="p-4 sm:px-5">
-                  <p className="text-label text-[var(--color-text-muted)]">Active loans</p>
-                  <p className="text-metric-sm mt-1.5 tabular-nums">
-                    {activeLoanSummary.activeCount}
-                  </p>
-                  <p className="text-caption mt-1">
-                    {activeLoanSummary.overdueCount} overdue · {activeLoanSummary.settledCount}{' '}
-                    settled
-                  </p>
-                </div>
-                <div className="p-4 sm:px-5">
-                  <p className="text-label text-[var(--color-text-muted)]">Totals</p>
-                  <dl className="mt-1.5 space-y-1 text-secondary">
-                    <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-                      <dt>Lent</dt>
-                      <dd className="tabular-nums text-[var(--color-text)]">
-                        {formatMoney(activeLoanSummary.totalLent, chartCurrency)}
-                      </dd>
-                    </div>
-                    <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-                      <dt>Borrowed</dt>
-                      <dd className="tabular-nums text-[var(--color-text)]">
-                        {formatMoney(activeLoanSummary.totalBorrowed, chartCurrency)}
-                      </dd>
-                    </div>
-                    <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-                      <dt>Repaid</dt>
-                      <dd className="tabular-nums text-[var(--color-text)]">
-                        {formatMoney(repaidTotal, chartCurrency)}
-                      </dd>
-                    </div>
-                  </dl>
-                </div>
-              </StatStrip>
-            )}
+            </div>
 
             {showCharts && (
               <div className="grid gap-4 lg:grid-cols-2">

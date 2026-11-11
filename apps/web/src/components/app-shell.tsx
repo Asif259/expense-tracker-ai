@@ -64,12 +64,16 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
             aria-current={active ? 'page' : undefined}
             className={`flex items-center justify-between gap-3 rounded-[var(--radius-md)] px-3 py-2 text-[13px] transition-colors duration-[var(--duration-fast)] ${
               active
-                ? 'bg-[var(--color-primary-subtle)] font-semibold text-[var(--color-primary-text)]'
+                ? 'bg-[var(--color-primary-subtle)] font-semibold text-[var(--color-primary)]'
                 : 'font-medium text-[var(--color-text-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text)]'
             }`}
           >
             <span className="flex min-w-0 items-center gap-2.5">
-              <Icon className="h-[18px] w-[18px] shrink-0" />
+              <Icon
+                className={`h-[18px] w-[18px] shrink-0 ${
+                  active ? 'text-[var(--color-primary-text)]' : ''
+                }`}
+              />
               <span className="truncate">{item.label}</span>
             </span>
             {item.badge && (
