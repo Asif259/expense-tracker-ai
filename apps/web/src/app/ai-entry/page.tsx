@@ -224,7 +224,7 @@ function AiEntryInner() {
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-3xl space-y-8">
+      <div className="mx-auto max-w-5xl space-y-8">
         <PageHeader
           title="Add a transaction by describing it"
           description="Type or say something like “Spent 350 BDT on lunch today”. You'll review the draft below and confirm it before it is saved."
