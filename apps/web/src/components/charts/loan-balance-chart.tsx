@@ -6,7 +6,6 @@ import '@/lib/chart-registry';
 import { useTheme } from '@/context/theme-context';
 import { getBaseChartOptions, getChartPalette } from '@/lib/chart-theme';
 import { LoanPortfolioSummary } from '@/lib/chart-aggregation';
-import { formatMoney } from '@/lib/format';
 import { ChartCard } from './chart-card';
 import { AccessibleChartTable } from './accessible-chart-table';
 
@@ -41,7 +40,7 @@ export function LoanBalanceChart({
         {
           label: 'Outstanding',
           data: [summary.outstandingReceivables, summary.outstandingPayables],
-          backgroundColor: [palette.receivable, palette.expense],
+          backgroundColor: palette.primary,
           borderRadius: 4,
           borderSkipped: false,
           barPercentage: 0.5,
@@ -49,7 +48,7 @@ export function LoanBalanceChart({
         {
           label: 'Repaid',
           data: [summary.repaidLent, summary.repaidBorrowed],
-          backgroundColor: [palette.income, palette.income],
+          backgroundColor: palette.income,
           borderRadius: 4,
           borderSkipped: false,
           barPercentage: 0.5,
@@ -97,7 +96,7 @@ export function LoanBalanceChart({
   return (
     <ChartCard
       title="Debts and loans"
-      subtitle="Outstanding balances and amounts repaid"
+      subtitle="Outstanding and repaid"
       currency={currency}
       loading={loading}
       error={error}
@@ -119,33 +118,10 @@ export function LoanBalanceChart({
       heightClass="h-auto min-h-[300px]"
     >
       <div className="flex h-full flex-col gap-4">
-        <div className="h-44 w-full">
+        <div className="h-60 w-full">
           <Bar data={chartData} options={options} />
         </div>
 
-        {/* Plain hairline summary — ChartCard already provides the surface. */}
-        {summary && (
-          <dl className="grid grid-cols-1 gap-x-6 gap-y-3 border-t border-[var(--color-border)] pt-3 sm:grid-cols-2">
-            <div className="min-w-0">
-              <dt className="text-label text-[var(--color-text-muted)]">Owed to you</dt>
-              <dd className="text-metric-sm mt-0.5 tabular-nums">
-                {formatMoney(summary.outstandingReceivables, currency)}
-              </dd>
-              <p className="text-caption mt-0.5">
-                {formatMoney(summary.repaidLent, currency)} repaid so far
-              </p>
-            </div>
-            <div className="min-w-0">
-              <dt className="text-label text-[var(--color-text-muted)]">You owe</dt>
-              <dd className="text-metric-sm mt-0.5 tabular-nums">
-                {formatMoney(summary.outstandingPayables, currency)}
-              </dd>
-              <p className="text-caption mt-0.5">
-                {formatMoney(summary.repaidBorrowed, currency)} repaid so far
-              </p>
-            </div>
-          </dl>
-        )}
       </div>
     </ChartCard>
   );

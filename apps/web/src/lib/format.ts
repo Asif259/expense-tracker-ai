@@ -24,7 +24,11 @@ const ZERO_DECIMAL_CURRENCIES = new Set(['JPY']);
  */
 export function formatMoney(amount: string | number, currency: string): string {
   const symbol = CURRENCY_SYMBOLS[currency] || currency;
-  const str = String(amount);
+  const raw = String(amount);
+  // Sign goes before the symbol ("−৳300.00"); a rounded zero never shows a sign.
+  const negative = raw.startsWith('-') && Number(raw) !== 0;
+  const str = raw.replace(/^-/, '');
+  if (negative) return `−${formatMoney(str, currency)}`;
 
   if (ZERO_DECIMAL_CURRENCIES.has(currency)) {
     // Strip decimals for zero-decimal currencies

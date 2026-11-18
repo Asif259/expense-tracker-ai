@@ -66,13 +66,14 @@ export function SpendingTrendChart({
         {
           label: 'Spending',
           data: data.map((d) => d.spending),
-          borderColor: palette.expense,
-          backgroundColor: withAlpha(palette.expense, theme === 'dark' ? 0.16 : 0.08),
+          borderColor: palette.primary,
+          backgroundColor: withAlpha(palette.primary, theme === 'dark' ? 0.16 : 0.08),
           fill: true,
-          tension: 0.35,
+          tension: 0.2,
+          cubicInterpolationMode: 'monotone' as const,
           pointRadius: showPoints ? 3 : 0,
           pointHoverRadius: 5,
-          pointBackgroundColor: palette.expense,
+          pointBackgroundColor: palette.primary,
           pointBorderColor: palette.cardBg,
           pointBorderWidth: 2,
           borderWidth: 2,
@@ -100,7 +101,7 @@ export function SpendingTrendChart({
   return (
     <ChartCard
       title="Spending trend"
-      subtitle="How your spending moves over time"
+      subtitle="Outflow"
       currency={currency}
       selectedRange={selectedRange}
       onRangeChange={onRangeChange}

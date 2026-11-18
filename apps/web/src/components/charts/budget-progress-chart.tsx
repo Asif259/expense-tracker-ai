@@ -149,7 +149,7 @@ export function BudgetProgressChart({
   return (
     <ChartCard
       title="Budget progress"
-      subtitle="How spending compares to each limit"
+      subtitle="Spent vs limit"
       currency={currency}
       loading={loading}
       error={error}

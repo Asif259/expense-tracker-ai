@@ -18,6 +18,8 @@ import { formatMoney, formatDate } from '@/lib/format';
 import { fetchCategories, Category } from '@/lib/categories';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { toast } from '@/components/toast';
+import { KpiStrip, type KpiTile } from '@/components/dashboard/kpi-strip';
+import { delta } from '@/lib/dashboard-metrics';
 import {
   Sparkles,
   Plus,
@@ -27,6 +29,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
+  ArrowDownLeft,
+  ArrowUpRight,
   SendHorizonal,
   RotateCcw,
   MessageSquare,
@@ -47,13 +51,11 @@ import {
   Field,
   IconButton,
   Input,
-  Metric,
   PageHeader,
   Section,
   Select,
   Skeleton,
   Spinner,
-  StatStrip,
   Textarea,
 } from '@/components/ui';
 
@@ -115,6 +117,7 @@ function TransactionsPageContent() {
 
   // ── Summary state ──
   const [summary, setSummary] = useState<MonthlySummary | null>(null);
+  const [prevSummary, setPrevSummary] = useState<MonthlySummary | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(true);
 
   // ── Transaction list state ──
@@ -171,8 +174,16 @@ function TransactionsPageContent() {
       try {
         const token = await getToken();
         if (!token || !mounted) return;
-        const data = await getMonthlySummary(token, selectedMonth, selectedYear);
-        if (mounted) setSummary(data);
+        const prevMonth = selectedMonth === 1 ? 12 : selectedMonth - 1;
+        const prevYear = selectedMonth === 1 ? selectedYear - 1 : selectedYear;
+        const [data, prev] = await Promise.all([
+          getMonthlySummary(token, selectedMonth, selectedYear),
+          getMonthlySummary(token, prevMonth, prevYear).catch(() => null),
+        ]);
+        if (mounted) {
+          setSummary(data);
+          setPrevSummary(prev);
+        }
       } catch {
         // summary errors are non-fatal
       } finally {
@@ -356,16 +367,69 @@ function TransactionsPageContent() {
   }, [transactions, filterSearch]);
 
   // ── Summary values (formatting preserved) ──
-  const netValue = summaryFirstCurrency
-    ? formatMoney(summaryFirstCurrency[1].net.replace('-', ''), summaryFirstCurrency[0])
-    : '—';
-  const incomeValue = summaryFirstCurrency
-    ? formatMoney(summaryFirstCurrency[1].income, summaryFirstCurrency[0])
-    : '—';
-  const expensesValue = summaryFirstCurrency
-    ? formatMoney(summaryFirstCurrency[1].expenses, summaryFirstCurrency[0])
-    : '—';
-  const countValue = summary ? summary.transactionCount.toLocaleString() : '—';
+  const prevMonthName = MONTH_NAMES[(selectedMonth + 10) % 12].slice(0, 3);
+  const kpiTiles: KpiTile[] = (() => {
+    const cur = summaryFirstCurrency?.[0];
+    const now = summaryFirstCurrency?.[1];
+    // A loaded month with no rows in this currency is a real zero, not unknown.
+    const prev =
+      cur && prevSummary
+        ? (prevSummary.currencies[cur] ?? { income: '0.00', expenses: '0.00', net: '0.00' })
+        : undefined;
+    const fmt = (v: string | number) => (cur ? formatMoney(v, cur) : '');
+    const d = (a?: string, b?: string, better: 'higher' | 'lower' = 'higher') =>
+      a !== undefined && b !== undefined
+        ? delta(parseFloat(a) || 0, parseFloat(b) || 0, better)
+        : null;
+    const net = now ? parseFloat(now.net) || 0 : 0;
+    return [
+      {
+        label: 'Net balance',
+        value: now ? fmt(now.net) : null,
+        bad: net < 0,
+        title: 'Income minus expenses',
+        delta: d(now?.net, prev?.net),
+        prevLabel: prev ? fmt(prev.net) : '',
+      },
+      {
+        label: 'Income',
+        value: now ? fmt(now.income) : null,
+        icon: <ArrowDownLeft strokeWidth={1.5} aria-hidden="true" />,
+        delta: d(now?.income, prev?.income),
+        prevLabel: prev ? fmt(prev.income) : '',
+      },
+      {
+        label: 'Expenses',
+        value: now ? fmt(now.expenses) : null,
+        icon: <ArrowUpRight strokeWidth={1.5} aria-hidden="true" />,
+        delta: d(now?.expenses, prev?.expenses, 'lower'),
+        prevLabel: prev ? fmt(prev.expenses) : '',
+      },
+      {
+        label: 'Transactions',
+        value: summary ? summary.transactionCount.toLocaleString() : null,
+        icon: <ReceiptText strokeWidth={1.5} aria-hidden="true" />,
+        delta:
+          summary && prevSummary
+            ? delta(summary.transactionCount, prevSummary.transactionCount, 'neutral')
+            : null,
+        prevLabel: prevSummary ? String(prevSummary.transactionCount) : '',
+        title: hasMultipleCurrencies ? 'All currencies' : undefined,
+      },
+    ].map((t: KpiTile) =>
+      // Month in progress: show last month's value neutrally, no percent.
+      isCurrentMonth && t.prevLabel
+        ? {
+            ...t,
+            note: (
+              <span className="tabular-nums text-[var(--color-text-muted)]">
+                {prevMonthName} {t.prevLabel}
+              </span>
+            ),
+          }
+        : t,
+    );
+  })();
 
   // ── Table columns ──
   const columns: ResponsiveColumn<Transaction>[] = useMemo(
@@ -567,7 +631,6 @@ function TransactionsPageContent() {
         {/* ── Page header: one primary action ── */}
         <PageHeader
           title="Transactions"
-          description="Every income and expense entry, month by month. Filter the list, open a row for details, or ask a question about the month."
           actions={
             <>
               <ButtonLink
@@ -590,90 +653,52 @@ function TransactionsPageContent() {
           }
         />
 
-        {/* ── Month context + summary (Bento KPI Container) ── */}
-        <div className="rounded-[var(--radius-2xl)] border border-[var(--color-border-sky)] bg-gradient-to-b from-[#f2f8ff] to-[var(--color-surface)] p-1.5 shadow-[var(--shadow-sm)] dark:border-sky-900/40 dark:from-slate-900 dark:to-slate-950">
-          <section
-            aria-labelledby="month-activity-heading"
-            className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 sm:p-5 space-y-4"
-          >
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 id="month-activity-heading" className="text-card-title">{monthLabel}</h2>
-              <div className="flex items-center gap-1.5">
-                {!isCurrentMonth && (
-                  <Button variant="ghost" size="sm" className="min-h-[40px]" onClick={goToCurrentMonth}>
-                    This month
-                  </Button>
-                )}
-                <IconButton
-                  variant="secondary"
-                  size="lg"
-                  label="Previous month"
-                  onClick={goToPrevMonth}
-                >
-                  <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-                </IconButton>
-                <IconButton
-                  variant="secondary"
-                  size="lg"
-                  label="Next month"
-                  onClick={goToNextMonth}
-                  disabled={isNextDisabled}
-                >
-                  <ChevronRight className="h-4 w-4" aria-hidden="true" />
-                </IconButton>
-              </div>
-            </div>
-
-            <StatStrip>
-              <Metric
+        {/* ── Month context + summary ── */}
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 id="month-activity-heading" className="text-card-title">{monthLabel}</h2>
+            <div className="flex items-center gap-1.5">
+              {!isCurrentMonth && (
+                <Button variant="ghost" size="sm" className="min-h-[40px]" onClick={goToCurrentMonth}>
+                  This month
+                </Button>
+              )}
+              <IconButton variant="secondary" size="lg" label="Previous month" onClick={goToPrevMonth}>
+                <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+              </IconButton>
+              <IconButton
+                variant="secondary"
                 size="lg"
-                label="Net balance"
-                hint="Income minus expenses"
-                className="py-3.5 sm:px-4 sm:first:pl-0"
-                value={
-                  summaryLoading ? (
-                    <Skeleton className="h-7 w-28" />
-                  ) : (
-                    <span className="tabular-nums">{netValue}</span>
-                  )
-                }
-              />
-              <Metric
-                label="Income"
-                className="py-3.5 sm:px-4 sm:first:pl-0"
-                value={
-                  summaryLoading ? <Skeleton className="h-6 w-24" /> : <span className="tabular-nums">{incomeValue}</span>
-                }
-              />
-              <Metric
-                label="Expenses"
-                className="py-3.5 sm:px-4 sm:first:pl-0"
-                value={
-                  summaryLoading ? <Skeleton className="h-6 w-24" /> : <span className="tabular-nums">{expensesValue}</span>
-                }
-              />
-              <Metric
-                label="Transactions"
-                className="py-3.5 sm:px-4 sm:first:pl-0"
-                value={
-                  summaryLoading ? <Skeleton className="h-6 w-12" /> : <span className="tabular-nums">{countValue}</span>
-                }
-              />
-            </StatStrip>
+                label="Next month"
+                onClick={goToNextMonth}
+                disabled={isNextDisabled}
+              >
+                <ChevronRight className="h-4 w-4" aria-hidden="true" />
+              </IconButton>
+            </div>
+          </div>
 
-            {hasMultipleCurrencies && summary && (
-              <p className="text-caption border-t border-[var(--color-border)] pt-3">
-                <span className="text-[var(--color-text-secondary)]">Multiple currencies this month: </span>
-                {Object.entries(summary.currencies).map(([cur, totals], idx) => (
-                  <span key={cur}>
-                    {idx > 0 && ', '}
-                    <span className="tabular-nums text-[var(--color-text-secondary)]">{cur}</span>{' '}
-                    income {formatMoney(totals.income, cur)}, expenses {formatMoney(totals.expenses, cur)}
-                  </span>
-                ))}
-              </p>
-            )}
-          </section>
+          <KpiStrip
+            label={`${monthLabel} summary`}
+            tiles={kpiTiles}
+            baseline={prevMonthName}
+            loading={summaryLoading}
+          />
+
+          {hasMultipleCurrencies && summary && (
+            <ul className="flex flex-wrap gap-2 text-xs tabular-nums text-[var(--color-text-muted)]">
+              {Object.entries(summary.currencies).slice(1).map(([cur, totals]) => (
+                <li
+                  key={cur}
+                  className="rounded-[var(--radius-full)] border border-[var(--color-border)] px-2.5 py-1"
+                  title={`Income ${formatMoney(totals.income, cur)} · Expenses ${formatMoney(totals.expenses, cur)}`}
+                >
+                  <span className="font-medium text-[var(--color-text-secondary)]">{cur}</span> net{' '}
+                  {formatMoney(totals.net, cur)}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         {/* ── AI analyst: structured container with sky border & sparkle badge ── */}

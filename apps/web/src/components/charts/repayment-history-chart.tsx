@@ -71,7 +71,7 @@ export function RepaymentHistoryChart({
   return (
     <ChartCard
       title="Repayments"
-      subtitle="Loan repayments recorded over time"
+      subtitle="By month"
       currency={currency}
       loading={loading}
       error={error}

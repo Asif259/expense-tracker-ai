@@ -1,18 +1,25 @@
 'use client';
 
-import { useEffect, useState, useMemo, type FormEvent } from 'react';
+/*
+ * Overview — one question: "Is my money OK over this range, and what is driving it?"
+ * Numbers: net cash flow, inflow, outflow, transactions (each vs the previous window of the same length).
+ * Problems: drafts waiting, overdue loans, outflow above inflow. Each sits on the data with its action beside it.
+ * Deviations from the dashboard-design pattern:
+ *  - Tooltips use the native `title` attribute; the app has no shared tooltip component yet.
+ *  - Monthly cash flow always shows 12 months; the range control drives the KPIs, trend and categories.
+ */
+
+import { useEffect, useState, useMemo, type FormEvent, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import AppShell from '@/components/app-shell';
 import { useAuth } from '@/context/auth-context';
 import {
-  listTransactions,
+  listAllTransactions,
   listDrafts,
   getLoanSummary,
-  listLoans,
   Transaction,
   AiDraft,
-  Loan,
   CurrencyLoanSummary,
 } from '@/lib/api';
 import { formatMoney, formatDate } from '@/lib/format';
@@ -21,43 +28,47 @@ import {
   aggregateMonthlyCashFlow,
   aggregateSpendingTrend,
   aggregateCategoryBreakdown,
-  aggregateLoanPortfolio,
-  aggregateRepaymentHistory,
-  aggregateBudgetProgress,
   getCurrenciesFromTransactions,
-  DateRangePreset,
 } from '@/lib/chart-aggregation';
 import {
-  IncomeExpenseChart,
-  SpendingTrendChart,
-  CategoryBreakdownChart,
-  BudgetProgressChart,
-  LoanBalanceChart,
-  RepaymentHistoryChart,
-} from '@/components/charts';
+  rangeWindow,
+  fetchStart,
+  sumWindow,
+  delta,
+  parseTxDate,
+  type KpiRange,
+} from '@/lib/dashboard-metrics';
+import { IncomeExpenseChart, SpendingTrendChart } from '@/components/charts';
+import { KpiStrip, type KpiTile } from '@/components/dashboard/kpi-strip';
 import {
-  Alert,
-  Badge,
   Button,
   ButtonLink,
-  Card,
   EmptyState,
-  Field,
   Input,
-  Metric,
   PageHeader,
-  Section,
   SegmentedControl,
   Select,
   Skeleton,
 } from '@/components/ui';
 import {
+  AlertTriangle,
   ArrowDownLeft,
   ArrowRight,
   ArrowUpRight,
+  FileClock,
   ReceiptText,
   Sparkles,
 } from 'lucide-react';
+
+const RANGE_OPTIONS: { value: KpiRange; label: string; baseline: string }[] = [
+  { value: '7d', label: '7 days', baseline: 'prev 7 days' },
+  { value: '30d', label: '30 days', baseline: 'prev 30 days' },
+  { value: '6m', label: '6 months', baseline: 'prev period' },
+];
+
+function isoDate(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 
 export default function DashboardPage() {
   const { user, getToken } = useAuth();
@@ -66,12 +77,11 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [complete, setComplete] = useState(true);
   const [drafts, setDrafts] = useState<AiDraft[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [loans, setLoans] = useState<Loan[]>([]);
   const [loanSummaries, setLoanSummaries] = useState<Record<string, CurrencyLoanSummary>>({});
-  const [activeReportTab, setActiveReportTab] = useState<'flow' | 'breakdown' | 'loans'>('flow');
-  const [selectedRange, setSelectedRange] = useState<DateRangePreset>('30d');
+  const [range, setRange] = useState<KpiRange>('30d');
   const [selectedCurrency, setSelectedCurrency] = useState<string>('BDT');
   const [aiAskInput, setAiAskInput] = useState('');
   const [today, setToday] = useState<{ date: Date; label: string } | null>(null);
@@ -91,12 +101,12 @@ export default function DashboardPage() {
   }, []);
 
   const nowDate = today?.date ?? null;
-  const currentDateFormatted = today?.label ?? '';
 
   useEffect(() => {
+    if (!nowDate) return;
     let mounted = true;
 
-    async function loadDashboardData() {
+    async function loadDashboardData(now: Date) {
       setLoading(true);
       setError(null);
 
@@ -104,25 +114,22 @@ export default function DashboardPage() {
         const token = await getToken();
         if (!token) return;
 
-        const [cats, txRes, draftRes, loanSummaryRes, loanListRes] = await Promise.all([
+        const [cats, txRes, draftRes, loanSummaryRes] = await Promise.all([
           fetchCategories(),
-          listTransactions(token, { limit: 100 }),
+          listAllTransactions(token, isoDate(fetchStart(now))),
           listDrafts(token).catch(() => ({ data: [], total: 0 })),
           getLoanSummary(token).catch(() => ({ currencies: {} })),
-          listLoans(token, { limit: 100 }).catch(() => ({ data: [], total: 0, limit: 100, offset: 0 })),
         ]);
 
         if (mounted) {
           setCategories(cats);
-          const txList = txRes.data || [];
-          setTransactions(txList);
+          setTransactions(txRes.data);
+          setComplete(txRes.complete);
           setDrafts(draftRes.data || []);
           setLoanSummaries(loanSummaryRes.currencies || {});
-          setLoans(loanListRes.data || []);
 
-          // Automatically select first available active currency if transactions exist
-          const distinctCurrencies = getCurrenciesFromTransactions(txList);
-          if (distinctCurrencies.length > 0 && !distinctCurrencies.includes(selectedCurrency)) {
+          const distinctCurrencies = getCurrenciesFromTransactions(txRes.data);
+          if (txRes.data.length > 0 && !distinctCurrencies.includes(selectedCurrency)) {
             setSelectedCurrency(distinctCurrencies[0]);
           }
         }
@@ -131,13 +138,11 @@ export default function DashboardPage() {
           setError(err instanceof Error ? err.message : 'Failed to load dashboard data');
         }
       } finally {
-        if (mounted) {
-          setLoading(false);
-        }
+        if (mounted) setLoading(false);
       }
     }
 
-    loadDashboardData();
+    loadDashboardData(nowDate);
 
     return () => {
       mounted = false;
@@ -145,162 +150,71 @@ export default function DashboardPage() {
     // `selectedCurrency` is only read to pick an initial value; adding it would
     // refetch the whole dashboard every time the user switches currency.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [getToken, reloadToken]);
+  }, [getToken, reloadToken, nowDate]);
 
-  const categoryMap = useMemo(() => {
-    const map = new Map<string, Category>();
-    for (const c of categories) {
-      map.set(c.id, c);
-    }
-    return map;
-  }, [categories]);
+  const categoryMap = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories]);
 
-  // Extract distinct currency options
   const allCurrencies = useMemo(() => {
-    const set = new Set<string>();
-    for (const tx of transactions) {
-      if (tx.currency) set.add(tx.currency);
-    }
-    for (const cur of Object.keys(loanSummaries)) {
-      set.add(cur);
-    }
-    if (set.size === 0) set.add('BDT');
+    const set = new Set<string>(getCurrenciesFromTransactions(transactions));
+    for (const cur of Object.keys(loanSummaries)) set.add(cur);
     return Array.from(set);
   }, [transactions, loanSummaries]);
 
-  // Financial summary computation: group by currency so different currencies are NEVER summed together
-  const currencySummaries = useMemo(() => {
-    const map = new Map<string, { income: number; expense: number; count: number }>();
+  const win = useMemo(() => (nowDate ? rangeWindow(range, nowDate) : null), [range, nowDate]);
 
-    for (const tx of transactions) {
-      const cur = tx.currency || 'BDT';
-      const existing = map.get(cur) || { income: 0, expense: 0, count: 0 };
-      const num = parseFloat(tx.amount) || 0;
-      if (tx.type === 'income') {
-        existing.income += num;
-      } else {
-        existing.expense += num;
-      }
-      existing.count += 1;
-      map.set(cur, existing);
-    }
-
-    if (map.size === 0) {
-      return [
-        {
-          currency: selectedCurrency,
-          incomeTotal: '0.00',
-          expenseTotal: '0.00',
-          netBalance: '0.00',
-          count: 0,
-        },
-      ];
-    }
-
-    return Array.from(map.entries()).map(([currency, data]) => ({
-      currency,
-      incomeTotal: data.income.toFixed(2),
-      expenseTotal: data.expense.toFixed(2),
-      netBalance: (data.income - data.expense).toFixed(2),
-      count: data.count,
-    }));
-  }, [transactions, selectedCurrency]);
-
-  const currentSummary = useMemo(() => {
-    const match = currencySummaries.find((s) => s.currency === selectedCurrency);
-    if (match) return match;
-    return {
-      currency: selectedCurrency,
-      incomeTotal: '0.00',
-      expenseTotal: '0.00',
-      netBalance: '0.00',
-      count: 0,
-    };
-  }, [currencySummaries, selectedCurrency]);
-
-  const otherCurrencies = useMemo(() => {
-    return currencySummaries.filter((s) => s.currency !== selectedCurrency && s.count > 0);
-  }, [currencySummaries, selectedCurrency]);
-
-  // Chart datasets derived safely using pure aggregation functions
-  const monthlyCashFlowData = useMemo(() => {
-    return aggregateMonthlyCashFlow(transactions, selectedCurrency);
-  }, [transactions, selectedCurrency]);
-
-  const spendingTrendData = useMemo(() => {
-    return aggregateSpendingTrend(transactions, selectedCurrency, selectedRange, nowDate);
-  }, [transactions, selectedCurrency, selectedRange, nowDate]);
-
-  const categoryBreakdownData = useMemo(() => {
-    return aggregateCategoryBreakdown(transactions, categories, selectedCurrency);
-  }, [transactions, categories, selectedCurrency]);
-
-  const loanPortfolioSummary = useMemo(() => {
-    const summaryFromApi = loanSummaries[selectedCurrency];
-    if (summaryFromApi) {
-      return {
-        currency: selectedCurrency,
-        totalLent: summaryFromApi.total_lent,
-        totalBorrowed: summaryFromApi.total_borrowed,
-        repaidLent: summaryFromApi.total_repaid_lent,
-        repaidBorrowed: summaryFromApi.total_repaid_borrowed,
-        outstandingReceivables: summaryFromApi.outstanding_receivables,
-        outstandingPayables: summaryFromApi.outstanding_payables,
-        activeCount: summaryFromApi.active_loans_count,
-        settledCount: summaryFromApi.settled_loans_count,
-        overdueCount: summaryFromApi.overdue_loans_count,
-      };
-    }
-    return aggregateLoanPortfolio(loans, selectedCurrency);
-  }, [loanSummaries, loans, selectedCurrency]);
-
-  const repaymentHistoryData = useMemo(() => {
-    return aggregateRepaymentHistory(loans, selectedCurrency);
-  }, [loans, selectedCurrency]);
-
-  // Budget progress data (using actual category totals vs empty/zero limits)
-  const budgetProgressData = useMemo(() => {
-    return aggregateBudgetProgress(transactions, [], selectedCurrency);
-  }, [transactions, selectedCurrency]);
-
-  const recentTransactions = useMemo(() => {
-    return transactions.slice(0, 5);
+  // Rows come newest first, so a window is fully fetched when the list is complete
+  // or the oldest fetched row is older than the window's start.
+  const oldestFetched = useMemo(() => {
+    const last = transactions[transactions.length - 1];
+    return last ? parseTxDate(last.transaction_date) : null;
   }, [transactions]);
+  const covers = (start: Date) => complete || (oldestFetched !== null && oldestFetched < start);
 
-  const totalInflowNum = parseFloat(currentSummary.incomeTotal) || 0;
-  const totalOutflowNum = parseFloat(currentSummary.expenseTotal) || 0;
-  const netBalanceNum = parseFloat(currentSummary.netBalance) || 0;
-  const avgPerTx =
-    currentSummary.count > 0 ? (totalOutflowNum / currentSummary.count).toFixed(2) : '0.00';
+  const current = useMemo(
+    () => (win ? sumWindow(transactions, selectedCurrency, win.start, win.end) : null),
+    [transactions, selectedCurrency, win],
+  );
+  const previous = useMemo(
+    () => (win ? sumWindow(transactions, selectedCurrency, win.prevStart, win.prevEnd) : null),
+    [transactions, selectedCurrency, win],
+  );
 
-  // Savings / Retention rate
-  const retentionRate =
-    totalInflowNum > 0
-      ? Math.max(
-          0,
-          Math.min(100, Math.round(((totalInflowNum - totalOutflowNum) / totalInflowNum) * 100)),
-        )
-      : 0;
+  const totalsKnown = !loading && !error && current !== null && win !== null && covers(win.start);
+  const deltasKnown = totalsKnown && win !== null && covers(win.prevStart);
 
-  // Debt obligations ratio vs monthly inflow
-  const debtRatio =
-    totalInflowNum > 0 && loanPortfolioSummary
-      ? Math.min(
-          100,
-          Math.round((Number(loanPortfolioSummary.outstandingPayables) / totalInflowNum) * 100),
-        )
-      : 0;
+  const inRange = useMemo(
+    () =>
+      win
+        ? transactions.filter((tx) => {
+            const d = parseTxDate(tx.transaction_date);
+            return d !== null && d >= win.start && d < win.end;
+          })
+        : [],
+    [transactions, win],
+  );
 
-  const topCategory = categoryBreakdownData[0];
+  // shortcut: past the 2,000-row fetch cap the oldest months plot partial totals; add a per-month summary API if that ever matters.
+  const monthlyCashFlowData = useMemo(
+    () => aggregateMonthlyCashFlow(transactions, selectedCurrency),
+    [transactions, selectedCurrency],
+  );
+  const spendingTrendData = useMemo(
+    () => aggregateSpendingTrend(inRange, selectedCurrency, range, nowDate),
+    [inRange, selectedCurrency, range, nowDate],
+  );
+  const categoryBreakdown = useMemo(
+    () => aggregateCategoryBreakdown(inRange, categories, selectedCurrency),
+    [inRange, categories, selectedCurrency],
+  );
 
-  // Use the real account name only when Supabase returns one — never invent one.
+  const loanSummary = loanSummaries[selectedCurrency];
+  const overdueCount = loanSummary?.overdue_loans_count ?? 0;
+  const recentTransactions = transactions.slice(0, 6);
+  const baseline = RANGE_OPTIONS.find((r) => r.value === range)!.baseline;
+
   const rawMetaName = user?.user_metadata?.name;
   const metaName =
     typeof rawMetaName === 'string' && rawMetaName.trim() ? rawMetaName.trim() : null;
-
-  const handleRetry = () => {
-    setReloadToken((token) => token + 1);
-  };
 
   const handleAskSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -308,49 +222,62 @@ export default function DashboardPage() {
     router.push(prompt ? `/ai-entry?prompt=${encodeURIComponent(prompt)}` : '/ai-entry');
   };
 
-  const reportOptions: { value: 'flow' | 'breakdown' | 'loans'; label: string }[] = [
-    { value: 'flow', label: 'Cash flow' },
-    { value: 'breakdown', label: 'Categories' },
-    { value: 'loans', label: 'Loans' },
+  const money = (n: number) => formatMoney(n.toFixed(2), selectedCurrency);
+  const keptPct =
+    current && current.income > 0 ? Math.round((current.net / current.income) * 100) : null;
+  const avgExpense =
+    current && current.expenseCount > 0 ? current.expense / current.expenseCount : null;
+
+  const kpiTiles: KpiTile[] = [
+    {
+      label: 'Net cash flow',
+      value: totalsKnown && current ? money(current.net) : null,
+      bad: !!current && current.net < 0,
+      delta: deltasKnown && current && previous ? delta(current.net, previous.net, 'higher') : null,
+      prevLabel: previous ? money(previous.net) : '',
+      title:
+        keptPct !== null
+          ? `Inflow minus outflow. Kept ${keptPct}% of inflow.`
+          : 'Inflow minus outflow.',
+    },
+    {
+      label: 'Inflow',
+      value: totalsKnown && current ? money(current.income) : null,
+      delta: deltasKnown && current && previous ? delta(current.income, previous.income, 'higher') : null,
+      prevLabel: previous ? money(previous.income) : '',
+      title: 'Income and deposits',
+      icon: <ArrowDownLeft strokeWidth={1.5} aria-hidden="true" />,
+    },
+    {
+      label: 'Outflow',
+      value: totalsKnown && current ? money(current.expense) : null,
+      delta: deltasKnown && current && previous ? delta(current.expense, previous.expense, 'lower') : null,
+      prevLabel: previous ? money(previous.expense) : '',
+      title: 'Spending and payments',
+      icon: <ArrowUpRight strokeWidth={1.5} aria-hidden="true" />,
+    },
+    {
+      label: 'Transactions',
+      value: totalsKnown && current ? String(current.count) : null,
+      delta: deltasKnown && current && previous ? delta(current.count, previous.count, 'neutral') : null,
+      prevLabel: previous ? String(previous.count) : '',
+      title: avgExpense !== null ? `Average expense ${money(avgExpense)}` : 'No expenses in range',
+      icon: <ReceiptText strokeWidth={1.5} aria-hidden="true" />,
+    },
   ];
 
-  const draftCountLabel = `${drafts.length} draft${drafts.length === 1 ? '' : 's'} to review`;
-
-  // Don't present failed loads as measured zero totals.
-  const totalsUnavailable = Boolean(error) && transactions.length === 0;
-
-  const atAGlanceCopy = totalsUnavailable
-    ? 'Totals are unavailable right now. Retry once your connection is back.'
-    : totalInflowNum > 0 && netBalanceNum >= 0
-      ? `You kept ${retentionRate}% of the ${formatMoney(
-          currentSummary.incomeTotal,
-          currentSummary.currency,
-        )} that came in across ${currentSummary.count} transaction${
-          currentSummary.count === 1 ? '' : 's'
-        }.`
-      : totalInflowNum > 0
-        ? `You spent ${formatMoney(
-            Math.abs(netBalanceNum).toFixed(2),
-            currentSummary.currency,
-          )} more than came in across ${currentSummary.count} transaction${
-            currentSummary.count === 1 ? '' : 's'
-          }.`
-        : currentSummary.count > 0
-          ? `No income recorded in ${currentSummary.currency} yet, and ${formatMoney(
-              currentSummary.expenseTotal,
-              currentSummary.currency,
-            )} has gone out.`
-          : `No transactions in ${currentSummary.currency} yet. Add one and this panel will fill in.`;
+  const hasAttention = drafts.length > 0 || overdueCount > 0;
+  const maxCategory = categoryBreakdown[0]?.amount ?? 0;
 
   return (
-    <AppShell>
-      <div className="space-y-8">
+    <AppShell wide>
+      <div className="space-y-6">
         <PageHeader
           title="Overview"
           meta={
-            <span className="flex min-h-5 max-w-full flex-wrap items-center gap-x-2 gap-y-1 break-words">
-              {currentDateFormatted ? <span>{currentDateFormatted}</span> : null}
-              {currentDateFormatted && metaName ? (
+            <span className="flex min-h-5 max-w-full flex-wrap items-center gap-x-2 gap-y-1">
+              {today ? <span>{today.label}</span> : null}
+              {today && metaName ? (
                 <span aria-hidden="true" className="text-[var(--color-text-subtle)]">
                   ·
                 </span>
@@ -367,11 +294,9 @@ export default function DashboardPage() {
               >
                 Add with AI
               </ButtonLink>
-
               <ButtonLink href="/loans/new" variant="ghost">
                 Record a loan
               </ButtonLink>
-
               <ButtonLink
                 href="/transactions/new"
                 variant="primary"
@@ -383,532 +308,346 @@ export default function DashboardPage() {
           }
         />
 
-        {/* Load failure — plain language with a retry */}
-        {error && (
-          <Alert
-            tone="danger"
-            title="We couldn't load your dashboard"
-            action={
-              <Button variant="secondary" size="sm" onClick={handleRetry}>
-                Retry
-              </Button>
-            }
-          >
-            Check your connection and try again. Nothing has been changed or lost.
-          </Alert>
-        )}
-
-        {/* Drafts waiting for confirmation */}
-        {drafts.length > 0 && (
-          <Alert
-            tone="info"
-            title={draftCountLabel}
-            action={
-              <ButtonLink href="/ai-entry" variant="secondary" size="sm">
-                Review drafts
-              </ButtonLink>
-            }
-          >
-            Nothing is saved until you confirm each draft.
-          </Alert>
-        )}
-
-        {/* Net cash flow is the one dominant number; the rest are a quiet strip. */}
-        <div className="rounded-[var(--radius-2xl)] border border-[var(--color-border-sky)] bg-gradient-to-b from-[#f2f8ff] to-[var(--color-surface)] p-1.5 shadow-[var(--shadow-sm)] dark:border-sky-900/40 dark:from-slate-900 dark:to-slate-950">
-          <section
-            aria-labelledby="cash-flow-summary"
-            className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 sm:p-6"
-          >
-          <h2 id="cash-flow-summary" className="sr-only">
-            Cash flow summary
-          </h2>
-
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <Metric
-              label="Net cash flow"
-              size="lg"
-              className="min-w-0 break-words"
-              value={
-                loading ? (
-                  <Skeleton className="w-44" style={{ height: 36 }} />
-                ) : totalsUnavailable ? (
-                  <span aria-label="Totals unavailable">—</span>
-                ) : (
-                  formatMoney(currentSummary.netBalance, currentSummary.currency)
-                )
-              }
-              hint={`Inflow minus outflow in ${currentSummary.currency}`}
-            />
-
-            <div className="flex flex-wrap items-center gap-2">
-              {allCurrencies.length > 1 && (
-                <div className="flex items-center gap-2">
-                  <label
-                    htmlFor="dashboard-currency"
-                    className="text-label whitespace-nowrap text-[var(--color-text-muted)]"
-                  >
-                    Currency
-                  </label>
-                  <div className="w-24 shrink-0">
-                    <Select
-                      id="dashboard-currency"
-                      value={selectedCurrency}
-                      onChange={(e) => setSelectedCurrency(e.target.value)}
-                    >
-                      {allCurrencies.map((c) => (
-                        <option key={c} value={c}>
-                          {c}
-                        </option>
-                      ))}
-                    </Select>
-                  </div>
-                </div>
-              )}
-
-              {loading ? (
-                <Skeleton className="h-5 w-20" />
-              ) : totalsUnavailable ? null : currentSummary.count === 0 ? (
-                <Badge tone="neutral" dot>
-                  No activity
-                </Badge>
-              ) : netBalanceNum === 0 ? (
-                <Badge tone="neutral" dot>
-                  Balanced
-                </Badge>
-              ) : (
-                <Badge tone={netBalanceNum > 0 ? 'success' : 'danger'} dot>
-                  {netBalanceNum > 0 ? 'In surplus' : 'In deficit'}
-                </Badge>
-              )}
-            </div>
-          </div>
-
-          <div className="mt-4 grid grid-cols-1 divide-y divide-[var(--color-border)] border-t border-[var(--color-border)] pt-3 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-            <div className="py-4 sm:py-0 sm:pr-5">
-              <Metric
-                label="Inflow"
-                className="min-w-0 break-words"
-                value={
-                  loading ? (
-                    <Skeleton className="w-32" style={{ height: 26 }} />
-                  ) : totalsUnavailable ? (
-                    <span aria-label="Totals unavailable">—</span>
-                  ) : (
-                    formatMoney(currentSummary.incomeTotal, currentSummary.currency)
-                  )
-                }
-                hint="Income and deposits"
+        {/* Toolbar: one global range and currency for every number below. */}
+        <div className="flex flex-wrap items-center gap-2">
+          <SegmentedControl
+            label="Date range"
+            size="sm"
+            value={range}
+            onChange={setRange}
+            options={RANGE_OPTIONS.map(({ value, label }) => ({ value, label }))}
+          />
+          {allCurrencies.length > 1 &&
+            (allCurrencies.length <= 4 ? (
+              <SegmentedControl
+                label="Currency"
+                size="sm"
+                value={selectedCurrency}
+                onChange={setSelectedCurrency}
+                options={allCurrencies.map((c) => ({ value: c, label: c }))}
               />
-            </div>
-            <div className="py-4 sm:px-5 sm:py-0">
-              <Metric
-                label="Outflow"
-                className="min-w-0 break-words"
-                value={
-                  loading ? (
-                    <Skeleton className="w-32" style={{ height: 26 }} />
-                  ) : totalsUnavailable ? (
-                    <span aria-label="Totals unavailable">—</span>
-                  ) : (
-                    formatMoney(currentSummary.expenseTotal, currentSummary.currency)
-                  )
-                }
-                hint="Spending and payments"
-              />
-            </div>
-            <div className="py-4 sm:pl-5 sm:py-0">
-              <Metric
-                label="Transactions"
-                className="min-w-0 break-words"
-                value={
-                  loading ? (
-                    <Skeleton className="w-16" style={{ height: 26 }} />
-                  ) : totalsUnavailable ? (
-                    <span aria-label="Totals unavailable">—</span>
-                  ) : (
-                    currentSummary.count
-                  )
-                }
-                hint={
-                  loading ? (
-                    <Skeleton className="w-40" style={{ height: 12 }} />
-                  ) : currentSummary.count > 0 ? (
-                    `Average ${formatMoney(avgPerTx, currentSummary.currency)} per transaction`
-                  ) : (
-                    'Nothing recorded yet'
-                  )
-                }
-              />
-            </div>
-          </div>
-          </section>
+            ) : (
+              <div className="w-24">
+                <Select
+                  aria-label="Currency"
+                  value={selectedCurrency}
+                  onChange={(e) => setSelectedCurrency(e.target.value)}
+                >
+                  {allCurrencies.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            ))}
+          {!loading && !error && (
+            <span
+              className="ml-auto inline-flex items-center gap-1.5 rounded-[var(--radius-full)] border border-[var(--color-border)] bg-[var(--color-surface)] px-2.5 py-1 text-xs text-[var(--color-text-muted)]"
+              title="Loaded when you opened this page"
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-income)]" aria-hidden="true" />
+              Updated
+            </span>
+          )}
         </div>
 
-        {/* Other currencies held in the account */}
-        {otherCurrencies.length > 0 && (
-          <Section
-            title="Other currencies"
-            description={`You also have activity in ${otherCurrencies.length} other ${
-              otherCurrencies.length === 1 ? 'currency' : 'currencies'
-            }.`}
+        {/* One page-level note for a failed load or a capped fetch. */}
+        {error && (
+          <div
+            role="alert"
+            className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-lg)] border border-[var(--color-danger)]/30 bg-[var(--color-danger-subtle)] px-4 py-3"
           >
-            <ul className="divide-y divide-[var(--color-border)] border-y border-[var(--color-border)]">
-              {otherCurrencies.map((c) => (
-                <li key={c.currency}>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedCurrency(c.currency)}
-                    className="flex w-full cursor-pointer items-center justify-between gap-3 py-3 text-left transition-colors duration-[var(--duration-fast)] hover:bg-[var(--color-surface-hover)]"
-                  >
-                    <span className="flex min-w-0 items-center gap-3">
-                      <span className="text-card-title">{c.currency}</span>
-                      <span className="text-caption truncate">
-                        {c.count} transaction{c.count === 1 ? '' : 's'}
-                      </span>
-                    </span>
-                    <span className="flex shrink-0 items-center gap-2">
-                      <span className="text-card-title tabular-nums">
-                        {formatMoney(c.netBalance, c.currency)}
-                      </span>
-                      <ArrowRight
-                        className="h-4 w-4 text-[var(--color-text-subtle)]"
-                        aria-hidden="true"
-                      />
-                      <span className="sr-only">Show the dashboard in {c.currency}</span>
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </Section>
+            <span className="flex items-center gap-2 text-sm font-medium text-[var(--color-text)]">
+              <AlertTriangle className="h-4 w-4 text-[var(--color-danger)]" aria-hidden="true" />
+              Couldn&apos;t load totals
+            </span>
+            <Button variant="secondary" size="sm" onClick={() => setReloadToken((t) => t + 1)}>
+              Retry
+            </Button>
+          </div>
         )}
 
-        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
-          {/* Main workspace: charts + recent activity */}
-          <div className="space-y-8 lg:col-span-8">
-            <Section
-              title="Charts"
-              actions={
-                <SegmentedControl
-                  label="Chart view"
-                  size="sm"
-                  value={activeReportTab}
-                  onChange={setActiveReportTab}
-                  options={reportOptions}
-                />
-              }
+        {/* Attention: noun + number + action, only when something waits. */}
+        {hasAttention && (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {drafts.length > 0 && (
+              <AttentionItem
+                icon={<FileClock className="h-4 w-4" aria-hidden="true" />}
+                label={`${drafts.length} AI draft${drafts.length === 1 ? '' : 's'}`}
+                detail="unsaved"
+                href="/ai-entry"
+                action="Review"
+              />
+            )}
+            {overdueCount > 0 && (
+              <AttentionItem
+                icon={<AlertTriangle className="h-4 w-4" aria-hidden="true" />}
+                label={`${overdueCount} overdue loan${overdueCount === 1 ? '' : 's'}`}
+                detail={selectedCurrency}
+                href="/loans?status=overdue"
+                action="View"
+              />
+            )}
+          </div>
+        )}
+
+        <KpiStrip label="Cash flow summary" tiles={kpiTiles} baseline={baseline} loading={loading} />
+
+        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
+          {/* Main view: where the money went over time. */}
+          <div className="space-y-6 lg:col-span-8">
+            <SpendingTrendChart
+              data={spendingTrendData}
+              currency={selectedCurrency}
+              selectedRange={range}
+              loading={loading}
+            />
+            <IncomeExpenseChart
+              data={monthlyCashFlowData}
+              currency={selectedCurrency}
+              loading={loading}
+            />
+          </div>
+
+          {/* Breakdowns: categories and loans. */}
+          <div className="space-y-6 lg:col-span-4">
+            <section
+              aria-labelledby="top-categories"
+              className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-xs)] sm:p-5"
             >
-              <div className="space-y-6">
-                {activeReportTab === 'flow' && (
-                  <>
-                    <IncomeExpenseChart
-                      data={monthlyCashFlowData}
-                      currency={selectedCurrency}
-                      loading={loading}
-                    />
-
-                    <SpendingTrendChart
-                      data={spendingTrendData}
-                      currency={selectedCurrency}
-                      selectedRange={selectedRange}
-                      onRangeChange={setSelectedRange}
-                      loading={loading}
-                    />
-                  </>
-                )}
-
-                {activeReportTab === 'breakdown' && (
-                  <>
-                    <CategoryBreakdownChart
-                      data={categoryBreakdownData}
-                      currency={selectedCurrency}
-                      loading={loading}
-                    />
-
-                    <BudgetProgressChart
-                      data={budgetProgressData}
-                      currency={selectedCurrency}
-                      loading={loading}
-                    />
-                  </>
-                )}
-
-                {activeReportTab === 'loans' && (
-                  <>
-                    <LoanBalanceChart
-                      summary={loanPortfolioSummary}
-                      currency={selectedCurrency}
-                      loading={loading}
-                    />
-
-                    <RepaymentHistoryChart
-                      data={repaymentHistoryData}
-                      currency={selectedCurrency}
-                      loading={loading}
-                    />
-                  </>
-                )}
+              <div className="flex items-baseline justify-between gap-2">
+                <h2 id="top-categories" className="text-card-title">
+                  Top categories
+                </h2>
+                <span className="text-xs text-[var(--color-text-muted)]">Outflow</span>
               </div>
-            </Section>
-
-            <Section
-              title="Recent activity"
-              actions={
-                <ButtonLink href="/transactions" variant="ghost" size="sm">
-                  View all transactions
-                </ButtonLink>
-              }
-            >
               {loading ? (
-                <ul className="divide-y divide-[var(--color-border)] border-y border-[var(--color-border)]">
-                  {[0, 1, 2].map((i) => (
-                    <li key={i} className="flex items-center gap-3 py-3">
-                      <Skeleton className="h-8 w-8 shrink-0" />
-                      <div className="min-w-0 flex-1 space-y-2">
-                        <Skeleton className="w-32" style={{ height: 14 }} />
-                        <Skeleton className="w-48" style={{ height: 12 }} />
-                      </div>
-                      <Skeleton className="h-4 w-20 shrink-0" />
+                <div className="mt-3 space-y-3">
+                  {[0, 1, 2, 3].map((i) => (
+                    <Skeleton key={i} className="w-full" style={{ height: 28 }} />
+                  ))}
+                </div>
+              ) : categoryBreakdown.length === 0 ? (
+                <p className="mt-3 text-sm text-[var(--color-text-muted)]">No spending in range</p>
+              ) : (
+                <ul className="mt-2 -mx-2">
+                  {categoryBreakdown.slice(0, 6).map((c) => (
+                    <li
+                      key={c.categoryId}
+                      className="group relative flex h-11 items-center gap-3 rounded-[var(--radius-sm)] px-2 pb-1.5 hover:bg-[var(--color-surface-hover)]"
+                      title={`${c.categoryName} · ${money(c.amount)} · ${c.count} expense${c.count === 1 ? '' : 's'}`}
+                    >
+                      <span className="min-w-0 flex-1 truncate text-sm text-[var(--color-text)]">
+                        {c.categoryName}
+                      </span>
+                      <span className="text-sm tabular-nums text-[var(--color-text)]">{money(c.amount)}</span>
+                      <span className="w-10 text-right text-xs tabular-nums text-[var(--color-text-muted)]">
+                        {c.percentage < 1 ? '<1%' : `${c.percentage}%`}
+                      </span>
+                      <span
+                        className="absolute inset-x-2 bottom-1 h-[3px] rounded-full bg-[var(--color-border)]"
+                        aria-hidden="true"
+                      >
+                        <span
+                          className="block h-full rounded-full bg-[var(--color-primary-text)] opacity-75 group-hover:opacity-100"
+                          style={{ width: `${maxCategory > 0 ? (c.amount / maxCategory) * 100 : 0}%` }}
+                        />
+                      </span>
                     </li>
                   ))}
                 </ul>
-              ) : recentTransactions.length === 0 ? (
-                <EmptyState
-                  icon={<ReceiptText aria-hidden="true" />}
-                  title="No transactions yet"
-                  description="Add your first transaction and your cash flow, categories and recent activity will appear here."
-                  action={
-                    <ButtonLink href="/transactions/new" variant="primary" size="sm">
-                      Add your first transaction
-                    </ButtonLink>
-                  }
-                />
-              ) : (
-                <ul className="divide-y divide-[var(--color-border)] border-y border-[var(--color-border)]">
-                  {recentTransactions.map((tx) => {
-                    const cat = categoryMap.get(tx.category_id);
-                    const isIncome = tx.type === 'income';
-
-                    return (
-                      <li
-                        key={tx.id}
-                        className="flex items-center justify-between gap-3 py-3 transition-colors duration-[var(--duration-fast)]"
-                      >
-                        <div className="flex min-w-0 items-center gap-3">
-                          <span
-                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--radius-md)] ${
-                              isIncome
-                                ? 'bg-[var(--color-income-subtle)] text-[var(--color-income)]'
-                                : 'bg-[var(--color-expense-subtle)] text-[var(--color-expense)]'
-                            }`}
-                          >
-                            {isIncome ? (
-                              <ArrowDownLeft className="h-4 w-4" aria-hidden="true" />
-                            ) : (
-                              <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
-                            )}
-                          </span>
-
-                          <div className="min-w-0">
-                            <div className="flex min-w-0 items-center gap-2">
-                              <span className="text-card-title truncate">
-                                {cat ? cat.name : 'Uncategorized'}
-                              </span>
-                              {tx.is_ai_generated && <Badge tone="outline">AI entry</Badge>}
-                            </div>
-                            <p className="text-caption truncate">
-                              {tx.description || 'No description'} ·{' '}
-                              <span className="tabular-nums">
-                                {formatDate(tx.transaction_date)}
-                              </span>
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex shrink-0 items-center gap-3">
-                          <span className="text-card-title tabular-nums">
-                            <span className="sr-only">{isIncome ? 'Inflow of' : 'Outflow of'}</span>{' '}
-                            {isIncome ? '+' : '−'}&nbsp;
-                            {formatMoney(tx.amount, tx.currency)}
-                          </span>
-                          <Link
-                            href={`/transactions/${tx.id}/edit`}
-                            className="link-quiet text-label whitespace-nowrap"
-                          >
-                            Edit
-                          </Link>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
               )}
-            </Section>
-          </div>
+            </section>
 
-          {/* Context column: a calm summary and question entry */}
-          <div className="space-y-8 lg:col-span-4">
-            <div className="rounded-[var(--radius-2xl)] border border-[var(--color-border-sky)] bg-gradient-to-b from-[#f2f8ff] to-[var(--color-surface)] p-1.5 shadow-[var(--shadow-sm)] dark:border-sky-900/40 dark:from-slate-900 dark:to-slate-950">
-              <Card className="rounded-[var(--radius-xl)] p-5">
-                <h2 className="text-card-title">At a glance</h2>
-
-              <div className="text-secondary mt-1.5">
-                {loading ? (
-                  <Skeleton lines={2} />
-                ) : (
-                  <p>{atAGlanceCopy}</p>
-                )}
+            <section
+              aria-labelledby="loans-summary"
+              className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-xs)] sm:p-5"
+            >
+              <div className="flex items-baseline justify-between gap-2">
+                <h2 id="loans-summary" className="text-card-title">
+                  Loans
+                </h2>
+                <Link href="/loans" className="link-quiet text-xs">
+                  View all
+                </Link>
               </div>
-
-              <dl className="mt-4 divide-y divide-[var(--color-border)] border-t border-[var(--color-border)]">
-                <div className="py-3">
-                  <div className="flex items-baseline justify-between gap-3">
-                    <dt className="text-secondary">Kept from inflow</dt>
-                    <dd className="text-label tabular-nums text-[var(--color-text)]">
-                      {loading ? <Skeleton className="w-8" style={{ height: 12 }} /> : `${retentionRate}%`}
+              {loading ? (
+                <Skeleton className="mt-3 w-full" style={{ height: 56 }} />
+              ) : !loanSummary ? (
+                <p className="mt-3 text-sm text-[var(--color-text-muted)]">No loans in {selectedCurrency}</p>
+              ) : (
+                <dl className="mt-3 grid grid-cols-2 gap-3">
+                  <div title="Lent and not yet repaid">
+                    <dt className="text-xs text-[var(--color-text-muted)]">Owed to you</dt>
+                    <dd className="mt-0.5 text-lg font-semibold tabular-nums text-[var(--color-text)]">
+                      {formatMoney(loanSummary.outstanding_receivables, selectedCurrency)}
                     </dd>
                   </div>
-                  <div
-                    className="mt-2 h-1.5 overflow-hidden rounded-[var(--radius-full)] bg-[var(--color-surface-sunken)]"
-                    aria-hidden="true"
-                  >
-                    <div
-                      className="h-full rounded-[var(--radius-full)] bg-[var(--color-primary)]"
-                      style={{ width: `${loading ? 0 : retentionRate}%` }}
-                    />
-                  </div>
-                </div>
-
-                <div className="py-3">
-                  <div className="flex items-baseline justify-between gap-3">
-                    <dt className="text-secondary">Outstanding debt vs inflow</dt>
-                    <dd className="text-label tabular-nums text-[var(--color-text)]">
-                      {loading ? <Skeleton className="w-8" style={{ height: 12 }} /> : `${debtRatio}%`}
+                  <div title="Borrowed and not yet repaid">
+                    <dt className="text-xs text-[var(--color-text-muted)]">You owe</dt>
+                    <dd className="mt-0.5 text-lg font-semibold tabular-nums text-[var(--color-text)]">
+                      {formatMoney(loanSummary.outstanding_payables, selectedCurrency)}
                     </dd>
                   </div>
-                  <div
-                    className="mt-2 h-1.5 overflow-hidden rounded-[var(--radius-full)] bg-[var(--color-surface-sunken)]"
-                    aria-hidden="true"
-                  >
-                    <div
-                      className="h-full rounded-[var(--radius-full)] bg-[var(--color-warning)]"
-                      style={{ width: `${loading ? 0 : debtRatio}%` }}
-                    />
+                  <div className="col-span-2 flex flex-wrap gap-x-3 gap-y-1 border-t border-[var(--color-border)] pt-2 text-xs tabular-nums text-[var(--color-text-muted)]">
+                    <span>{loanSummary.active_loans_count} active</span>
+                    <span>{loanSummary.settled_loans_count} settled</span>
+                    {overdueCount > 0 && (
+                      <span className="font-medium text-[var(--color-warning)]">▲ {overdueCount} overdue</span>
+                    )}
                   </div>
-                  <p className="text-caption mt-1.5">
-                    {loading
-                      ? ''
-                      : loanPortfolioSummary && Number(loanPortfolioSummary.outstandingPayables) > 0
-                        ? `You owe ${formatMoney(
-                            loanPortfolioSummary.outstandingPayables,
-                            currentSummary.currency,
-                          )} in total.`
-                        : 'No outstanding loan balance.'}
-                  </p>
-                </div>
+                </dl>
+              )}
+            </section>
 
-                <div className="py-3">
-                  <div className="flex items-baseline justify-between gap-3">
-                    <dt className="text-secondary">Top spending category</dt>
-                    <dd className="text-label tabular-nums text-[var(--color-text)]">
-                      {loading ? (
-                        <Skeleton className="w-8" style={{ height: 12 }} />
-                      ) : topCategory ? (
-                        `${topCategory.percentage}%`
-                      ) : (
-                        '—'
-                      )}
-                    </dd>
-                  </div>
-                  <div
-                    className="mt-2 h-1.5 overflow-hidden rounded-[var(--radius-full)] bg-[var(--color-surface-sunken)]"
-                    aria-hidden="true"
-                  >
-                    <div
-                      className="h-full rounded-[var(--radius-full)] bg-[var(--color-expense)]"
-                      style={{ width: `${loading ? 0 : (topCategory?.percentage ?? 0)}%` }}
-                    />
-                  </div>
-                  <p className="text-caption mt-1.5 truncate">
-                    {loading
-                      ? ''
-                      : topCategory
-                        ? `${topCategory.categoryName} · ${formatMoney(
-                            topCategory.amount,
-                            currentSummary.currency,
-                          )}`
-                        : 'No expenses in this currency yet.'}
-                  </p>
-                </div>
-              </dl>
-              </Card>
-            </div>
-
-            <Section title="Ask about your spending">
-              <ul className="divide-y divide-[var(--color-border)] border-y border-[var(--color-border)]">
-                <li>
-                  <Link
-                    href="/ai-entry?prompt=What%20caused%20the%20highest%20expense%20this%20month%3F"
-                    className="flex cursor-pointer items-center justify-between gap-3 py-2.5 text-secondary transition-colors duration-[var(--duration-fast)] hover:text-[var(--color-text)]"
-                  >
-                    <span>What was my biggest expense this month?</span>
-                    <ArrowRight
-                      className="h-4 w-4 shrink-0 text-[var(--color-text-subtle)]"
-                      aria-hidden="true"
-                    />
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/loans"
-                    className="flex cursor-pointer items-center justify-between gap-3 py-2.5 text-secondary transition-colors duration-[var(--duration-fast)] hover:text-[var(--color-text)]"
-                  >
-                    <span>Check my loan repayment schedule</span>
-                    <ArrowRight
-                      className="h-4 w-4 shrink-0 text-[var(--color-text-subtle)]"
-                      aria-hidden="true"
-                    />
-                  </Link>
-                </li>
-                {drafts.length > 0 && (
-                  <li>
-                    <Link
-                      href="/ai-entry"
-                      className="flex cursor-pointer items-center justify-between gap-3 py-2.5 text-secondary transition-colors duration-[var(--duration-fast)] hover:text-[var(--color-text)]"
-                    >
-                      <span>Review {drafts.length} draft entries</span>
-                      <ArrowRight
-                        className="h-4 w-4 shrink-0 text-[var(--color-text-subtle)]"
-                        aria-hidden="true"
-                      />
-                    </Link>
-                  </li>
-                )}
-              </ul>
-
-              <form onSubmit={handleAskSubmit} className="space-y-3">
-                <Field
-                  id="dashboard-question"
-                  label="Ask a question"
-                  hint="Opens the quick-add page with your question ready to send."
-                >
-                  <Input
-                    id="dashboard-question"
-                    type="text"
-                    name="prompt"
-                    value={aiAskInput}
-                    onChange={(e) => setAiAskInput(e.target.value)}
-                    placeholder="How much did I spend on transport last month?"
-                  />
-                </Field>
-                <Button type="submit" variant="primary" size="sm" className="w-full sm:w-auto">
+            <section
+              aria-labelledby="ask-heading"
+              className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-xs)] sm:p-5"
+            >
+              <h2 id="ask-heading" className="text-card-title">
+                Ask
+              </h2>
+              <form onSubmit={handleAskSubmit} className="mt-3 flex gap-2">
+                <Input
+                  aria-label="Ask about your spending"
+                  type="text"
+                  name="prompt"
+                  value={aiAskInput}
+                  onChange={(e) => setAiAskInput(e.target.value)}
+                  placeholder="Transport spend last month?"
+                />
+                <Button type="submit" variant="primary" size="sm" className="shrink-0">
                   Ask
                 </Button>
               </form>
-            </Section>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {['Biggest expense this month', 'Spend vs last month'].map((q) => (
+                  <Link
+                    key={q}
+                    href={`/ai-entry?prompt=${encodeURIComponent(q)}`}
+                    className="rounded-[var(--radius-full)] border border-[var(--color-border)] px-2.5 py-1 text-xs text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)]"
+                  >
+                    {q}
+                  </Link>
+                ))}
+              </div>
+            </section>
           </div>
         </div>
+
+        {/* Recent activity */}
+        <section
+          aria-labelledby="recent-heading"
+          className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-xs)] sm:p-5"
+        >
+          <div className="flex items-baseline justify-between gap-2">
+            <h2 id="recent-heading" className="text-card-title">
+              Recent activity
+            </h2>
+            <Link href="/transactions" className="link-quiet inline-flex items-center gap-1 text-xs">
+              All transactions <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+            </Link>
+          </div>
+          {loading ? (
+            <ul className="mt-2 divide-y divide-[var(--color-border)]">
+              {[0, 1, 2].map((i) => (
+                <li key={i} className="flex items-center gap-3 py-3">
+                  <Skeleton className="h-8 w-8 shrink-0" />
+                  <Skeleton className="flex-1" style={{ height: 14 }} />
+                  <Skeleton className="h-4 w-20 shrink-0" />
+                </li>
+              ))}
+            </ul>
+          ) : recentTransactions.length === 0 ? (
+            <EmptyState
+              icon={<ReceiptText aria-hidden="true" />}
+              title="No transactions yet"
+              description="Transactions appear here after the first one is added."
+              action={
+                <ButtonLink href="/transactions/new" variant="primary" size="sm">
+                  Add transaction
+                </ButtonLink>
+              }
+            />
+          ) : (
+            <ul className="mt-2 divide-y divide-[var(--color-border)]">
+              {recentTransactions.map((tx) => {
+                const cat = categoryMap.get(tx.category_id);
+                const isIncome = tx.type === 'income';
+                return (
+                  <li key={tx.id}>
+                    <Link
+                      href={`/transactions/${tx.id}/edit`}
+                      className="-mx-2 flex items-center gap-3 rounded-[var(--radius-sm)] px-2 py-2.5 hover:bg-[var(--color-surface-hover)]"
+                    >
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--radius-sm)] bg-[var(--color-surface-sunken)] text-[var(--color-text-muted)]">
+                        {isIncome ? (
+                          <ArrowDownLeft className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+                        ) : (
+                          <ArrowUpRight className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+                        )}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center gap-2">
+                          <span className="truncate text-sm font-medium text-[var(--color-text)]">
+                            {cat ? cat.name : 'Uncategorized'}
+                          </span>
+                          {tx.is_ai_generated && (
+                            <span className="rounded-[var(--radius-xs)] border border-[var(--color-border)] px-1 text-[10px] text-[var(--color-text-muted)]">
+                              AI
+                            </span>
+                          )}
+                        </span>
+                        <span className="block truncate text-xs text-[var(--color-text-muted)]">
+                          {tx.description ? `${tx.description} · ` : ''}
+                          <span className="tabular-nums">{formatDate(tx.transaction_date)}</span>
+                        </span>
+                      </span>
+                      <span
+                        className={`shrink-0 text-sm font-medium tabular-nums ${
+                          isIncome ? 'text-[var(--color-income)]' : 'text-[var(--color-text)]'
+                        }`}
+                      >
+                        <span className="sr-only">{isIncome ? 'Inflow of' : 'Outflow of'} </span>
+                        {isIncome ? '+' : '−'}
+                        {formatMoney(tx.amount, tx.currency)}
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
       </div>
     </AppShell>
+  );
+}
+
+function AttentionItem({
+  icon,
+  label,
+  detail,
+  href,
+  action,
+}: {
+  icon: ReactNode;
+  label: string;
+  detail: string;
+  href: string;
+  action: string;
+}) {
+  return (
+    <div className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-[var(--color-warning)]/30 bg-[var(--color-warning-subtle)] px-4 py-2.5">
+      <span className="text-[var(--color-warning)]">{icon}</span>
+      <span className="min-w-0 flex-1 truncate text-sm">
+        <span className="font-medium text-[var(--color-text)]">{label}</span>
+        <span className="text-[var(--color-text-muted)]"> · {detail}</span>
+      </span>
+      <ButtonLink href={href} variant="secondary" size="sm">
+        {action}
+      </ButtonLink>
+    </div>
   );
 }

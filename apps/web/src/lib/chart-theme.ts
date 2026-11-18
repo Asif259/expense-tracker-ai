@@ -187,10 +187,10 @@ export function getBaseChartOptions(
           callback: (value: any) => {
             const num = Number(value);
             if (Math.abs(num) >= 1000000) {
-              return `${(num / 1000000).toFixed(1)}M`;
+              return `${Number((num / 1000000).toFixed(1))}M`;
             }
             if (Math.abs(num) >= 1000) {
-              return `${(num / 1000).toFixed(0)}k`;
+              return `${Number((num / 1000).toFixed(1))}k`;
             }
             return num.toLocaleString();
           },
@@ -215,4 +215,20 @@ export function getBaseChartOptions(
       ...(customOptions.scales || {}),
     },
   };
+}
+
+/** `#rrggbb` + alpha → `rgba()`, for pastel fills on the same entity hue. */
+export function withAlpha(hex: string, alpha: number) {
+  const value = hex.replace('#', '');
+  const full =
+    value.length === 3
+      ? value
+          .split('')
+          .map((char) => char + char)
+          .join('')
+      : value;
+  const r = parseInt(full.slice(0, 2), 16);
+  const g = parseInt(full.slice(2, 4), 16);
+  const b = parseInt(full.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }

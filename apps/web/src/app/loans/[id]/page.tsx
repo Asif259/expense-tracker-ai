@@ -54,9 +54,9 @@ function statusLabel(status: Loan['status']): string {
 }
 
 function progressColor(status: Loan['status']): string {
-  if (status === 'settled') return 'bg-[var(--color-income)]';
-  if (status === 'overdue') return 'bg-[var(--color-warning)]';
-  return 'bg-[var(--color-primary)]';
+  if (status === 'settled') return 'text-[var(--color-income)]';
+  if (status === 'overdue') return 'text-[var(--color-warning)]';
+  return 'text-[var(--color-primary)]';
 }
 
 function clampPct(value: number): number {
@@ -393,49 +393,47 @@ function LoanDetailContent() {
           }
         />
 
-        {/* Balance summary */}
-        <div className="rounded-[var(--radius-2xl)] border border-[var(--color-border-sky)] bg-gradient-to-b from-[#f2f8ff] to-[var(--color-surface)] p-1.5 shadow-[var(--shadow-sm)] dark:border-sky-900/40 dark:from-slate-900 dark:to-slate-950">
+        {/* Balance: value, original and what is left on one tile (target tile with a tick bar). */}
+        <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] p-1.5">
+          <div className="flex items-center justify-between px-3 py-1.5 text-sm text-[var(--color-text-muted)]">
+            <span>{isLent ? 'To collect' : 'To repay'}</span>
+            <span className="tabular-nums">{loan.currency}</span>
+          </div>
           <Card padding="lg" className="space-y-5">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div className="min-w-0">
-                <p className="text-label text-[var(--color-text-muted)]">
-                  {isLent ? 'Remaining to collect' : 'Remaining to repay'}
-                </p>
-                <p className="text-metric-xl mt-1 tabular-nums">
-                  {formatMoney(loan.outstanding_balance, loan.currency)}
-                </p>
-                <p className="text-secondary mt-1.5 tabular-nums">
-                  {formatMoney(loan.principal_amount, loan.currency)} original
-                  <span aria-hidden="true"> · </span>
-                  {formatMoney(loan.total_repaid, loan.currency)} repaid
-                </p>
-              </div>
-              <div className="sm:text-right">
-                <p className="text-label text-[var(--color-text-muted)]">Progress</p>
-                <p className="text-metric-sm mt-1 tabular-nums">{progress}% repaid</p>
-                <p className="text-caption mt-0.5">
-                  {isSettled ? 'Fully settled' : `${formatMoney(loan.outstanding_balance, loan.currency)} left`}
-                </p>
-              </div>
-            </div>
-
             <div>
+              <p className="flex flex-wrap items-baseline gap-x-2 tabular-nums">
+                <span className="text-[32px] font-semibold leading-tight tracking-[-0.03em] text-[var(--color-text)]">
+                  {formatMoney(loan.outstanding_balance, loan.currency)}
+                </span>
+                <span className="text-sm text-[var(--color-text-muted)]">
+                  of {formatMoney(loan.principal_amount, loan.currency)}
+                </span>
+              </p>
               <div
                 role="progressbar"
                 aria-label="Loan repayment progress"
                 aria-valuemin={0}
                 aria-valuemax={100}
                 aria-valuenow={progress}
-                className="h-2 w-full overflow-hidden rounded-full bg-[var(--color-surface-sunken)]"
+                className="relative mt-4 h-7 w-full"
               >
                 <div
-                  className={`h-full rounded-full transition-[width] duration-150 ${progressColor(loan.status)}`}
-                  style={{ width: `${progress}%` }}
+                  className="absolute inset-0 text-[var(--color-border-strong)]"
+                  style={{ background: 'repeating-linear-gradient(90deg, currentColor 0 2px, transparent 2px 5px)' }}
+                />
+                <div
+                  className={`absolute inset-y-0 left-0 ${progressColor(loan.status)}`}
+                  style={{
+                    width: `${progress}%`,
+                    background: 'repeating-linear-gradient(90deg, currentColor 0 2px, transparent 2px 5px)',
+                  }}
                 />
               </div>
-              <div className="mt-1.5 flex flex-wrap justify-between gap-2 text-caption tabular-nums">
+              <div className="mt-2 flex flex-wrap justify-between gap-2 text-sm tabular-nums text-[var(--color-text-muted)]">
                 <span>{formatMoney(loan.total_repaid, loan.currency)} repaid</span>
-                <span>{formatMoney(loan.outstanding_balance, loan.currency)} remaining</span>
+                <span className={isSettled ? 'font-medium text-[var(--color-income)]' : ''}>
+                  {isSettled ? 'Settled' : `${progress}%`}
+                </span>
               </div>
             </div>
 
@@ -448,9 +446,10 @@ function LoanDetailContent() {
                 <dt className="text-caption">Due date</dt>
                 <dd
                   className={`text-body mt-0.5 tabular-nums ${
-                    isOverdue ? 'text-[var(--color-warning)]' : ''
+                    isOverdue ? 'font-medium text-[var(--color-warning)]!' : ''
                   }`}
                 >
+                  {isOverdue && '▲ '}
                   {loan.due_date ? formatDate(loan.due_date) : 'No due date'}
                 </dd>
               </div>
@@ -478,8 +477,8 @@ function LoanDetailContent() {
           title="Repayment history"
           description={
             repayments.length > 0
-              ? `${repayments.length} ${repayments.length === 1 ? 'payment' : 'payments'} recorded`
-              : 'Payments recorded against this loan appear here.'
+              ? `${repayments.length} ${repayments.length === 1 ? 'payment' : 'payments'}`
+              : undefined
           }
         >
           {repayments.length === 0 ? (

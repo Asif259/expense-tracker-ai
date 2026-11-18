@@ -226,12 +226,12 @@ function AiEntryInner() {
     <AppShell>
       <div className="mx-auto max-w-5xl space-y-8">
         <PageHeader
-          title="Add a transaction by describing it"
-          description="Type or say something like “Spent 350 BDT on lunch today”. You'll review the draft below and confirm it before it is saved."
+          title="AI quick add"
+          description="Type or say it · saved only after you confirm"
         />
 
         {/* Input */}
-        <div className="rounded-[var(--radius-2xl)] border border-[var(--color-border-sky)] bg-gradient-to-b from-[#f2f8ff] to-[var(--color-surface)] p-1.5 shadow-[var(--shadow-sm)] dark:border-sky-900/40 dark:from-slate-900 dark:to-slate-950">
+        <div>
           <Card className="p-5 sm:p-6">
             <form onSubmit={handleParse} className="space-y-5">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start">

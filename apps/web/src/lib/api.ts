@@ -125,6 +125,20 @@ export async function listTransactions(token: string, query: TransactionQuery = 
   return { ...response, data: (response.data ?? []).map(normalizeTransaction) };
 }
 
+/**
+ * Every transaction on or after `startDate`, paged 100 at a time.
+ * `complete` is false when the page cap was hit, so callers never show a partial total as a real one.
+ */
+export async function listAllTransactions(token: string, startDate: string, maxPages = 20) {
+  const data: Transaction[] = [];
+  for (let page = 0; page < maxPages; page++) {
+    const res = await listTransactions(token, { startDate, limit: 100, offset: page * 100 });
+    data.push(...res.data);
+    if (res.data.length < 100 || data.length >= res.total) return { data, complete: true };
+  }
+  return { data, complete: false };
+}
+
 export async function getTransaction(token: string, id: string) {
   const transaction = await request<Transaction>(`/transactions/${id}`, token);
   return normalizeTransaction(transaction);

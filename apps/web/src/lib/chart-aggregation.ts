@@ -1,5 +1,6 @@
 import { Transaction, Loan } from './api';
 import { Category } from './categories';
+import { parseTxDate } from './dashboard-metrics';
 
 export type DateRangePreset =
   | '7d'
@@ -110,8 +111,8 @@ export function filterTransactions(
 
   return transactions.filter((tx) => {
     if ((tx.currency || 'BDT') !== currency) return false;
-    const txDate = new Date(tx.transaction_date);
-    if (isNaN(txDate.getTime())) return false;
+    const txDate = parseTxDate(tx.transaction_date);
+    if (!txDate) return false;
     if (minDate && txDate < minDate) return false;
     if (maxDate && txDate > maxDate) return false;
     return true;
@@ -149,8 +150,8 @@ export function aggregateMonthlyCashFlow(
 
   for (const tx of transactions) {
     if ((tx.currency || 'BDT') !== currency) continue;
-    const d = new Date(tx.transaction_date);
-    if (isNaN(d.getTime())) continue;
+    const d = parseTxDate(tx.transaction_date);
+    if (!d) continue;
 
     const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
     const existing = map.get(monthKey) || { income: 0, expense: 0 };
@@ -195,8 +196,8 @@ export function aggregateSpendingTrend(
   const map = new Map<string, { spending: number; count: number }>();
 
   for (const tx of filtered) {
-    const d = new Date(tx.transaction_date);
-    if (isNaN(d.getTime())) continue;
+    const d = parseTxDate(tx.transaction_date);
+    if (!d) continue;
 
     const key = isDaily
       ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`

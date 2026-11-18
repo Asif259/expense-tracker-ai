@@ -150,7 +150,7 @@ function ShellSkeleton() {
   );
 }
 
-function ShellInner({ children }: { children: React.ReactNode }) {
+function ShellInner({ children, wide }: { children: React.ReactNode; wide?: boolean }) {
   const { user, loading, signOut } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -362,7 +362,9 @@ function ShellInner({ children }: { children: React.ReactNode }) {
       <div className="flex min-w-0 flex-1 flex-col md:pl-64">
         <main
           id="main-content"
-          className="mx-auto mt-14 w-full max-w-7xl flex-1 px-4 py-6 pb-24 sm:px-6 md:mt-0 md:py-8 md:pb-10 lg:px-8"
+          className={`mx-auto mt-14 w-full max-w-7xl flex-1 px-4 py-6 pb-24 sm:px-6 md:mt-0 md:py-8 md:pb-10 lg:px-8 ${
+            wide ? 'min-[112.5rem]:max-w-[1640px]' : ''
+          }`}
         >
           {children}
         </main>
@@ -371,10 +373,11 @@ function ShellInner({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function AppShell({ children }: { children: React.ReactNode }) {
+/** `wide` lets data-heavy pages grow on large screens; forms stay narrow. */
+export default function AppShell({ children, wide }: { children: React.ReactNode; wide?: boolean }) {
   return (
     <Suspense fallback={<ShellSkeleton />}>
-      <ShellInner>{children}</ShellInner>
+      <ShellInner wide={wide}>{children}</ShellInner>
     </Suspense>
   );
 }

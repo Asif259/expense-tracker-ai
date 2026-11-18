@@ -161,7 +161,7 @@ export function CategoryBreakdownChart({
   return (
     <ChartCard
       title="Expense categories"
-      subtitle="Where your spending went"
+      subtitle="Outflow by category"
       currency={currency}
       loading={loading}
       error={error}

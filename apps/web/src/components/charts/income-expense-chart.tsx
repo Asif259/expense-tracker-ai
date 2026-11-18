@@ -4,7 +4,7 @@ import React, { useMemo } from 'react';
 import { Bar } from 'react-chartjs-2';
 import '@/lib/chart-registry';
 import { useTheme } from '@/context/theme-context';
-import { getBaseChartOptions, getChartPalette } from '@/lib/chart-theme';
+import { getBaseChartOptions, getChartPalette, withAlpha } from '@/lib/chart-theme';
 import { MonthlyCashFlowPoint } from '@/lib/chart-aggregation';
 import { ChartCard } from './chart-card';
 import { AccessibleChartTable } from './accessible-chart-table';
@@ -36,20 +36,24 @@ export function IncomeExpenseChart({
         {
           label: 'Inflow',
           data: data.map((d) => d.income),
-          backgroundColor: palette.income,
-          hoverBackgroundColor: palette.income,
+          backgroundColor: withAlpha(palette.income, 0.22),
+          hoverBackgroundColor: withAlpha(palette.income, 0.35),
+          borderColor: palette.income,
+          borderWidth: { top: 3, right: 0, bottom: 0, left: 0 },
           borderRadius: 4,
-          borderSkipped: false,
+          borderSkipped: 'bottom' as const,
           barPercentage: 0.7,
           categoryPercentage: 0.8,
         },
         {
           label: 'Outflow',
           data: data.map((d) => d.expense),
-          backgroundColor: palette.expense,
-          hoverBackgroundColor: palette.expense,
+          backgroundColor: withAlpha(palette.expense, 0.22),
+          hoverBackgroundColor: withAlpha(palette.expense, 0.35),
+          borderColor: palette.expense,
+          borderWidth: { top: 3, right: 0, bottom: 0, left: 0 },
           borderRadius: 4,
-          borderSkipped: false,
+          borderSkipped: 'bottom' as const,
           barPercentage: 0.7,
           categoryPercentage: 0.8,
         },
@@ -71,7 +75,7 @@ export function IncomeExpenseChart({
   return (
     <ChartCard
       title="Income and expenses"
-      subtitle="Inflow and outflow by month"
+      subtitle="Last 12 months"
       currency={currency}
       loading={loading}
       error={error}
