@@ -5,6 +5,7 @@ import './globals.css';
 import { AuthProvider } from '@/context/auth-context';
 import { ThemeProvider } from '@/context/theme-context';
 import { Toaster } from '@/components/toast';
+import { SmoothScroll } from '@/components/smooth-scroll';
 
 // Bengali UI strings (voice input examples, category names) fall back to this
 // instead of a random system font. Preload is off: Latin pages never fetch it.
@@ -75,7 +76,7 @@ export default function RootLayout({
       >
         <ThemeProvider>
           <AuthProvider>
-            {children}
+            <SmoothScroll>{children}</SmoothScroll>
             <Toaster />
           </AuthProvider>
         </ThemeProvider>
