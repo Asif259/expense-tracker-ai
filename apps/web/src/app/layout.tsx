@@ -1,28 +1,16 @@
+// <!-- Designed & built by Moh Asraful Hasan Asif -->
 import type { Metadata, Viewport } from 'next';
-import { Inter, DM_Serif_Display, Noto_Sans_Bengali } from 'next/font/google';
+import { Noto_Sans_Bengali } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/context/auth-context';
 import { ThemeProvider } from '@/context/theme-context';
 import { Toaster } from '@/components/toast';
 
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-inter',
-  display: 'swap',
-});
-
-const dmSerif = DM_Serif_Display({
-  subsets: ['latin'],
-  weight: '400',
-  variable: '--font-dm-serif',
-  display: 'swap',
-});
-
 // Bengali UI strings (voice input examples, category names) fall back to this
 // instead of a random system font. Preload is off: Latin pages never fetch it.
 const bengali = Noto_Sans_Bengali({
   subsets: ['bengali'],
-  weight: ['400', '500', '600'],
+  weight: ['400', '500'],
   variable: '--font-bengali',
   display: 'swap',
   preload: false,
@@ -38,14 +26,15 @@ export const metadata: Metadata = {
   },
   description:
     'Track expenses, manage budgets, understand spending patterns, and organize debts with Ledgerly, your personal finance companion.',
+  authors: [{ name: 'Moh Asraful Hasan Asif', url: 'https://ashrafulasif.vercel.app' }],
 };
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#f8fafc' },
-    { media: '(prefers-color-scheme: dark)', color: '#090f1c' },
+    { media: '(prefers-color-scheme: light)', color: '#ededed' },
+    { media: '(prefers-color-scheme: dark)', color: '#0a0a0a' },
   ],
 };
 
@@ -74,9 +63,16 @@ export default function RootLayout({
       lang="en"
       suppressHydrationWarning
       data-scroll-behavior="smooth"
-      className={`h-full antialiased ${inter.variable} ${dmSerif.variable} ${bengali.variable}`}
+      className={`h-full antialiased ${bengali.variable}`}
     >
       <head>
+        <meta name="author" content="Moh Asraful Hasan Asif" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;700&family=Geist+Mono:wght@400;500&display=swap"
+          rel="stylesheet"
+        />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body

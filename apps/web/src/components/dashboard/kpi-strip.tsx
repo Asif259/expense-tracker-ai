@@ -32,7 +32,7 @@ export function KpiStrip({
   return (
     <section
       aria-label={label}
-      className="grid grid-cols-2 overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-xs)] lg:grid-cols-4"
+      className="grid grid-cols-2 overflow-hidden rounded-[10px] border border-[var(--color-border)] bg-[var(--color-surface)] lg:grid-cols-4"
     >
       {tiles.map((t, i) => (
         <div
@@ -43,15 +43,15 @@ export function KpiStrip({
           } ${i === 2 ? 'lg:border-l' : ''}`}
         >
           <div className="flex items-center justify-between gap-2">
-            <span className="truncate text-sm text-[var(--color-text-muted)]">{t.label}</span>
+            <span className="truncate font-mono text-[11px] uppercase tracking-wider text-[var(--color-text-muted)]">{t.label}</span>
             {t.icon && (
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--radius-sm)] bg-[var(--color-surface-sunken)] text-[var(--color-text-muted)] [&>svg]:h-4 [&>svg]:w-4">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[4px] bg-[var(--color-surface-sunken)] text-[var(--color-text-muted)] [&>svg]:h-3.5 [&>svg]:w-3.5">
                 {t.icon}
               </span>
             )}
           </div>
           <div
-            className={`mt-2 break-all text-[22px] font-semibold leading-tight tracking-[-0.03em] tabular-nums sm:text-[28px] ${
+            className={`mt-2 break-all text-[22px] font-medium leading-tight tracking-[-0.03em] tabular-nums sm:text-[28px] ${
               t.bad && t.value ? 'text-[var(--color-expense)]' : 'text-[var(--color-text)]'
             }`}
           >

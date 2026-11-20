@@ -77,7 +77,7 @@ export function getChartPalette(theme: 'light' | 'dark'): ChartPalette {
 }
 
 export const CHART_FONT_FAMILY =
-  '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans Bengali", sans-serif';
+  '"Geist", system-ui, -apple-system, sans-serif;';
 
 export function getBaseChartOptions(
   theme: 'light' | 'dark',

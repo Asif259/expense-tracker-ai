@@ -3,17 +3,85 @@
 @custom-variant dark (&:is(.dark, .dark *));
 
 /* ==========================================================================
-   LEDGERLY DESIGN TOKENS
-   One accent (teal), neutrals for 95% of the surface area, semantic colors
-   reserved for state. All text tokens are checked for WCAG AA contrast on
-   the surfaces they are used on.
+   EDITORIAL TASTE DESIGN TOKENS
+   Monochrome, editorial, typography-led design system.
+   Geist 500 for headings, Geist 400 for body, Geist Mono for UI/buttons/labels.
+   Glass blur (16px) instead of drop shadows. 5px rhythm.
    ========================================================================== */
 
-/* ==========================================================================
-   LEDGERLY DESIGN TOKENS — Sky-Blue & Deep-Navy Fintech
-   Navy/cerulean carries brand UI; emerald is reserved for income and positive
-   cash flow. Text tokens are checked for WCAG AA on the surfaces they sit on.
-   ========================================================================== */
+:root {
+  /* Fonts */
+  --font-heading: "Geist", system-ui, -apple-system, sans-serif;
+  --font-body: "Geist", system-ui, -apple-system, sans-serif;
+  --font-ui: "Geist Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* Neutral scale */
+  --neutral-white: #ffffff;
+  --neutral-50: #fafafa;
+  --neutral-100: #f5f5f5;
+  --neutral-150: #ededed;
+  --neutral-200: #e5e5e5;
+  --neutral-300: #d4d4d4;
+  --neutral-400: #a3a3a3;
+  --neutral-500: #737373;
+  --neutral-600: #525252;
+  --neutral-700: #404040;
+  --neutral-800: #262626;
+  --neutral-850: #1f1f1f;
+  --neutral-900: #171717;
+  --neutral-950: #0a0a0a;
+  --neutral-975: #050505;
+  --neutral-black: #000000;
+
+  /* Base alpha ramps */
+  --light-100: #ededed;
+  --light-88: #ededede0;
+  --light-64: #edededa3;
+  --light-48: #ededed7a;
+  --light-32: #ededed52;
+  --light-16: #ededed29;
+  --light-8: #ededed14;
+  --light-4: #ededed0a;
+
+  --dark-100: #151515;
+  --dark-88: #151515e0;
+  --dark-64: #151515a3;
+  --dark-48: #1515157a;
+  --dark-32: #15151552;
+  --dark-16: #15151529;
+  --dark-8: #15151514;
+  --dark-4: #1515150a;
+
+  /* 5px Spacing rhythm */
+  --space-5: 5px;
+  --space-10: 10px;
+  --space-15: 15px;
+  --space-20: 20px;
+  --space-25: 25px;
+  --space-30: 30px;
+  --space-35: 35px;
+  --space-40: 40px;
+  --space-50: 50px;
+  --space-60: 60px;
+  --space-75: 75px;
+  --space-96: 96px;
+  --space-100: 100px;
+
+  /* Radii */
+  --radius-btn: 8px;
+  --radius-card: 10px;
+  --radius-case: 20px;
+  --radius-pill: 9999px;
+
+  /* Glass blur instead of shadows */
+  --blur-glass: blur(16px);
+  --shadow-none: none;
+  --shadow-xs: none;
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: none;
+  --shadow-card: none;
+}
 
 :root,
 [data-theme="light"],
@@ -21,78 +89,71 @@
   color-scheme: light;
 
   /* Surfaces & neutrals */
-  --color-bg: #f8fafc;
+  --color-bg: #ededed;
   --color-surface: #ffffff;
   --color-surface-elevated: #ffffff;
-  --color-surface-hover: #f1f7fe;
-  --color-surface-sunken: #f4f9ff;
-  --color-border: #e2e8f0;
-  --color-border-sky: #cfe6fc;
-  --color-border-strong: #cbd5e1;
-  --color-border-hover: #5ba6ea;
-  --color-scrim: rgba(15, 23, 42, 0.52);
+  --color-surface-hover: #f5f5f5;
+  --color-surface-sunken: #e5e5e5;
+  --color-border: #15151529;
+  --color-border-sky: #15151529;
+  --color-border-strong: #15151552;
+  --color-border-hover: #1515157a;
+  --color-scrim: rgba(21, 21, 21, 0.52);
 
   /* Text */
-  --color-text: #0f172a;
-  --color-text-secondary: #334155;
-  --color-text-muted: #475569;
-  --color-text-subtle: #5c6b7f;
+  --color-text: #151515;
+  --color-text-secondary: #404040;
+  --color-text-muted: #737373;
+  --color-text-subtle: #a3a3a3;
   --color-text-inverse: #ffffff;
 
-  /* Brand: deep navy primary with cerulean accents */
-  --color-primary: #1e3a5f;
-  --color-primary-hover: #162c49;
-  --color-primary-active: #11233b;
-  --color-primary-contrast: #ffffff;
-  --color-primary-subtle: #ebf5ff;
-  --color-primary-subtle-hover: #d8ecff;
-  --color-primary-text: #2b75b6;
-  --color-focus: #2b75b6;
-  --color-focus-ring: rgba(43, 117, 182, 0.32);
-  --color-brand: #2b75b6;
-  --color-brand-soft: #ebf5ff;
-  --color-accent-blue: #3b82f6;
-  --color-sky-tint: #bce1fa;
+  /* Primary & Brand */
+  --color-primary: #151515;
+  --color-primary-hover: #262626;
+  --color-primary-active: #0a0a0a;
+  --color-primary-contrast: #ededed;
+  --color-primary-subtle: #1515150a;
+  --color-primary-subtle-hover: #15151514;
+  --color-primary-text: #151515;
+  --color-focus: #151515;
+  --color-focus-ring: rgba(21, 21, 21, 0.25);
+  --color-brand: #151515;
+  --color-brand-soft: #1515150a;
+  --color-accent-blue: #151515;
+  --color-sky-tint: #e5e5e5;
 
-  /* Semantic states — green only for income / positive flow */
-  --color-income: #059669;
-  --color-income-subtle: #ecfdf5;
-  --color-expense: #e11d48;
-  --color-expense-subtle: #fff1f2;
-  --color-expense-bg: #fff1f2;
-  --color-warning: #b45309;
-  --color-warning-subtle: #fffbeb;
-  --color-amber: #d97706;
-  --color-amber-subtle: #fffbeb;
-  --color-danger: #e11d48;
-  --color-danger-hover: #be123c;
-  --color-danger-contrast: #ffffff;
-  --color-danger-subtle: #fff1f2;
-  --color-mint: #059669;
-  --color-soft-blue: #3b82f6;
+  /* Semantic financial indicators */
+  --color-income: #151515;
+  --color-income-subtle: #1515150a;
+  --color-expense: #525252;
+  --color-expense-subtle: #1515150a;
+  --color-expense-bg: #1515150a;
+  --color-warning: #525252;
+  --color-warning-subtle: #1515150a;
+  --color-amber: #525252;
+  --color-amber-subtle: #1515150a;
+  --color-danger: #151515;
+  --color-danger-hover: #262626;
+  --color-danger-contrast: #ededed;
+  --color-danger-subtle: #1515150a;
+  --color-mint: #151515;
+  --color-soft-blue: #404040;
 
   /* Compatibility aliases */
   --color-secondary: var(--color-primary);
   --color-secondary-hover: var(--color-primary-hover);
-  --color-secondary-bg: rgba(59, 130, 246, 0.1);
+  --color-secondary-bg: #1515150a;
   --color-pale-mint: var(--color-income-subtle);
   --color-pale-cyan: var(--color-brand-soft);
   --color-pale-yellow: var(--color-warning-subtle);
 
-  /* Elevation — soft navy-tinted shadows for floating surfaces */
-  --shadow-xs: 0 1px 2px rgba(30, 58, 95, 0.04);
-  --shadow-sm: 0 4px 16px rgba(30, 58, 95, 0.05);
-  --shadow-md: 0 12px 36px rgba(30, 58, 95, 0.08);
-  --shadow-lg: 0 24px 60px -24px rgba(30, 58, 95, 0.16);
-  --shadow-card: none;
-
-  /* Radii — softer, bento-friendly scale */
-  --radius-xs: 0.25rem;
-  --radius-sm: 0.5rem;
-  --radius-md: 0.75rem;
-  --radius-lg: 1rem;
-  --radius-xl: 1.25rem;
-  --radius-2xl: 1.75rem;
+  /* Radii */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 10px;
+  --radius-2xl: 20px;
   --radius-full: 9999px;
 }
 
@@ -100,81 +161,78 @@
 .dark {
   color-scheme: dark;
 
-  --color-bg: #090f1c;
-  --color-surface: #0f172a;
-  --color-surface-elevated: #1e293b;
-  --color-surface-hover: #162238;
-  --color-surface-sunken: #0b1324;
-  --color-border: #1e293b;
-  --color-border-sky: rgba(56, 189, 248, 0.22);
-  --color-border-strong: #334155;
-  --color-border-hover: #38bdf8;
-  --color-scrim: rgba(2, 6, 12, 0.66);
+  --color-bg: #0a0a0a;
+  --color-surface: #151515;
+  --color-surface-elevated: #1f1f1f;
+  --color-surface-hover: #262626;
+  --color-surface-sunken: #050505;
+  --color-border: #ededed29;
+  --color-border-sky: #ededed29;
+  --color-border-strong: #ededed52;
+  --color-border-hover: #ededed7a;
+  --color-scrim: rgba(0, 0, 0, 0.75);
 
-  --color-text: #f8fafc;
-  --color-text-secondary: #cbd5e1;
-  --color-text-muted: #94a3b8;
-  --color-text-subtle: #7e90a6;
-  --color-text-inverse: #090f1c;
+  --color-text: #ededed;
+  --color-text-secondary: #d4d4d4;
+  --color-text-muted: #a3a3a3;
+  --color-text-subtle: #737373;
+  --color-text-inverse: #0a0a0a;
 
-  --color-primary: #38bdf8;
-  --color-primary-hover: #7dd3fc;
-  --color-primary-active: #0ea5e9;
-  --color-primary-contrast: #090f1c;
-  --color-primary-subtle: rgba(56, 189, 248, 0.12);
-  --color-primary-subtle-hover: rgba(56, 189, 248, 0.2);
-  --color-primary-text: #60a5fa;
-  --color-focus: #38bdf8;
-  --color-focus-ring: rgba(56, 189, 248, 0.36);
-  --color-brand: #38bdf8;
-  --color-brand-soft: rgba(56, 189, 248, 0.14);
-  --color-accent-blue: #60a5fa;
-  --color-sky-tint: #122b4a;
+  --color-primary: #ededed;
+  --color-primary-hover: #ffffff;
+  --color-primary-active: #d4d4d4;
+  --color-primary-contrast: #151515;
+  --color-primary-subtle: #ededed14;
+  --color-primary-subtle-hover: #ededed29;
+  --color-primary-text: #ededed;
+  --color-focus: #ededed;
+  --color-focus-ring: rgba(237, 237, 237, 0.25);
+  --color-brand: #ededed;
+  --color-brand-soft: #ededed14;
+  --color-accent-blue: #ededed;
+  --color-sky-tint: #262626;
 
-  --color-income: #34d399;
-  --color-income-subtle: rgba(16, 185, 129, 0.14);
-  --color-expense: #fb7185;
-  --color-expense-subtle: rgba(244, 63, 94, 0.14);
-  --color-expense-bg: rgba(244, 63, 94, 0.14);
-  --color-warning: #fbbf24;
-  --color-warning-subtle: rgba(245, 158, 11, 0.14);
-  --color-amber: #fbbf24;
-  --color-amber-subtle: rgba(245, 158, 11, 0.14);
-  --color-danger: #fb7185;
-  --color-danger-hover: #fda4af;
-  --color-danger-contrast: #2a0507;
-  --color-danger-subtle: rgba(244, 63, 94, 0.14);
-  --color-mint: #34d399;
-  --color-soft-blue: #60a5fa;
+  --color-income: #ededed;
+  --color-income-subtle: #ededed0a;
+  --color-expense: #a3a3a3;
+  --color-expense-subtle: #ededed0a;
+  --color-expense-bg: #ededed0a;
+  --color-warning: #a3a3a3;
+  --color-warning-subtle: #ededed0a;
+  --color-amber: #a3a3a3;
+  --color-amber-subtle: #ededed0a;
+  --color-danger: #ededed;
+  --color-danger-hover: #ffffff;
+  --color-danger-contrast: #151515;
+  --color-danger-subtle: #ededed0a;
+  --color-mint: #ededed;
+  --color-soft-blue: #d4d4d4;
 
   --color-secondary: var(--color-primary);
   --color-secondary-hover: var(--color-primary-hover);
-  --color-secondary-bg: rgba(56, 189, 248, 0.1);
+  --color-secondary-bg: #ededed0a;
   --color-pale-mint: var(--color-income-subtle);
   --color-pale-cyan: var(--color-brand-soft);
   --color-pale-yellow: var(--color-warning-subtle);
 
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.25);
-  --shadow-md: 0 12px 36px rgba(0, 0, 0, 0.45);
-  --shadow-lg: 0 24px 60px -24px rgba(0, 0, 0, 0.6);
-  --shadow-card: none;
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 10px;
+  --radius-2xl: 20px;
+  --radius-full: 9999px;
 }
 
 /* ==========================================================================
    TAILWIND THEME BRIDGE
-   `inline` keeps the utilities pointing at the live CSS variables so light and
-   dark themes resolve correctly without duplicating the palette.
    ========================================================================== */
 
 @theme inline {
-  --font-sans: var(--font-inter), var(--font-bengali), -apple-system,
-    BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
-    "Noto Sans Bengali", sans-serif;
-  --font-serif: var(--font-dm-serif), Georgia, Cambria, "Times New Roman", Times, serif;
-  --font-display: var(--font-dm-serif), Georgia, Cambria, "Times New Roman", Times, serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
-    "Courier New", monospace;
+  --font-sans: "Geist", var(--font-bengali), system-ui, -apple-system, sans-serif;
+  --font-serif: "Geist", serif;
+  --font-display: "Geist", system-ui, -apple-system, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, monospace;
 
   --color-landing-bg: var(--color-bg);
   --color-landing-surface: var(--color-surface-elevated);
@@ -190,14 +248,18 @@
   --color-landing-border: var(--color-border);
 
   --radius-*: initial;
-  --radius-xs: 0.25rem;
-  --radius-sm: 0.5rem;
-  --radius-md: 0.75rem;
-  --radius-lg: 1rem;
-  --radius-xl: 1.25rem;
-  --radius-2xl: 1.75rem;
-  --radius-3xl: 2rem;
-  --radius-4xl: 2.5rem;
+  --radius-btn: 8px;
+  --radius-card: 10px;
+  --radius-case: 20px;
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 10px;
+  --radius-2xl: 20px;
+  --radius-3xl: 20px;
+  --radius-4xl: 20px;
+  --radius-full: 9999px;
   --radius-full: 9999px;
 
   --animate-fade-in: fade-in 160ms var(--ease-standard) both;
@@ -229,7 +291,7 @@ body {
   overflow-x: clip;
   background: var(--color-bg);
   color: var(--color-text);
-  font-family: var(--font-inter), var(--font-bengali), sans-serif;
+  font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -346,30 +408,31 @@ body {
 }
 
 /* ==========================================================================
-   TYPOGRAPHY SCALE
-   Sizes are deliberate; nothing important is smaller than 12px.
+   TYPOGRAPHY SCALE (EDITORIAL TASTE)
+   Geist Medium (500) for titles and metrics, Geist Regular (400) for body,
+   Geist Mono (400/500) for UI, labels, chips, and eyebrows.
    ========================================================================== */
 
 .text-page-title {
   font-family: var(--font-sans);
   font-size: clamp(1.5rem, 2.2vw, 1.875rem); /* 24px – 30px */
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.18;
-  letter-spacing: -0.022em;
+  letter-spacing: -0.025em;
   color: var(--color-text);
 }
 
 .text-section-title {
   font-size: 1.0625rem; /* 17px */
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.3;
-  letter-spacing: -0.012em;
+  letter-spacing: -0.015em;
   color: var(--color-text);
 }
 
 .text-card-title {
   font-size: 0.875rem; /* 14px */
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.35;
   color: var(--color-text);
 }
@@ -377,7 +440,7 @@ body {
 .text-metric-xl {
   font-family: var(--font-sans);
   font-size: clamp(1.75rem, 2.4vw, 2.25rem); /* 28px – 36px */
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.1;
   letter-spacing: -0.025em;
   font-variant-numeric: tabular-nums lining-nums;
@@ -387,7 +450,7 @@ body {
 .text-metric {
   font-family: var(--font-sans);
   font-size: 1.375rem; /* 22px */
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.2;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums lining-nums;
@@ -396,7 +459,7 @@ body {
 
 .text-metric-sm {
   font-size: 1.0625rem; /* 17px */
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.25;
   font-variant-numeric: tabular-nums lining-nums;
   color: var(--color-text);
@@ -417,10 +480,13 @@ body {
 }
 
 .text-label {
-  font-size: 0.75rem; /* 12px */
-  font-weight: 500;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem; /* 11px */
+  font-weight: 400;
   line-height: 1.4;
-  color: var(--color-text-secondary);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
 }
 
 .text-caption {
@@ -431,10 +497,11 @@ body {
 }
 
 .text-eyebrow {
-  font-size: 0.6875rem; /* 11px — reserved for compact group labels */
-  font-weight: 600;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem; /* 11px */
+  font-weight: 400;
   line-height: 1.4;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--color-text-subtle);
 }
@@ -448,19 +515,18 @@ body {
 
 /* ==========================================================================
    SURFACES
-   Cards use a hairline border, not a shadow. Shadows are reserved for layers
-   that actually float above the page.
+   Cards use a hairline border, not a shadow. 10px radius per Editorial Taste.
    ========================================================================== */
 
 .surface-card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-card);
 }
 
 .surface-sunken {
   background: var(--color-surface-sunken);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-card);
 }
 
 .hairline {

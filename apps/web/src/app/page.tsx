@@ -1942,12 +1942,25 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="mt-10 flex flex-col items-start justify-between gap-3 border-t border-[var(--color-border)] pt-6 text-[12px] text-[var(--color-text-subtle)] sm:flex-row sm:items-center">
-              <p>
-                © <span className="inline-block min-w-[3.5ch] tabular-nums">{year ?? ''}</span>{' '}
-                Ledgerly. All rights reserved.
-              </p>
-              <p>Your records are private to your account.</p>
+            <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-[var(--color-border)] pt-6 text-[12px] text-[var(--color-text-subtle)] sm:flex-row sm:items-center">
+              <div className="flex flex-col items-center gap-1 sm:items-start">
+                <p>
+                  © <span className="inline-block min-w-[3.5ch] tabular-nums">{year ?? ''}</span>{' '}
+                  Ledgerly. All rights reserved.
+                </p>
+                <p className="text-[11px] text-[var(--color-text-subtle)]">
+                  Designed &amp; built by{' '}
+                  <a
+                    href="https://ashrafulasif.vercel.app"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-[var(--color-text-muted)] underline decoration-[var(--color-border-strong)] underline-offset-2 transition-colors hover:text-[var(--color-text)] hover:decoration-current"
+                  >
+                    Asif
+                  </a>
+                </p>
+              </div>
+              <p className="text-center sm:text-right">Your records are private to your account.</p>
             </div>
 
             {/* Oversized Faded Brand Watermark (Matches Video 00:24 Footer) */}

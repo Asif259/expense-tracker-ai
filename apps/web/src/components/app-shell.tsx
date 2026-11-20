@@ -62,22 +62,22 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
             href={item.href}
             onClick={onNavigate}
             aria-current={active ? 'page' : undefined}
-            className={`flex items-center justify-between gap-3 rounded-[var(--radius-md)] px-3 py-2 text-[13px] transition-colors duration-[var(--duration-fast)] ${
+            className={`flex items-center justify-between gap-3 rounded-[8px] px-3 py-2 font-mono text-[12px] transition-colors duration-[var(--dur-fast,0.2s)] ${
               active
-                ? 'bg-[var(--color-primary-subtle)] font-semibold text-[var(--color-primary)]'
-                : 'font-medium text-[var(--color-text-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text)]'
+                ? 'bg-[var(--color-surface-hover)] font-medium text-[var(--color-text)]'
+                : 'text-[var(--color-text-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text)]'
             }`}
           >
             <span className="flex min-w-0 items-center gap-2.5">
               <Icon
-                className={`h-[18px] w-[18px] shrink-0 ${
-                  active ? 'text-[var(--color-primary-text)]' : ''
+                className={`h-[16px] w-[16px] shrink-0 ${
+                  active ? 'text-[var(--color-text)]' : ''
                 }`}
               />
               <span className="truncate">{item.label}</span>
             </span>
             {item.badge && (
-              <span className="rounded-[var(--radius-xs)] border border-[var(--color-border)] px-1 py-0.5 text-[11px] font-semibold text-[var(--color-text-subtle)]">
+              <span className="rounded-[4px] border border-[var(--color-border)] px-1 py-0.5 font-mono text-[10px] text-[var(--color-text-subtle)]">
                 {item.badge}
               </span>
             )}
@@ -90,16 +90,16 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
 
 function AccountRow({ email, initials, onSignOut }: { email?: string | null; initials: string; onSignOut: () => void }) {
   return (
-    <div className="flex items-center justify-between gap-2 rounded-[var(--radius-md)] px-2 py-2">
+    <div className="flex items-center justify-between gap-2 rounded-[8px] px-2 py-2">
       <div className="flex min-w-0 items-center gap-2.5">
         <span
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-surface-hover)] text-[11px] font-semibold text-[var(--color-text-secondary)]"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-surface-hover)] text-[11px] font-medium text-[var(--color-text-secondary)]"
           aria-hidden="true"
         >
           {initials}
         </span>
         <div className="min-w-0">
-          <span className="block text-xs font-semibold text-[var(--color-text)]">Your account</span>
+          <span className="block text-xs font-medium text-[var(--color-text)]">Your account</span>
           <span
             className="block truncate text-[11px] text-[var(--color-text-subtle)]"
             title={email ?? undefined}
@@ -208,7 +208,7 @@ function ShellInner({ children, wide }: { children: React.ReactNode; wide?: bool
     <div className="flex min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:rounded-[var(--radius-md)] focus:bg-[var(--color-surface)] focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-[var(--color-text)] focus:shadow-[var(--shadow-md)]"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:rounded-[8px] focus:bg-[var(--color-surface)] focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-[var(--color-text)] focus:border focus:border-[var(--color-border)]"
       >
         Skip to content
       </a>
@@ -218,10 +218,10 @@ function ShellInner({ children, wide }: { children: React.ReactNode; wide?: bool
         <div className="flex h-16 items-center px-5">
           <Link
             href="/dashboard"
-            className="flex items-center gap-2.5 rounded-[var(--radius-sm)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)]"
+            className="flex items-center gap-2.5 rounded-[8px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)]"
           >
             <BrandMark />
-            <span className="text-[15px] font-semibold tracking-tight text-[var(--color-text)]">
+            <span className="text-[15px] font-medium tracking-tight text-[var(--color-text)]">
               Ledgerly<span className="text-[var(--color-primary)]">.</span>
             </span>
           </Link>
@@ -241,7 +241,7 @@ function ShellInner({ children, wide }: { children: React.ReactNode; wide?: bool
       <header className="fixed top-0 right-0 left-0 z-30 flex h-14 items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-surface-elevated)] px-4 pt-[env(safe-area-inset-top,0px)] md:hidden">
         <Link href="/dashboard" className="flex items-center gap-2">
           <BrandMark size={26} />
-          <span className="text-[15px] font-semibold tracking-tight text-[var(--color-text)]">
+          <span className="text-[15px] font-medium tracking-tight text-[var(--color-text)]">
             Ledgerly<span className="text-[var(--color-primary)]">.</span>
           </span>
         </Link>
@@ -282,7 +282,7 @@ function ShellInner({ children, wide }: { children: React.ReactNode; wide?: bool
         role="dialog"
         aria-modal="true"
         aria-label="Navigation"
-        className={`fixed inset-y-0 left-0 z-[60] flex h-[100dvh] w-72 max-w-[calc(100vw-3rem)] transform flex-col border-r border-[var(--color-border)] bg-[var(--color-surface-elevated)] shadow-[var(--shadow-lg)] transition-transform duration-200 ease-[var(--ease-out)] md:hidden ${
+        className={`fixed inset-y-0 left-0 z-[60] flex h-[100dvh] w-72 max-w-[calc(100vw-3rem)] transform flex-col border-r border-[var(--color-border)] bg-[var(--color-surface-elevated)] transition-transform duration-200 ease-[var(--ease-out)] md:hidden ${
           mobileNavOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -293,7 +293,7 @@ function ShellInner({ children, wide }: { children: React.ReactNode; wide?: bool
             className="flex items-center gap-2.5"
           >
             <BrandMark size={28} />
-            <span className="text-[15px] font-semibold tracking-tight">Ledgerly</span>
+            <span className="text-[15px] font-medium tracking-tight">Ledgerly</span>
           </Link>
           <button
             ref={drawerCloseBtnRef}
@@ -362,12 +362,34 @@ function ShellInner({ children, wide }: { children: React.ReactNode; wide?: bool
       <div className="flex min-w-0 flex-1 flex-col md:pl-64">
         <main
           id="main-content"
-          className={`mx-auto mt-14 w-full max-w-7xl flex-1 px-4 py-6 pb-24 sm:px-6 md:mt-0 md:py-8 md:pb-10 lg:px-8 ${
+          className={`mx-auto mt-14 w-full max-w-7xl flex-1 px-4 py-6 pb-12 sm:px-6 md:mt-0 md:py-8 md:pb-12 lg:px-8 ${
             wide ? 'min-[112.5rem]:max-w-[1640px]' : ''
           }`}
         >
           {children}
         </main>
+        <footer
+          className={`mx-auto w-full max-w-7xl px-4 pb-24 sm:px-6 md:pb-8 lg:px-8 ${
+            wide ? 'min-[112.5rem]:max-w-[1640px]' : ''
+          }`}
+        >
+          <div className="flex flex-col items-center justify-between gap-2 border-t border-[var(--color-border)] pt-4 text-[12px] text-[var(--color-text-subtle)] sm:flex-row">
+            <p className="text-center sm:text-left">
+              © {new Date().getFullYear()} Ledgerly. All rights reserved.
+            </p>
+            <p className="text-center text-[11px] text-[var(--color-text-subtle)] sm:text-right">
+              Designed &amp; built by{' '}
+              <a
+                href="https://ashrafulasif.vercel.app"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-[var(--color-text-muted)] underline decoration-[var(--color-border-strong)] underline-offset-2 transition-colors hover:text-[var(--color-text)] hover:decoration-current"
+              >
+                Asif
+              </a>
+            </p>
+          </div>
+        </footer>
       </div>
     </div>
   );

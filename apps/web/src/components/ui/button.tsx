@@ -6,16 +6,16 @@ export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 const BASE =
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[var(--radius-md)] font-medium cursor-pointer ' +
-  'transition-[background-color,border-color,color,box-shadow] duration-[var(--duration-fast)] ease-[var(--ease-standard)] ' +
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[8px] font-mono font-medium cursor-pointer ' +
+  'transition-colors duration-[var(--dur-fast,0.2s)] ease-[var(--ease-out,cubic-bezier(0.16,1,0.3,1))] ' +
   'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)] ' +
-  'disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed';
+  'disabled:opacity-40 disabled:pointer-events-none disabled:cursor-not-allowed';
 
 const VARIANTS: Record<ButtonVariant, string> = {
   primary:
     'bg-[var(--color-primary)] text-[var(--color-primary-contrast)] hover:bg-[var(--color-primary-hover)] active:bg-[var(--color-primary-active)]',
   secondary:
-    'bg-[var(--color-surface)] text-[var(--color-text)] border border-[var(--color-border-strong)] hover:bg-[var(--color-surface-hover)] hover:border-[var(--color-border-hover)]',
+    'bg-[var(--color-surface)] text-[var(--color-text)] border border-[var(--color-border)] hover:bg-[var(--color-surface-hover)]',
   ghost:
     'bg-transparent text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text)]',
   danger:
@@ -23,9 +23,9 @@ const VARIANTS: Record<ButtonVariant, string> = {
 };
 
 const SIZES: Record<ButtonSize, string> = {
-  sm: 'h-8 px-3 text-xs',
-  md: 'h-9 px-3.5 text-[13px]',
-  lg: 'h-11 px-5 text-sm',
+  sm: 'h-[30px] px-3 text-[11px]',
+  md: 'h-[36px] px-3.5 text-[12px]',
+  lg: 'h-[40px] px-5 text-[13px]',
 };
 
 export function buttonStyles(

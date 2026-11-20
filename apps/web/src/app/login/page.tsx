@@ -305,19 +305,34 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-[var(--color-bg)] px-4 py-12 text-[var(--color-text)]">
+    <div className="relative flex min-h-screen flex-col items-center justify-between bg-[var(--color-bg)] px-4 py-12 text-[var(--color-text)]">
       <div className="absolute right-4 top-4">
         <ThemeToggle variant="compact" />
       </div>
-      <Suspense
-        fallback={
-          <div className="flex items-center justify-center">
-            <Spinner className="h-6 w-6" label="Loading sign-in form" />
-          </div>
-        }
-      >
-        <LoginForm />
-      </Suspense>
+      <div className="my-auto w-full max-w-md">
+        <Suspense
+          fallback={
+            <div className="flex items-center justify-center">
+              <Spinner className="h-6 w-6" label="Loading sign-in form" />
+            </div>
+          }
+        >
+          <LoginForm />
+        </Suspense>
+      </div>
+      <footer className="mt-8 text-center text-[11px] text-[var(--color-text-subtle)]">
+        <p>
+          Designed &amp; built by{' '}
+          <a
+            href="https://ashrafulasif.vercel.app"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-[var(--color-text-muted)] underline decoration-[var(--color-border-strong)] underline-offset-2 transition-colors hover:text-[var(--color-text)] hover:decoration-current"
+          >
+            Asif
+          </a>
+        </p>
+      </footer>
     </div>
   );
 }
