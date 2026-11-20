@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@400;500;700&family=Geist+Mono:wght@400;500&display=swap");
 
 @custom-variant dark (&:is(.dark, .dark *));
 
@@ -95,9 +96,9 @@
   --color-surface-hover: #f5f5f5;
   --color-surface-sunken: #e5e5e5;
   --color-border: #15151529;
-  --color-border-sky: #15151529;
+  --color-border-sky: #cfe6fc;
   --color-border-strong: #15151552;
-  --color-border-hover: #1515157a;
+  --color-border-hover: #2b75b6;
   --color-scrim: rgba(21, 21, 21, 0.52);
 
   /* Text */
@@ -107,42 +108,42 @@
   --color-text-subtle: #a3a3a3;
   --color-text-inverse: #ffffff;
 
-  /* Primary & Brand */
-  --color-primary: #151515;
-  --color-primary-hover: #262626;
-  --color-primary-active: #0a0a0a;
-  --color-primary-contrast: #ededed;
-  --color-primary-subtle: #1515150a;
-  --color-primary-subtle-hover: #15151514;
-  --color-primary-text: #151515;
-  --color-focus: #151515;
-  --color-focus-ring: rgba(21, 21, 21, 0.25);
-  --color-brand: #151515;
-  --color-brand-soft: #1515150a;
-  --color-accent-blue: #151515;
-  --color-sky-tint: #e5e5e5;
+  /* Primary & Brand — refined deep sapphire with cerulean accents */
+  --color-primary: #1e3a5f;
+  --color-primary-hover: #162c49;
+  --color-primary-active: #11233b;
+  --color-primary-contrast: #ffffff;
+  --color-primary-subtle: #ebf5ff;
+  --color-primary-subtle-hover: #d8ecff;
+  --color-primary-text: #2b75b6;
+  --color-focus: #2b75b6;
+  --color-focus-ring: rgba(43, 117, 182, 0.25);
+  --color-brand: #2b75b6;
+  --color-brand-soft: #ebf5ff;
+  --color-accent-blue: #3b82f6;
+  --color-sky-tint: #bce1fa;
 
   /* Semantic financial indicators */
-  --color-income: #151515;
-  --color-income-subtle: #1515150a;
-  --color-expense: #525252;
-  --color-expense-subtle: #1515150a;
-  --color-expense-bg: #1515150a;
-  --color-warning: #525252;
-  --color-warning-subtle: #1515150a;
-  --color-amber: #525252;
-  --color-amber-subtle: #1515150a;
-  --color-danger: #151515;
-  --color-danger-hover: #262626;
-  --color-danger-contrast: #ededed;
-  --color-danger-subtle: #1515150a;
-  --color-mint: #151515;
-  --color-soft-blue: #404040;
+  --color-income: #059669;
+  --color-income-subtle: #ecfdf5;
+  --color-expense: #e11d48;
+  --color-expense-subtle: #fff1f2;
+  --color-expense-bg: #fff1f2;
+  --color-warning: #b45309;
+  --color-warning-subtle: #fffbeb;
+  --color-amber: #d97706;
+  --color-amber-subtle: #fffbeb;
+  --color-danger: #e11d48;
+  --color-danger-hover: #be123c;
+  --color-danger-contrast: #ffffff;
+  --color-danger-subtle: #fff1f2;
+  --color-mint: #059669;
+  --color-soft-blue: #3b82f6;
 
   /* Compatibility aliases */
   --color-secondary: var(--color-primary);
   --color-secondary-hover: var(--color-primary-hover);
-  --color-secondary-bg: #1515150a;
+  --color-secondary-bg: #ebf5ff;
   --color-pale-mint: var(--color-income-subtle);
   --color-pale-cyan: var(--color-brand-soft);
   --color-pale-yellow: var(--color-warning-subtle);
@@ -167,9 +168,9 @@
   --color-surface-hover: #262626;
   --color-surface-sunken: #050505;
   --color-border: #ededed29;
-  --color-border-sky: #ededed29;
+  --color-border-sky: rgba(56, 189, 248, 0.22);
   --color-border-strong: #ededed52;
-  --color-border-hover: #ededed7a;
+  --color-border-hover: #38bdf8;
   --color-scrim: rgba(0, 0, 0, 0.75);
 
   --color-text: #ededed;
@@ -178,39 +179,39 @@
   --color-text-subtle: #737373;
   --color-text-inverse: #0a0a0a;
 
-  --color-primary: #ededed;
-  --color-primary-hover: #ffffff;
-  --color-primary-active: #d4d4d4;
-  --color-primary-contrast: #151515;
-  --color-primary-subtle: #ededed14;
-  --color-primary-subtle-hover: #ededed29;
-  --color-primary-text: #ededed;
-  --color-focus: #ededed;
-  --color-focus-ring: rgba(237, 237, 237, 0.25);
-  --color-brand: #ededed;
-  --color-brand-soft: #ededed14;
-  --color-accent-blue: #ededed;
-  --color-sky-tint: #262626;
+  --color-primary: #38bdf8;
+  --color-primary-hover: #7dd3fc;
+  --color-primary-active: #0ea5e9;
+  --color-primary-contrast: #090f1c;
+  --color-primary-subtle: rgba(56, 189, 248, 0.12);
+  --color-primary-subtle-hover: rgba(56, 189, 248, 0.2);
+  --color-primary-text: #38bdf8;
+  --color-focus: #38bdf8;
+  --color-focus-ring: rgba(56, 189, 248, 0.3);
+  --color-brand: #38bdf8;
+  --color-brand-soft: rgba(56, 189, 248, 0.14);
+  --color-accent-blue: #60a5fa;
+  --color-sky-tint: #122b4a;
 
-  --color-income: #ededed;
-  --color-income-subtle: #ededed0a;
-  --color-expense: #a3a3a3;
-  --color-expense-subtle: #ededed0a;
-  --color-expense-bg: #ededed0a;
-  --color-warning: #a3a3a3;
-  --color-warning-subtle: #ededed0a;
-  --color-amber: #a3a3a3;
-  --color-amber-subtle: #ededed0a;
-  --color-danger: #ededed;
-  --color-danger-hover: #ffffff;
-  --color-danger-contrast: #151515;
-  --color-danger-subtle: #ededed0a;
-  --color-mint: #ededed;
-  --color-soft-blue: #d4d4d4;
+  --color-income: #34d399;
+  --color-income-subtle: rgba(16, 185, 129, 0.14);
+  --color-expense: #fb7185;
+  --color-expense-subtle: rgba(244, 63, 94, 0.14);
+  --color-expense-bg: rgba(244, 63, 94, 0.14);
+  --color-warning: #fbbf24;
+  --color-warning-subtle: rgba(245, 158, 11, 0.14);
+  --color-amber: #fbbf24;
+  --color-amber-subtle: rgba(245, 158, 11, 0.14);
+  --color-danger: #fb7185;
+  --color-danger-hover: #fda4af;
+  --color-danger-contrast: #2a0507;
+  --color-danger-subtle: rgba(244, 63, 94, 0.14);
+  --color-mint: #34d399;
+  --color-soft-blue: #60a5fa;
 
   --color-secondary: var(--color-primary);
   --color-secondary-hover: var(--color-primary-hover);
-  --color-secondary-bg: #ededed0a;
+  --color-secondary-bg: rgba(56, 189, 248, 0.1);
   --color-pale-mint: var(--color-income-subtle);
   --color-pale-cyan: var(--color-brand-soft);
   --color-pale-yellow: var(--color-warning-subtle);
