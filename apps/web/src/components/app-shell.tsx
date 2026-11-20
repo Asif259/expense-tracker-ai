@@ -385,7 +385,7 @@ function ShellInner({ children, wide }: { children: React.ReactNode; wide?: bool
                 rel="noopener noreferrer"
                 className="font-medium text-[var(--color-text-muted)] underline decoration-[var(--color-border-strong)] underline-offset-2 transition-colors hover:text-[var(--color-text)] hover:decoration-current"
               >
-                Asif
+                Ashraful Asif
               </a>
             </p>
           </div>
