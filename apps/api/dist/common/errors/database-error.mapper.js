@@ -52,8 +52,9 @@ export function mapDatabaseError(error) {
             case 'PGRST116':
                 return new NotFoundException('Requested resource was not found');
             case 'PGRST204':
+                return new InternalServerErrorException('Database schema is outdated; a column is missing. Apply pending migrations');
             case 'PGRST205':
-                return new InternalServerErrorException('Database schema is outdated; apply pending migrations');
+                return new InternalServerErrorException('Database schema is outdated; a table is missing. Apply pending migrations');
             default:
                 break;
         }

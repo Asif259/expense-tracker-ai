@@ -90,9 +90,13 @@ export function mapDatabaseError(error: PostgrestError | Error | null | undefine
         return new NotFoundException('Requested resource was not found');
 
       case 'PGRST204': // column not found in schema cache
+        return new InternalServerErrorException(
+          'Database schema is outdated; a column is missing. Apply pending migrations',
+        );
+
       case 'PGRST205': // table not found in schema cache
         return new InternalServerErrorException(
-          'Database schema is outdated; apply pending migrations',
+          'Database schema is outdated; a table is missing. Apply pending migrations',
         );
 
       default:
