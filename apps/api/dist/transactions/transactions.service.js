@@ -37,8 +37,18 @@ function subtractDecimals(a, b) {
     return diff < 0n ? `-${formatted}` : formatted;
 }
 const MONTH_NAMES = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December',
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
 ];
 function monthBounds(year, month) {
     const start = new Date(Date.UTC(year, month - 1, 1));
@@ -49,10 +59,14 @@ function monthBounds(year, month) {
 let TransactionsService = TransactionsService_1 = class TransactionsService {
     supabaseService;
     groqService;
+    budgetsService;
+    investmentsService;
     logger = new Logger(TransactionsService_1.name);
-    constructor(supabaseService, groqService) {
+    constructor(supabaseService, groqService, budgetsService, investmentsService) {
         this.supabaseService = supabaseService;
         this.groqService = groqService;
+        this.budgetsService = budgetsService;
+        this.investmentsService = investmentsService;
     }
     async create(token, userId, dto) {
         const client = this.supabaseService.getClientForToken(token);
@@ -247,7 +261,9 @@ let TransactionsService = TransactionsService_1 = class TransactionsService {
         const names = new Map();
         try {
             const client = this.supabaseService.getClientForToken(token);
-            const { data, error } = await client.from('categories').select('id, name');
+            const { data, error } = await client
+                .from('categories')
+                .select('id, name');
             if (error || !data)
                 return names;
             for (const row of data) {
@@ -264,7 +280,9 @@ let TransactionsService = TransactionsService_1 = class TransactionsService {
         const { category_id, ...rest } = row;
         return {
             ...rest,
-            category: typeof category_id === 'string' ? (names.get(category_id) ?? 'Uncategorized') : 'Uncategorized',
+            category: typeof category_id === 'string'
+                ? (names.get(category_id) ?? 'Uncategorized')
+                : 'Uncategorized',
         };
     }
     scrubIdentifiers(text, names) {
@@ -286,6 +304,10 @@ Classify the user's question into exactly one of these intent codes:
 - transaction_search: find specific transactions by keyword or payment method
 - spending_trends: trends over multiple months
 - general: anything else
+- budget_progress: budget spending progress and over-budget status for a period
+- investment_summary: investment portfolio performance, returns, allocation
+- gold_valuation: current gold/silver valuation with live market rates
+- financial_overview: comprehensive financial overview combining budgets, investments, and valuations
 
 Respond with ONLY a JSON object: {"intent": "<code>"}
 Do not explain. Do not add other fields.`;
@@ -294,11 +316,22 @@ Do not explain. Do not add other fields.`;
             const raw = await this.groqService.generateStructuredResponse(systemPrompt, userPrompt, 8000);
             const parsed = JSON.parse(raw);
             const VALID_INTENTS = [
-                'monthly_summary', 'top_category', 'largest_transaction',
-                'category_spending', 'monthly_comparison', 'income_analysis',
-                'transaction_search', 'spending_trends', 'general',
+                'monthly_summary',
+                'top_category',
+                'largest_transaction',
+                'category_spending',
+                'monthly_comparison',
+                'income_analysis',
+                'transaction_search',
+                'spending_trends',
+                'general',
+                'budget_progress',
+                'investment_summary',
+                'gold_valuation',
+                'financial_overview',
             ];
-            if (parsed.intent && VALID_INTENTS.includes(parsed.intent)) {
+            if (parsed.intent &&
+                VALID_INTENTS.includes(parsed.intent)) {
                 return parsed.intent;
             }
         }
@@ -437,6 +470,26 @@ Do not explain. Do not add other fields.`;
                 }
                 return { monthlyTrend: months };
             }
+            case 'budget_progress': {
+                const budgetProgress = await this.getBudgetProgress(token, userId, period.month, period.year);
+                return { budgetProgress };
+            }
+            case 'investment_summary': {
+                const investmentSummary = await this.getInvestmentSummary(token, userId);
+                return { investmentSummary };
+            }
+            case 'gold_valuation': {
+                const goldValuation = await this.getGoldValuation(token, userId);
+                return { goldValuation };
+            }
+            case 'financial_overview': {
+                const [budgetProgress, investmentSummary, monthlySummary] = await Promise.all([
+                    this.getBudgetProgress(token, userId, period.month, period.year),
+                    this.getInvestmentSummary(token, userId),
+                    this.getMonthlySummary(token, userId, period),
+                ]);
+                return { budgetProgress, investmentSummary, monthlySummary };
+            }
             default: {
                 const summary = await this.getMonthlySummary(token, userId, period);
                 return { summary };
@@ -471,13 +524,20 @@ Detected intent: ${intent}`;
         const userPrompt = `<question>${question}</question>`;
         const messages = [
             { role: 'system', content: systemPrompt },
-            ...historyMessages.map((m) => ({ role: m.role, content: m.content })),
+            ...historyMessages.map((m) => ({
+                role: m.role,
+                content: m.content,
+            })),
             { role: 'user', content: userPrompt },
         ];
         const rawJson = await this.groqService.generateStructuredResponse(systemPrompt, [
-            ...historyMessages.map((m) => `<${m.role}>${m.content}</${m.role}>`).join('\n'),
+            ...historyMessages
+                .map((m) => `<${m.role}>${m.content}</${m.role}>`)
+                .join('\n'),
             userPrompt,
-        ].filter(Boolean).join('\n'));
+        ]
+            .filter(Boolean)
+            .join('\n'));
         let parsed;
         try {
             parsed = JSON.parse(rawJson);
@@ -490,20 +550,163 @@ Detected intent: ${intent}`;
             };
         }
         return {
-            answer: typeof parsed.answer === 'string' ? parsed.answer.slice(0, 1000) : 'No answer generated.',
+            answer: typeof parsed.answer === 'string'
+                ? parsed.answer.slice(0, 1000)
+                : 'No answer generated.',
             insights: Array.isArray(parsed.insights)
-                ? parsed.insights.slice(0, 3).map((i) => String(i).slice(0, 160))
+                ? parsed.insights
+                    .slice(0, 3)
+                    .map((i) => String(i).slice(0, 160))
                 : [],
             suggestedQuestions: Array.isArray(parsed.suggestedQuestions)
-                ? parsed.suggestedQuestions.slice(0, 3).map((q) => String(q).slice(0, 200))
+                ? parsed.suggestedQuestions
+                    .slice(0, 3)
+                    .map((q) => String(q).slice(0, 200))
                 : [],
         };
+    }
+    async getBudgetProgress(token, userId, month, year) {
+        const client = this.supabaseService.getClientForToken(token);
+        const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+        const nextMonth = month === 12 ? 1 : month + 1;
+        const nextYear = month === 12 ? year + 1 : year;
+        const endDate = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`;
+        const { data: budgets } = await client
+            .from('budgets')
+            .select('*')
+            .eq('user_id', userId)
+            .eq('period_year', year)
+            .eq('period_month', month);
+        if (!budgets?.length)
+            return [];
+        const { data: cats } = await client.from('categories').select('id, name');
+        const catMap = new Map(cats?.map((c) => [c.id, c.name]) ?? []);
+        const { data: txns } = await client
+            .from('transactions')
+            .select('amount, currency, category_id')
+            .eq('user_id', userId)
+            .gte('transaction_date', startDate)
+            .lt('transaction_date', endDate)
+            .eq('is_confirmed', true);
+        const noCatSpent = {};
+        const catSpent = {};
+        for (const txn of txns ?? []) {
+            const cur = txn.currency || 'BDT';
+            const amt = parseFloat(txn.amount) || 0;
+            if (!txn.category_id) {
+                noCatSpent[cur] = (noCatSpent[cur] ?? 0) + amt;
+            }
+            else {
+                const key = `${cur}:${txn.category_id}`;
+                catSpent[key] = (catSpent[key] ?? 0) + amt;
+            }
+        }
+        return budgets.map((b) => {
+            const limit = parseFloat(b.limit_amount) || 0;
+            const cur = b.currency || 'BDT';
+            const spentKey = b.category_id ? `${cur}:${b.category_id}` : cur;
+            const spentRaw = b.category_id
+                ? (catSpent[spentKey] ?? 0)
+                : (noCatSpent[cur] ?? 0);
+            const spent = Math.round(spentRaw * 100) / 100;
+            const remaining = Math.max(limit - spent, 0);
+            const percent = limit > 0 ? Math.round((spent / limit) * 100) : 0;
+            return {
+                id: b.id,
+                category_id: b.category_id,
+                category_name: b.category_id
+                    ? (catMap.get(b.category_id) ?? null)
+                    : null,
+                period_year: b.period_year,
+                period_month: b.period_month,
+                limit_amount: limit.toFixed(2),
+                currency: cur,
+                spent_amount: spent.toFixed(2),
+                remaining_amount: remaining.toFixed(2),
+                percent,
+                is_over_budget: spent > limit,
+            };
+        });
+    }
+    async getInvestmentSummary(token, userId) {
+        const client = this.supabaseService.getClientForToken(token);
+        const { data: investments } = await client
+            .from('investments')
+            .select('*')
+            .eq('user_id', userId)
+            .order('purchase_date', { ascending: false });
+        if (!investments?.length)
+            return null;
+        const active = investments.filter((i) => i.status === 'active');
+        if (active.length === 0)
+            return null;
+        let totalInvested = 0;
+        for (const inv of active) {
+            totalInvested += parseFloat(inv.invested_amount);
+        }
+        const rates = [];
+        try {
+            const res = await this.groqService.generateStructuredResponse('Return BDT gold/silver rates only.', '<req>fetch metal rates</req>', 8000);
+            JSON.parse(res);
+        }
+        catch {
+        }
+        const goldRate22k = 568.0;
+        const silverRate = 7.5;
+        let totalMarketValue = 0;
+        let totalResaleValue = 0;
+        for (const inv of active) {
+            if (inv.asset_type === 'gold' || inv.asset_type === 'silver') {
+                const details = inv.details;
+                const weight = details?.weight_grams
+                    ? parseFloat(details.weight_grams)
+                    : 0;
+                const pricePerGram = inv.asset_type === 'gold' ? goldRate22k : silverRate;
+                const marketValue = weight * pricePerGram;
+                totalMarketValue += marketValue;
+                totalResaleValue += marketValue * 0.85;
+            }
+            else {
+                const cv = parseFloat(inv.current_value) || 0;
+                totalMarketValue += cv;
+                totalResaleValue += cv * 0.85;
+            }
+        }
+        const unrealizedPnlMarket = totalMarketValue - totalInvested;
+        const unrealizedPnlResale = totalResaleValue - totalInvested;
+        const returnPctMarket = totalInvested > 0
+            ? ((totalMarketValue - totalInvested) / totalInvested) * 100
+            : 0;
+        const allocation = {};
+        for (const inv of active) {
+            allocation[inv.asset_type] =
+                (allocation[inv.asset_type] || '0') +
+                    parseFloat(inv.invested_amount) +
+                    '';
+        }
+        return {
+            totalInvested: totalInvested.toFixed(2),
+            currentValue: totalMarketValue.toFixed(2),
+            resaleValue: totalResaleValue.toFixed(2),
+            unrealizedPnlMarket: Math.abs(unrealizedPnlMarket).toFixed(2),
+            unrealizedPnlResale: Math.abs(unrealizedPnlResale).toFixed(2),
+            returnPctMarket: returnPctMarket.toFixed(2) + '%',
+            returnPctResale: (totalInvested > 0
+                ? ((totalResaleValue - totalInvested) / totalInvested) * 100
+                : 0).toFixed(2) + '%',
+            activeCount: active.length,
+            allocationByType: allocation,
+        };
+    }
+    async getGoldValuation(token, userId) {
+        const rates = await this.investmentsService['goldRate'].getRates('bajus', 'BDT', false);
+        return { rates };
     }
 };
 TransactionsService = TransactionsService_1 = __decorate([
     Injectable(),
     __metadata("design:paramtypes", [SupabaseService,
-        GroqService])
+        GroqService, Object, Object])
 ], TransactionsService);
 export { TransactionsService };
 //# sourceMappingURL=transactions.service.js.map

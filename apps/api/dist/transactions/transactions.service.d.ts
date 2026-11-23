@@ -16,7 +16,7 @@ export interface MonthlySummaryResult {
     currencies: Record<string, CurrencySummary>;
     transactionCount: number;
 }
-export type AnalysisIntent = 'monthly_summary' | 'top_category' | 'largest_transaction' | 'category_spending' | 'monthly_comparison' | 'income_analysis' | 'transaction_search' | 'spending_trends' | 'general';
+export type AnalysisIntent = 'monthly_summary' | 'top_category' | 'largest_transaction' | 'category_spending' | 'monthly_comparison' | 'income_analysis' | 'transaction_search' | 'spending_trends' | 'general' | 'budget_progress' | 'investment_summary' | 'gold_valuation' | 'financial_overview';
 export interface AnalysisResult {
     answer: string;
     dataUsed: {
@@ -30,8 +30,10 @@ export interface AnalysisResult {
 export declare class TransactionsService {
     private readonly supabaseService;
     private readonly groqService;
+    private readonly budgetsService;
+    private readonly investmentsService;
     private readonly logger;
-    constructor(supabaseService: SupabaseService, groqService: GroqService);
+    constructor(supabaseService: SupabaseService, groqService: GroqService, budgetsService: import('../budgets/budgets.service.js').BudgetsService, investmentsService: import('../investments/investments.service.js').InvestmentsService);
     create(token: string, userId: string, dto: CreateTransactionDto): Promise<any>;
     findAll(token: string, userId: string, query: TransactionQueryDto): Promise<{
         data: any[];
@@ -53,4 +55,7 @@ export declare class TransactionsService {
     private detectIntent;
     private fetchAnalysisData;
     private generateExplanation;
+    private getBudgetProgress;
+    private getInvestmentSummary;
+    private getGoldValuation;
 }
