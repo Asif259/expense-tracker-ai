@@ -33,16 +33,27 @@ export function mapDatabaseError(error) {
                 return new BadRequestException('Loan has already been fully settled');
             case 'P0016':
                 return new BadRequestException('Repayment amount exceeds outstanding loan balance');
+            case '23502':
+                return new BadRequestException('A required field is missing');
             case '23503':
                 return new BadRequestException('Referenced record does not exist');
             case '23505':
                 return new ConflictException('A record with these details already exists');
             case '23514':
                 return new BadRequestException('Database constraint check failed');
+            case '22P02':
+                return new BadRequestException('A field has an invalid value format');
+            case '22003':
+                return new BadRequestException('A numeric field is out of the allowed range');
+            case '42P01':
+                return new InternalServerErrorException('Database table is missing; apply pending migrations');
             case '42501':
                 return new ForbiddenException('Access denied by security policy');
             case 'PGRST116':
                 return new NotFoundException('Requested resource was not found');
+            case 'PGRST204':
+            case 'PGRST205':
+                return new InternalServerErrorException('Database schema is outdated; apply pending migrations');
             default:
                 break;
         }
@@ -62,6 +73,6 @@ export function mapDatabaseError(error) {
     if (message.includes('chk_amount_valid')) {
         return new BadRequestException('Amount must be a positive number with at most 2 decimal places');
     }
-    return new InternalServerErrorException('Database operation failed');
+    return new InternalServerErrorException(code ? `Database operation failed (code: ${code})` : 'Database operation failed');
 }
 //# sourceMappingURL=database-error.mapper.js.map
