@@ -672,6 +672,123 @@ export async function calculateGoldValue(
   return response;
 }
 
+// ── Budgets ──
+
+export interface Budget {
+  id: string;
+  user_id: string;
+  category_id: string | null;
+  period_year: number;
+  period_month: number;
+  limit_amount: string;
+  currency: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BudgetQuery {
+  month?: string;
+  year?: string;
+  category_id?: string;
+}
+
+export interface CreateBudgetDto {
+  category_id?: string | null;
+  period_year: number;
+  period_month: number;
+  limit_amount: string;
+  currency?: string;
+}
+
+export interface UpdateBudgetDto {
+  category_id?: string | null;
+  limit_amount?: string;
+  currency?: string;
+}
+
+export interface BudgetProgressItem {
+  id: string;
+  category_id: string | null;
+  category_name: string | null;
+  period_year: number;
+  period_month: number;
+  limit_amount: string;
+  currency: string;
+  spent_amount: string;
+  remaining_amount: string;
+  percent: number;
+  is_over_budget: boolean;
+}
+
+export async function listBudgets(token: string, query: BudgetQuery = {}) {
+  const params = new URLSearchParams();
+  if (query.month) params.set('month', query.month);
+  if (query.year) params.set('year', query.year);
+  if (query.category_id) params.set('category_id', query.category_id);
+  const qs = params.toString() ? `?${params.toString()}` : '';
+  const response = await request<{ data: Budget[]; total: number }>(`/budgets${qs}`, token);
+  return {
+    ...response,
+    data: (response.data ?? []).map(normalizeBudget),
+  };
+}
+
+export async function getBudgetProgress(
+  token: string,
+  year?: number,
+  month?: number,
+) {
+  const params = new URLSearchParams();
+  if (year) params.set('year', String(year));
+  if (month) params.set('month', String(month));
+  const qs = params.toString() ? `?${params.toString()}` : '';
+  const response = await request<BudgetProgressItem[]>(`/budgets/progress${qs}`, token);
+  return (response ?? []).map(normalizeBudgetProgress);
+}
+
+export async function createBudget(token: string, dto: CreateBudgetDto) {
+  const budget = await request<Budget>('/budgets', token, {
+    method: 'POST',
+    body: JSON.stringify(dto),
+  });
+  return normalizeBudget(budget);
+}
+
+export async function updateBudget(token: string, id: string, dto: UpdateBudgetDto) {
+  const budget = await request<Budget>(`/budgets/${id}`, token, {
+    method: 'PATCH',
+    body: JSON.stringify(dto),
+  });
+  return normalizeBudget(budget);
+}
+
+export async function deleteBudget(token: string, id: string) {
+  return request<{ success: boolean }>(`/budgets/${id}`, token, {
+    method: 'DELETE',
+  });
+}
+
+export function normalizeBudget(row: Budget): Budget {
+  const amount = row.limit_amount as unknown;
+  return {
+    ...row,
+    limit_amount: typeof amount === 'number' ? amount.toFixed(2) : String(amount ?? '0.00'),
+  };
+}
+
+export function normalizeBudgetProgress(row: BudgetProgressItem): BudgetProgressItem {
+  const amount = (key: keyof BudgetProgressItem): string => {
+    const val = row[key] as unknown;
+    return typeof val === 'number' ? val.toFixed(2) : String(val ?? '0.00');
+  };
+  return {
+    ...row,
+    limit_amount: amount('limit_amount'),
+    spent_amount: amount('spent_amount'),
+    remaining_amount: amount('remaining_amount'),
+  };
+}
+
 // ── Responsive Data Table ──
 
 export interface ResponsiveColumn {

@@ -88,7 +88,7 @@ if (typeof window !== 'undefined') {
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   // Synchronous read of externally-mutated store via hooks.
   // Server snapshot = 'light'; client snapshot = getInitialTheme(). Match → no hydration warning.
-  const externalTheme = useSyncExternalStore(subscribe, () => 'light', getInitialTheme);
+  const externalTheme = useSyncExternalStore(subscribe, () => 'light', getInitialTheme) as Theme;
 
   // Local mount flag so consumers can guard SSR-vs-client rendering (e.g. chart color reactivity).
   const [mounted] = useState(() => typeof window !== 'undefined');

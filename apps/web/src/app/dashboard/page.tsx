@@ -18,9 +18,11 @@ import {
   listAllTransactions,
   listDrafts,
   getLoanSummary,
+  getBudgetProgress,
   Transaction,
   AiDraft,
   CurrencyLoanSummary,
+  BudgetProgressItem,
 } from '@/lib/api';
 import { formatMoney, formatDate } from '@/lib/format';
 import { fetchCategories, Category } from '@/lib/categories';
@@ -29,6 +31,7 @@ import {
   aggregateSpendingTrend,
   aggregateCategoryBreakdown,
   getCurrenciesFromTransactions,
+  type BudgetItemProgress,
 } from '@/lib/chart-aggregation';
 import {
   rangeWindow,
@@ -38,7 +41,7 @@ import {
   parseTxDate,
   type KpiRange,
 } from '@/lib/dashboard-metrics';
-import { IncomeExpenseChart, SpendingTrendChart } from '@/components/charts';
+import { IncomeExpenseChart, SpendingTrendChart, BudgetProgressChart } from '@/components/charts';
 import { KpiStrip, type KpiTile } from '@/components/dashboard/kpi-strip';
 import {
   Button,
@@ -81,6 +84,7 @@ export default function DashboardPage() {
   const [drafts, setDrafts] = useState<AiDraft[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loanSummaries, setLoanSummaries] = useState<Record<string, CurrencyLoanSummary>>({});
+  const [budgetProgress, setBudgetProgress] = useState<BudgetProgressItem[]>([]);
   const [range, setRange] = useState<KpiRange>('30d');
   const [selectedCurrency, setSelectedCurrency] = useState<string>('BDT');
   const [aiAskInput, setAiAskInput] = useState('');
@@ -114,11 +118,12 @@ export default function DashboardPage() {
         const token = await getToken();
         if (!token) return;
 
-        const [cats, txRes, draftRes, loanSummaryRes] = await Promise.all([
+        const [cats, txRes, draftRes, loanSummaryRes, budgetRes] = await Promise.all([
           fetchCategories(),
           listAllTransactions(token, isoDate(fetchStart(now))),
           listDrafts(token).catch(() => ({ data: [], total: 0 })),
           getLoanSummary(token).catch(() => ({ currencies: {} })),
+          getBudgetProgress(token, now.getFullYear(), now.getMonth() + 1).catch(() => []),
         ]);
 
         if (mounted) {
@@ -127,6 +132,7 @@ export default function DashboardPage() {
           setComplete(txRes.complete);
           setDrafts(draftRes.data || []);
           setLoanSummaries(loanSummaryRes.currencies || {});
+          setBudgetProgress(budgetRes || []);
 
           const distinctCurrencies = getCurrenciesFromTransactions(txRes.data);
           if (txRes.data.length > 0 && !distinctCurrencies.includes(selectedCurrency)) {
@@ -209,6 +215,21 @@ export default function DashboardPage() {
 
   const loanSummary = loanSummaries[selectedCurrency];
   const overdueCount = loanSummary?.overdue_loans_count ?? 0;
+
+  const budgetChartData: BudgetItemProgress[] = useMemo(() => {
+    return budgetProgress
+      .filter((b) => b.currency === selectedCurrency)
+      .map((b) => ({
+        id: b.id,
+        name: b.category_name ?? 'Overall',
+        limit: parseFloat(b.limit_amount) || 0,
+        spent: parseFloat(b.spent_amount) || 0,
+        remaining: parseFloat(b.remaining_amount) || 0,
+        percent: b.percent,
+        isOverBudget: b.is_over_budget,
+      }));
+  }, [budgetProgress, selectedCurrency]);
+
   const recentTransactions = transactions.slice(0, 6);
   const baseline = RANGE_OPTIONS.find((r) => r.value === range)!.baseline;
 
@@ -405,6 +426,11 @@ export default function DashboardPage() {
             />
             <IncomeExpenseChart
               data={monthlyCashFlowData}
+              currency={selectedCurrency}
+              loading={loading}
+            />
+            <BudgetProgressChart
+              data={budgetChartData}
               currency={selectedCurrency}
               loading={loading}
             />

@@ -9,6 +9,7 @@ import { AiDraftsModule } from './ai-drafts/ai-drafts.module.js';
 import { AiModule } from './ai/ai.module.js';
 import { LoansModule } from './loans/loans.module.js';
 import { InvestmentsModule } from './investments/investments.module.js';
+import { BudgetsModule } from './budgets/budgets.module.js';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter.js';
 import { SupabaseAuthGuard } from './common/guards/supabase-auth.guard.js';
 
