@@ -161,6 +161,20 @@ describe('database-error.mapper', () => {
     expect(exception).toBeInstanceOf(NotFoundException);
   });
 
+  it('maps 42P01 (undefined_table) to an actionable InternalServerErrorException', () => {
+    const error = {
+      name: 'PostgrestError',
+      message: 'relation "public.investments" does not exist',
+      details: '',
+      hint: '',
+      code: '42P01',
+    } as unknown as PostgrestError;
+    const exception = mapDatabaseError(error);
+    expect(exception).toBeInstanceOf(InternalServerErrorException);
+    expect(exception.message).toContain('apply pending migrations');
+    expect(exception.message).not.toContain('public.investments');
+  });
+
   it('maps unknown internal errors to generic InternalServerErrorException without leaking SQL', () => {
     const error = {
       name: 'PostgrestError',
@@ -171,7 +185,7 @@ describe('database-error.mapper', () => {
     } as unknown as PostgrestError;
     const exception = mapDatabaseError(error);
     expect(exception).toBeInstanceOf(InternalServerErrorException);
-    expect(exception.message).toBe('Database operation failed');
+    expect(exception.message).toBe('Database operation failed (code: 42601)');
     expect(exception.message).not.toContain('internal_secrets');
   });
 });

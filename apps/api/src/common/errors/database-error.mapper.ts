@@ -60,6 +60,9 @@ export function mapDatabaseError(error: PostgrestError | Error | null | undefine
         return new BadRequestException('Repayment amount exceeds outstanding loan balance');
 
       // PostgreSQL Standard Error Codes
+      case '23502': // not_null_violation
+        return new BadRequestException('A required field is missing');
+
       case '23503': // foreign_key_violation
         return new BadRequestException('Referenced record does not exist');
 
@@ -69,11 +72,28 @@ export function mapDatabaseError(error: PostgrestError | Error | null | undefine
       case '23514': // check_violation
         return new BadRequestException('Database constraint check failed');
 
+      case '22P02': // invalid_text_representation
+        return new BadRequestException('A field has an invalid value format');
+
+      case '22003': // numeric_value_out_of_range
+        return new BadRequestException('A numeric field is out of the allowed range');
+
+      case '42P01': // undefined_table
+        return new InternalServerErrorException(
+          'Database table is missing; apply pending migrations',
+        );
+
       case '42501': // insufficient_privilege / RLS policy violation
         return new ForbiddenException('Access denied by security policy');
 
       case 'PGRST116': // JSON object requested, multiple (or no) rows returned
         return new NotFoundException('Requested resource was not found');
+
+      case 'PGRST204': // column not found in schema cache
+      case 'PGRST205': // table not found in schema cache
+        return new InternalServerErrorException(
+          'Database schema is outdated; apply pending migrations',
+        );
 
       default:
         break;
@@ -97,6 +117,9 @@ export function mapDatabaseError(error: PostgrestError | Error | null | undefine
     return new BadRequestException('Amount must be a positive number with at most 2 decimal places');
   }
 
-  // Never leak internal database query or stack trace
-  return new InternalServerErrorException('Database operation failed');
+  // Never leak internal database query or stack trace; keep the SQLSTATE code
+  // only, so unmapped failures stay diagnosable from the client response.
+  return new InternalServerErrorException(
+    code ? `Database operation failed (code: ${code})` : 'Database operation failed',
+  );
 }
