@@ -26,7 +26,7 @@ import {
   PageHeader,
   SegmentedControl,
 } from '@/components/ui';
-import type { RowAction } from '@/components/responsive-table/types';
+import type { RowAction, ResponsiveColumn } from '@/components/responsive-table/types';
 import type { BadgeTone } from '@/components/ui';
 import {
   ArrowDownLeft,
@@ -140,47 +140,56 @@ export default function InvestmentsPage() {
     ];
   }, [summary, loading, viewMode, currency]);
 
-  const columns = [
+  const columns: ResponsiveColumn<Investment>[] = [
     {
       id: 'name',
       header: 'Name',
-      role: 'identity' as const,
+      role: 'identity',
       priority: 1,
-      render: (value: string) => <span className="font-medium text-[var(--color-text)]">{value}</span>,
+      label: 'Name',
+      cell: (row) => <span className="font-medium text-[var(--color-text)]">{row.name}</span>,
     },
     {
       id: 'asset_type',
       header: 'Type',
-      role: 'detail' as const,
+      role: 'detail',
       priority: 2,
-      render: (value: string) => (
-        <Badge tone="neutral">{assetLabel(value)}</Badge>
+      label: 'Type',
+      cell: (row) => (
+        <Badge tone="neutral">{assetLabel(row.asset_type)}</Badge>
       ),
     },
     {
       id: 'invested_amount',
       header: 'Invested',
-      role: 'detail' as const,
+      role: 'detail',
       priority: 3,
-      render: (value: string) => (
-        <span className="tabular-nums text-[var(--color-text)]">{formatMoney(value, currency)}</span>
+      label: 'Invested',
+      align: 'right',
+      isNumeric: true,
+      cell: (row) => (
+        <span className="tabular-nums text-[var(--color-text)]">{formatMoney(row.invested_amount, currency)}</span>
       ),
     },
     {
       id: 'current_value',
       header: 'Current',
-      role: 'value' as const,
+      role: 'value',
       priority: 4,
-      render: (value: string) => (
-        <span className="tabular-nums text-[var(--color-text)]">{formatMoney(value, currency)}</span>
+      label: 'Current',
+      align: 'right',
+      isNumeric: true,
+      cell: (row) => (
+        <span className="tabular-nums text-[var(--color-text)]">{formatMoney(row.current_value, currency)}</span>
       ),
     },
     {
       id: 'pnl',
       header: 'P&L',
-      role: 'detail' as const,
+      role: 'detail',
       priority: 5,
-      render: (_value: string, row: Investment) => {
+      label: 'P&L',
+      cell: (row) => {
         const invested = parseFloat(row.invested_amount);
         const current = parseFloat(row.current_value);
         const pnl = current - invested;
@@ -193,28 +202,31 @@ export default function InvestmentsPage() {
       },
     },
     {
-      id: 'purchased_date',
+      id: 'purchase_date',
       header: 'Date',
-      role: 'detail' as const,
+      role: 'detail',
       priority: 6,
-      render: (value: string) => formatDate(value),
+      label: 'Purchase date',
+      cell: (row) => formatDate(row.purchase_date),
     },
     {
       id: 'status',
       header: 'Status',
-      role: 'state' as const,
+      role: 'state',
       priority: 7,
-      render: (value: string) => {
-        const badge = statusBadge(value as Investment['status']);
+      label: 'Status',
+      cell: (row) => {
+        const badge = statusBadge(row.status);
         return <Badge tone={badge.tone}>{badge.label}</Badge>;
       },
     },
     {
       id: 'actions',
       header: '',
-      role: 'action' as const,
+      role: 'action',
       priority: 8,
       className: 'w-12',
+      hiddenInMobileDetails: true,
     },
   ];
 

@@ -55,7 +55,7 @@ function normalizeForForm(investment: Investment): FormData {
     asset_type: investment.asset_type,
     invested_amount: investment.invested_amount,
     current_value: investment.current_value,
-    purchased_date: investment.purchased_date,
+    purchased_date: investment.purchase_date,
     status: investment.status,
     details: typeof investment.details === 'object' && investment.details !== null ? JSON.stringify(investment.details) : '',
   };
