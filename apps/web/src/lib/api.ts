@@ -611,67 +611,6 @@ export async function fetchInvestmentSummary(token: string): Promise<InvestmentS
   return response;
 }
 
-// ── Gold Calculator API ──
-
-export interface GoldRate {
-  id?: string;
-  source: 'goldr.org' | 'goldapi.io';
-  metal_type: 'gold' | 'silver';
-  karat: '22k' | '24k' | '21k' | '18k' | 'traditional';
-  market_price_per_gram: string;
-  resale_price_per_gram: string;
-  currency: string;
-  source_updated_label?: string;
-  fetched_at?: string;
-}
-
-export interface GoldCalculationInput {
-  metal_type: 'gold' | 'silver';
-  karat: '22k' | '24k';
-  weight_grams: string;
-  making_charge_amount?: string;
-  vat_percent?: string;
-}
-
-export interface GoldCalculationResult {
-  market_value: string;
-  making_charge: string;
-  vat_amount: string;
-  total: string;
-}
-
-export interface GoldRatesQuery {
-  source?: 'bajus' | 'global';
-  currency?: string;
-  refresh?: boolean;
-}
-
-export async function fetchGoldRates(query?: GoldRatesQuery): Promise<GoldRate[]> {
-  const params = new URLSearchParams();
-  if (query?.source) params.set('source', query.source);
-  if (query?.currency) params.set('currency', query.currency);
-  if (query?.refresh !== undefined) params.set('refresh', String(query.refresh));
-
-  const qs = params.toString() ? `?${params.toString()}` : '';
-  const response = await request<GoldRate[]>('/investments/gold/rates' + qs, null);
-  return response;
-}
-
-export async function calculateGoldValue(
-  token: string,
-  input: GoldCalculationInput,
-): Promise<GoldCalculationResult> {
-  const response = await request<GoldCalculationResult>(
-    '/investments/gold/calculate',
-    token,
-    {
-      method: 'POST',
-      body: JSON.stringify(input),
-    },
-  );
-  return response;
-}
-
 // ── Budgets ──
 
 export interface Budget {

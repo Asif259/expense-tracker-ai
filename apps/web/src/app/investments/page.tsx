@@ -262,9 +262,6 @@ export default function InvestmentsPage() {
           description="Track your portfolio performance"
           actions={
             <div className="flex items-center gap-2">
-              <ButtonLink href="/investments/gold-calculator" variant="secondary" leadingIcon={<TrendingUp className="h-4 w-4" />}>
-                Gold Calculator
-              </ButtonLink>
               <ButtonLink href="/investments/new" variant="primary" leadingIcon={<Plus className="h-4 w-4" />}>
                 Add Investment
               </ButtonLink>
