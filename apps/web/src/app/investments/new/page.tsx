@@ -91,10 +91,9 @@ function InvestmentNewContent() {
           name: form.name.trim(),
           asset_type: form.asset_type,
           invested_amount: form.invested_amount,
-          current_value: form.current_value || form.invested_amount,
-          purchased_date: form.purchased_date,
+                    purchase_date: form.purchased_date,
           status: form.status,
-          details: form.details.trim() ? { notes: form.details.trim() } : undefined,
+          notes: form.details.trim(),
         };
 
         await createInvestment(token, payload);
