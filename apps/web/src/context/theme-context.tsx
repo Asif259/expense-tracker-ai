@@ -41,21 +41,21 @@ function applyTheme(newTheme: Theme) {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('light');
-  const [mounted, setMounted] = useState(false);
+  const [theme, setThemeState] = useState<Theme>(() => {
+    if (typeof window === 'undefined') return 'light';
+    const saved = localStorage.getItem(STORAGE_KEY) as Theme | null;
+    if (saved === 'light' || saved === 'dark') {
+      return saved;
+    }
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      return 'dark';
+    }
+    return 'light';
+  });
+  const [mounted] = useState(true);
 
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY) as Theme | null;
-    let initial: Theme = 'light';
-    if (saved === 'light' || saved === 'dark') {
-      initial = saved;
-    } else if (typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      initial = 'dark';
-    }
-
-    setThemeState(initial);
-    applyTheme(initial);
-    setMounted(true);
+    applyTheme(theme);
 
     // Listen to OS preference changes if user hasn't explicitly set a preference
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');

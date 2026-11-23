@@ -1,3 +1,5 @@
+import { ReactNode } from 'react';
+
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/+$/, '');
 
 export class ApiError extends Error {
@@ -448,4 +450,228 @@ export function deleteLoanRepayment(token: string, loanId: string, repaymentId: 
     method: 'DELETE',
   });
 }
+
+// ── Investments ──
+
+export interface Investment {
+  id: string;
+  user_id: string;
+  name: string;
+  asset_type: 'gold' | 'silver' | 'fdr_dps' | 'sanchaypatra' | 'stocks' | 'mutual_fund' | 'real_estate' | 'other';
+  invested_amount: string;
+  current_value: string;
+  purchased_date: string;
+  status: 'active' | 'sold';
+  details?: Record<string, unknown>;
+  sold_amount?: string | null;
+  sold_date?: string | null;
+}
+
+export interface InvestmentSummary {
+  totalInvested: string;
+  currentValue: string;
+  resaleValue: string;
+  unrealizedPnlMarket: string;
+  unrealizedPnlResale: string;
+  returnPctMarket: string;
+  returnPctResale: string;
+  activeCount: number;
+  allocationByType: Record<string, number>;
+}
+
+
+export interface InvestmentQuery {
+  assetType?: string;
+  status?: string;
+  search?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface CreateInvestmentDto {
+  name: string;
+  asset_type: 'gold' | 'silver' | 'fdr_dps' | 'sanchaypatra' | 'stocks' | 'mutual_fund' | 'real_estate' | 'other';
+  invested_amount: string;
+  current_value?: string;
+  purchased_date: string;
+  status?: 'active' | 'sold';
+  details?: Record<string, unknown>;
+}
+
+export interface UpdateInvestmentDto {
+  name?: string;
+  current_value?: string;
+  status?: 'active' | 'sold';
+  details?: Record<string, unknown>;
+}
+
+export interface SellInvestmentDto {
+  sold_amount: string;
+  sold_date: string;
+  linked_transaction_id?: string;
+}
+
+export async function listInvestments(token: string, query: InvestmentQuery = {}) {
+  const params = new URLSearchParams();
+  if (query.assetType) params.set('assetType', query.assetType);
+  if (query.status) params.set('status', query.status);
+  if (query.search) params.set('search', query.search);
+  if (query.limit) params.set('limit', String(query.limit));
+  if (query.offset) params.set('offset', String(query.offset));
+
+  const qs = params.toString() ? `?${params.toString()}` : '';
+  const response = await request<{ data: Investment[]; total: number }>(
+    `/investments${qs}`,
+    token,
+  );
+  return {
+    ...response,
+    data: (response.data ?? []).map(normalizeInvestment),
+  };
+}
+
+export async function getInvestment(token: string, id: string) {
+  const investment = await request<Investment>(`/investments/${id}`, token);
+  return normalizeInvestment(investment);
+}
+
+export async function createInvestment(
+  token: string,
+  dto: CreateInvestmentDto,
+) {
+  return request<Investment>('/investments', token, {
+    method: 'POST',
+    body: JSON.stringify(dto),
+  });
+}
+
+export async function updateInvestment(
+  token: string,
+  id: string,
+  dto: UpdateInvestmentDto,
+) {
+  return request<Investment>(`/investments/${id}`, token, {
+    method: 'PATCH',
+    body: JSON.stringify(dto),
+  });
+}
+
+export async function sellInvestment(
+  token: string,
+  id: string,
+  dto: SellInvestmentDto,
+) {
+  return request<Investment>(`/investments/${id}/sell`, token, {
+    method: 'POST',
+    body: JSON.stringify(dto),
+  });
+}
+
+export async function deleteInvestment(token: string, id: string) {
+  return request<{ success: boolean }>(`/investments/${id}`, token, {
+    method: 'DELETE',
+  });
+}
+
+export function normalizeInvestment(row: Investment): Investment {
+  const amount = row.invested_amount as unknown;
+  const current = row.current_value as unknown;
+  return {
+    ...row,
+    invested_amount: typeof amount === 'number' ? amount.toFixed(2) : String(amount ?? '0.00'),
+    current_value: typeof current === 'number' ? current.toFixed(2) : String(current ?? '0.00'),
+    sold_amount: row.sold_amount !== undefined ? (row.sold_amount ?? null) : null,
+    sold_date: row.sold_date ?? undefined,
+  };
+}
+
+// ── Investment Allocation Chart ──
+
+export interface AllocationPoint {
+  type: string;
+  invested: string;
+  current: string;
+}
+
+export async function fetchAllocation(token: string): Promise<AllocationPoint[]> {
+  const summary = await fetchInvestmentSummary(token);
+  const totalInvested = parseFloat(summary.totalInvested);
+  const totalCurrent = parseFloat(summary.currentValue);
+  if (totalInvested === 0) return [];
+  return Object.entries(summary.allocationByType).map(([type, invested]) => ({
+    type,
+    invested: invested.toFixed(2),
+    current: (totalCurrent * (invested / totalInvested)).toFixed(2),
+  }));
+}
+
+
+export async function fetchInvestmentSummary(token: string): Promise<InvestmentSummary> {
+  const response = await request<InvestmentSummary>(`/investments/summary`, token);
+  return response;
+}
+
+// ── Gold Calculator API ──
+
+export interface GoldRate {
+  metal_type: 'gold' | 'silver';
+  karat: '22k' | '24k';
+  market_price_per_gram: string;
+  resale_price_per_gram: string;
+}
+
+export interface GoldCalculationInput {
+  metal_type: 'gold' | 'silver';
+  karat: '22k' | '24k';
+  weight_grams: string;
+  making_charge_amount?: string;
+  vat_percent?: string;
+}
+
+export interface GoldCalculationResult {
+  market_value: string;
+  making_charge: string;
+  vat_amount: string;
+  total: string;
+}
+
+export async function fetchGoldRates(): Promise<GoldRate[]> {
+  const response = await request<GoldRate[]>('/investments/gold/rates', null);
+  return response;
+}
+
+export async function calculateGoldValue(
+  token: string,
+  input: GoldCalculationInput,
+): Promise<GoldCalculationResult> {
+  const response = await request<GoldCalculationResult>(
+    '/investments/gold/calculate',
+    token,
+    {
+      method: 'POST',
+      body: JSON.stringify(input),
+    },
+  );
+  return response;
+}
+
+// ── Responsive Data Table ──
+
+export interface ResponsiveColumn {
+  key: string;
+  header: string;
+  render?: (value: string) => ReactNode;
+}
+
+export interface ResponsiveDataTableProps {
+  columns: ResponsiveColumn[];
+  data: Investment[];
+  title?: string;
+  loading?: boolean;
+  emptyStateTitle?: string;
+  emptyStateDescription?: string;
+}
+
+export { ResponsiveDataTable } from '@/components/responsive-table/responsive-data-table';
+
 

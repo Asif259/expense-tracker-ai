@@ -26,6 +26,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
+  { href: '/investments', label: 'Investments', icon: HandCoins },
   { href: '/transactions', label: 'Transactions', icon: ReceiptText },
   { href: '/loans', label: 'Debts & loans', icon: HandCoins },
   { href: '/ai-entry', label: 'AI quick add', icon: Sparkles },
@@ -332,6 +333,7 @@ function ShellInner({ children, wide }: { children: React.ReactNode; wide?: bool
         <div className="mx-auto flex max-w-md items-center justify-around">
           {[
             { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
+            { href: '/investments', label: 'Invest', icon: HandCoins },
             { href: '/transactions', label: 'Activity', icon: ReceiptText },
             { href: '/loans', label: 'Loans', icon: HandCoins },
             { href: '/ai-entry', label: 'AI add', icon: Sparkles },

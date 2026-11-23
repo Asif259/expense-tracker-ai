@@ -8,6 +8,7 @@ import { TransactionsModule } from './transactions/transactions.module.js';
 import { AiDraftsModule } from './ai-drafts/ai-drafts.module.js';
 import { AiModule } from './ai/ai.module.js';
 import { LoansModule } from './loans/loans.module.js';
+import { InvestmentsModule } from './investments/investments.module.js';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter.js';
 import { SupabaseAuthGuard } from './common/guards/supabase-auth.guard.js';
 
@@ -24,6 +25,7 @@ import { SupabaseAuthGuard } from './common/guards/supabase-auth.guard.js';
     AiDraftsModule,
     AiModule,
     LoansModule,
+    InvestmentsModule,
   ],
   providers: [
     {

@@ -20,7 +20,9 @@ export class SupabaseAdminService {
 
   constructor(private readonly configService: ConfigService) {
     const supabaseUrl = this.configService.getOrThrow<string>('SUPABASE_URL');
-    const serviceRoleKey = this.configService.getOrThrow<string>('SUPABASE_SERVICE_ROLE_KEY');
+    const serviceRoleKey = this.configService.getOrThrow<string>(
+      'SUPABASE_SERVICE_ROLE_KEY',
+    );
 
     // Private privileged client: strictly isolated within this service.
     // Never exposed directly to controllers, logs, or external consumers.
@@ -33,10 +35,20 @@ export class SupabaseAdminService {
   }
 
   /**
+   * Returns the privileged Supabase client for admin operations.
+   * Use only within this service or other privileged backend services.
+   */
+  getPrivilegedClient(): SupabaseClient {
+    return this.privilegedClient;
+  }
+
+  /**
    * Invokes the database function public.create_ai_draft using the service_role key.
    * Derives user identity exclusively from the verified server-side caller.
    */
-  async createAiDraft(params: CreateAiDraftParams): Promise<{ draftId: string }> {
+  async createAiDraft(
+    params: CreateAiDraftParams,
+  ): Promise<{ draftId: string }> {
     const { data, error } = await this.privilegedClient.rpc('create_ai_draft', {
       p_user_id: params.userId,
       p_type: params.type,
@@ -48,7 +60,9 @@ export class SupabaseAdminService {
     });
 
     if (error) {
-      this.logger.error(`create_ai_draft RPC failed: ${error.message} (${error.code})`);
+      this.logger.error(
+        `create_ai_draft RPC failed: ${error.message} (${error.code})`,
+      );
       throw mapDatabaseError(error);
     }
 
