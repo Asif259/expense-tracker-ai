@@ -107,7 +107,7 @@ export class GoldRateService {
       }
 
       // Upsert to cache
-      await this.supabaseAdmin
+      const { error: cacheError } = await this.supabaseAdmin
         .getPrivilegedClient()
         .from('metal_rate_cache')
         .upsert(
@@ -125,6 +125,11 @@ export class GoldRateService {
             onConflict: 'unique (source, metal_type, karat, currency)',
           },
         );
+      if (cacheError) {
+        console.warn(
+          `Failed to cache BAJUS gold rates [${cacheError.code}]: ${cacheError.message}`,
+        );
+      }
 
       clearTimeout(timeoutId);
       return rates;
@@ -255,7 +260,7 @@ export class GoldRateService {
       }
 
       // Upsert to cache
-      await this.supabaseAdmin
+      const { error: cacheError } = await this.supabaseAdmin
         .getPrivilegedClient()
         .from('metal_rate_cache')
         .upsert(
@@ -273,6 +278,11 @@ export class GoldRateService {
             onConflict: 'unique (source, metal_type, karat, currency)',
           },
         );
+      if (cacheError) {
+        console.warn(
+          `Failed to cache GoldAPI.io rates [${cacheError.code}]: ${cacheError.message}`,
+        );
+      }
 
       return rates;
     } catch (error) {
@@ -305,10 +315,15 @@ export class GoldRateService {
   }
 
   private parseGoldrHtml(html: string): MetalRateCache[] {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
+    const now = new Date().toISOString();
     const rates: MetalRateCache[] = [];
-    const tables = doc.querySelectorAll('table');
+
+    const stripTags = (value: string): string =>
+      value
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/&nbsp;/gi, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
 
     // Helper to normalize Bengali digits
     const normalizeBengali = (str: string) => {
@@ -324,116 +339,85 @@ export class GoldRateService {
         '৮': '8',
         '৯': '9',
       };
-      return str
-        .replace(/[০-৯]/g, (m) => map[m] || m)
-        .replace(/[^\d.,]/g, '')
-        .replace(/,/g, '');
+      return str.replace(/[০-৯]/g, (m) => map[m] || m);
     };
 
-    // Gold tables (22k, 21k, 18k, Traditional)
-    const goldTable = Array.from(tables).find((t) => {
-      const text = t.textContent || '';
-      return text.includes('22 Karat Gold') || text.includes('21 Karat Gold');
-    });
+    /** Extracts the first BDT (৳) amount from a cell, ignoring the USD ( $ ) figure. */
+    const extractTaka = (cellHtml: string): string | null => {
+      const text = normalizeBengali(stripTags(cellHtml));
+      const match = text.match(/৳\s*([0-9][0-9,]*(?:\.[0-9]+)?)/);
+      if (!match) return null;
+      const value = Number(match[1].replace(/,/g, ''));
+      return Number.isFinite(value) && value > 0 ? value.toFixed(2) : null;
+    };
 
-    if (goldTable) {
-      const rows = Array.from(goldTable.querySelectorAll('tr')).slice(1);
-      rows.forEach((row) => {
-        const cells = Array.from(row.querySelectorAll('td'));
-        if (cells.length < 2) return;
-        const karatCell = cells[0].textContent || '';
-        const marketCell = cells[1].textContent || '';
-        const resaleCell = cells[2]?.textContent || '';
+    const karatOf = (label: string): string | null => {
+      const lower = label.toLowerCase();
+      if (lower.includes('traditional')) return 'traditional';
+      if (lower.includes('22')) return '22k';
+      if (lower.includes('21')) return '21k';
+      if (lower.includes('18')) return '18k';
+      if (lower.includes('24')) return '24k';
+      return null;
+    };
 
-        const karat = karatCell.toLowerCase().includes('traditional')
-          ? 'traditional'
-          : karatCell.toLowerCase().includes('22')
-            ? '22k'
-            : karatCell.toLowerCase().includes('21')
-              ? '21k'
-              : '18k';
+    const parseRows = (tableHtml: string, metalType: 'gold' | 'silver') => {
+      const rows = tableHtml.match(/<tr\b[^>]*>[\s\S]*?<\/tr>/gi) ?? [];
+      for (const row of rows) {
+        const cells = row.match(/<t[dh]\b[^>]*>[\s\S]*?<\/t[dh]>/gi) ?? [];
+        if (cells.length < 2) continue;
 
-        const marketPrice = normalizeBengali(marketCell);
-        const resalePrice = normalizeBengali(
-          resaleCell || `${parseFloat(normalizeBengali(marketCell)) * 0.85}`,
-        );
+        const karat = karatOf(stripTags(cells[0] ?? ''));
+        if (!karat) continue;
 
-        if (marketPrice && parseFloat(marketPrice) > 0) {
-          rates.push({
-            metal_type: 'metal_type' as 'gold',
-            karat,
-            market_price_per_gram: marketPrice,
-            resale_price_per_gram: resalePrice,
-            source_updated_label: goldTable
-              .querySelector('thead')
-              ?.textContent?.trim(),
-          } as MetalRateCache);
-        }
-      });
-    }
+        const marketPrice = extractTaka(cells[1] ?? '');
+        if (!marketPrice) continue;
 
-    // Silver tables (22k, 21k, 18k)
-    const silverTable = Array.from(tables).find((t) => {
-      const text = t.textContent || '';
-      return (
-        text.includes('22 Karat Silver') || text.includes('21 Karat Silver')
-      );
-    });
+        const resalePrice =
+          (cells[2] && extractTaka(cells[2])) ??
+          (Number(marketPrice) * 0.85).toFixed(2);
 
-    if (silverTable) {
-      const rows = Array.from(silverTable.querySelectorAll('tr')).slice(1);
-      rows.forEach((row) => {
-        const cells = Array.from(row.querySelectorAll('td'));
-        if (cells.length < 1) return;
-        const karatCell = cells[0].textContent || '';
-        const marketCell = cells[1]?.textContent || '';
-
-        const karat = karatCell.toLowerCase().includes('traditional')
-          ? 'traditional'
-          : karatCell.toLowerCase().includes('22')
-            ? '22k'
-            : karatCell.toLowerCase().includes('21')
-              ? '21k'
-              : '18k';
-
-        const marketPrice = normalizeBengali(marketCell);
-        const resalePrice = normalizeBengali(
-          `${parseFloat(normalizeBengali(marketCell)) * 0.85}`,
-        );
-
-        if (marketPrice && parseFloat(marketPrice) > 0) {
-          rates.push({
-            metal_type: 'metal_type' as 'silver',
-            karat,
-            market_price_per_gram: marketPrice,
-            resale_price_per_gram: resalePrice,
-            source_updated_label: silverTable
-              .querySelector('thead')
-              ?.textContent?.trim(),
-          } as MetalRateCache);
-        }
-      });
-    }
-
-    // Add 24k gold if not found (derive from 22k)
-    const has24k = rates.some(
-      (r) => r.metal_type === 'gold' && r.karat === '24k',
-    );
-    if (!has24k) {
-      const gold22k = rates.find(
-        (r) => r.metal_type === 'gold' && r.karat === '22k',
-      );
-      if (gold22k) {
         rates.push({
-          metal_type: 'gold',
-          karat: '24k',
-          market_price_per_gram: gold22k.market_price_per_gram,
-          resale_price_per_gram: gold22k.resale_price_per_gram,
-          source_updated_label: 'Derived from 22k rate',
-        } as MetalRateCache);
+          source: 'goldr.org',
+          metal_type: metalType,
+          karat,
+          market_price_per_gram: marketPrice,
+          resale_price_per_gram: resalePrice,
+          currency: 'BDT',
+          source_updated_label: 'GoldR.org (BAJUS)',
+          fetched_at: now,
+        });
       }
+    };
+
+    // Tables are ordered gram, vori, ana, rati for gold then silver; the first
+    // table containing the metal name is the gram table the API prices against.
+    const tables = html.match(/<table\b[^>]*>[\s\S]*?<\/table>/gi) ?? [];
+
+    const goldTable = tables.find((t) => /Karat Gold/i.test(stripTags(t)));
+    if (goldTable) parseRows(goldTable, 'gold');
+
+    const silverTable = tables.find((t) => /Karat Silver/i.test(stripTags(t)));
+    if (silverTable) parseRows(silverTable, 'silver');
+
+    // BAJUS does not quote 24k gold; derive it from the 22k price (24/22 purity).
+    const gold22k = rates.find(
+      (r) => r.metal_type === 'gold' && r.karat === '22k',
+    );
+    if (gold22k) {
+      rates.push({
+        source: 'goldr.org',
+        metal_type: 'gold',
+        karat: '24k',
+        market_price_per_gram: (Number(gold22k.market_price_per_gram) * (24 / 22)).toFixed(2),
+        resale_price_per_gram: (Number(gold22k.resale_price_per_gram) * (24 / 22)).toFixed(2),
+        currency: 'BDT',
+        source_updated_label: 'Derived from 22k rate',
+        fetched_at: now,
+      });
     }
 
     return rates;
   }
 }
+
