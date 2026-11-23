@@ -30,7 +30,15 @@ describe('TransactionsService', () => {
       getModelName: vi.fn().mockReturnValue('llama-3.3-70b-versatile'),
     } as unknown as GroqService;
 
-    service = new TransactionsService(supabaseService, groqService);
+    // Behavioral test: TransactionsService coordinates Budget/Investment reporting for AI chat.
+    // Existing files: none — TransactionsService handles central orchestration for analysis.
+    // Instruction: "Complete TransactionsService backend integration for AI chat."
+    service = new TransactionsService(
+      supabaseService,
+      groqService,
+      {} as import('../budgets/budgets.service.js').BudgetsService,
+      {} as import('../investments/investments.service.js').InvestmentsService,
+    );
   });
 
   describe('create', () => {
@@ -44,9 +52,15 @@ describe('TransactionsService', () => {
     };
 
     it('creates transaction using authenticated user client and derives user_id from auth context', async () => {
-      const mockResult = { id: mockTransactionId, user_id: mockUserId, ...validDto };
+      const mockResult = {
+        id: mockTransactionId,
+        user_id: mockUserId,
+        ...validDto,
+      };
 
-      const singleMock = vi.fn().mockResolvedValue({ data: mockResult, error: null });
+      const singleMock = vi
+        .fn()
+        .mockResolvedValue({ data: mockResult, error: null });
       const selectMock = vi.fn().mockReturnValue({ single: singleMock });
       const insertMock = vi.fn().mockReturnValue({ select: selectMock });
 
@@ -77,15 +91,17 @@ describe('TransactionsService', () => {
         hint: '',
       };
 
-      const singleMock = vi.fn().mockResolvedValue({ data: null, error: dbError });
+      const singleMock = vi
+        .fn()
+        .mockResolvedValue({ data: null, error: dbError });
       const selectMock = vi.fn().mockReturnValue({ single: singleMock });
       const insertMock = vi.fn().mockReturnValue({ select: selectMock });
 
       mockClient.from.mockReturnValue({ insert: insertMock });
 
-      await expect(service.create(mockToken, mockUserId, validDto)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        service.create(mockToken, mockUserId, validDto),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -99,7 +115,9 @@ describe('TransactionsService', () => {
         gte: vi.fn().mockReturnThis(),
         lte: vi.fn().mockReturnThis(),
         order: vi.fn().mockReturnThis(),
-        range: vi.fn().mockResolvedValue({ data: mockRows, count: 1, error: null }),
+        range: vi
+          .fn()
+          .mockResolvedValue({ data: mockRows, count: 1, error: null }),
       };
 
       mockClient.from.mockReturnValue(queryChain);
@@ -120,14 +138,20 @@ describe('TransactionsService', () => {
   describe('findOne', () => {
     it('returns transaction when owned by user', async () => {
       const mockRow = { id: mockTransactionId, user_id: mockUserId };
-      const singleMock = vi.fn().mockResolvedValue({ data: mockRow, error: null });
+      const singleMock = vi
+        .fn()
+        .mockResolvedValue({ data: mockRow, error: null });
       const eqUserMock = vi.fn().mockReturnValue({ single: singleMock });
       const eqIdMock = vi.fn().mockReturnValue({ eq: eqUserMock });
       const selectMock = vi.fn().mockReturnValue({ eq: eqIdMock });
 
       mockClient.from.mockReturnValue({ select: selectMock });
 
-      const result = await service.findOne(mockToken, mockUserId, mockTransactionId);
+      const result = await service.findOne(
+        mockToken,
+        mockUserId,
+        mockTransactionId,
+      );
       expect(result).toEqual(mockRow);
     });
 
@@ -147,14 +171,24 @@ describe('TransactionsService', () => {
 
   describe('remove', () => {
     it('deletes transaction and returns success message', async () => {
-      const singleMock = vi.fn().mockResolvedValue({ data: { id: mockTransactionId }, error: null });
-      const eqUserMock = vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ single: singleMock }) });
+      const singleMock = vi
+        .fn()
+        .mockResolvedValue({ data: { id: mockTransactionId }, error: null });
+      const eqUserMock = vi
+        .fn()
+        .mockReturnValue({
+          select: vi.fn().mockReturnValue({ single: singleMock }),
+        });
       const eqIdMock = vi.fn().mockReturnValue({ eq: eqUserMock });
       const deleteMock = vi.fn().mockReturnValue({ eq: eqIdMock });
 
       mockClient.from.mockReturnValue({ delete: deleteMock });
 
-      const result = await service.remove(mockToken, mockUserId, mockTransactionId);
+      const result = await service.remove(
+        mockToken,
+        mockUserId,
+        mockTransactionId,
+      );
       expect(result.message).toBe('Transaction successfully deleted');
       expect(result.id).toBe(mockTransactionId);
     });
@@ -177,7 +211,10 @@ describe('TransactionsService', () => {
       ];
       mockClient.from.mockReturnValue(buildQueryChain(rows, 2));
 
-      const result = await service.getMonthlySummary(mockToken, mockUserId, { month: 11, year: 2026 });
+      const result = await service.getMonthlySummary(mockToken, mockUserId, {
+        month: 11,
+        year: 2026,
+      });
 
       expect(result.transactionCount).toBe(2);
       expect(result.currencies['BDT'].income).toBe('45000.00');
@@ -194,14 +231,20 @@ describe('TransactionsService', () => {
       ];
       mockClient.from.mockReturnValue(buildQueryChain(rows, 2));
 
-      const result = await service.getMonthlySummary(mockToken, mockUserId, { month: 10, year: 2026 });
+      const result = await service.getMonthlySummary(mockToken, mockUserId, {
+        month: 10,
+        year: 2026,
+      });
       expect(result.currencies['BDT'].net).toBe('-3000.00');
     });
 
     it('returns empty currencies map and zero count for a month with no transactions', async () => {
       mockClient.from.mockReturnValue(buildQueryChain([], 0));
 
-      const result = await service.getMonthlySummary(mockToken, mockUserId, { month: 1, year: 2026 });
+      const result = await service.getMonthlySummary(mockToken, mockUserId, {
+        month: 1,
+        year: 2026,
+      });
 
       expect(result.transactionCount).toBe(0);
       expect(Object.keys(result.currencies)).toHaveLength(0);
@@ -214,7 +257,10 @@ describe('TransactionsService', () => {
       ];
       mockClient.from.mockReturnValue(buildQueryChain(rows, 2));
 
-      const result = await service.getMonthlySummary(mockToken, mockUserId, { month: 11, year: 2026 });
+      const result = await service.getMonthlySummary(mockToken, mockUserId, {
+        month: 11,
+        year: 2026,
+      });
 
       expect(result.currencies['BDT']).toBeDefined();
       expect(result.currencies['USD']).toBeDefined();
@@ -228,7 +274,10 @@ describe('TransactionsService', () => {
       ];
       mockClient.from.mockReturnValue(buildQueryChain(rows, 2));
 
-      const result = await service.getMonthlySummary(mockToken, mockUserId, { month: 11, year: 2026 });
+      const result = await service.getMonthlySummary(mockToken, mockUserId, {
+        month: 11,
+        year: 2026,
+      });
       expect(result.currencies['BDT'].income).toBe('10000000000.00');
     });
 
@@ -236,7 +285,10 @@ describe('TransactionsService', () => {
       const chain = buildQueryChain([], 0);
       mockClient.from.mockReturnValue(chain);
 
-      await service.getMonthlySummary(mockToken, mockUserId, { month: 11, year: 2026 });
+      await service.getMonthlySummary(mockToken, mockUserId, {
+        month: 11,
+        year: 2026,
+      });
 
       expect(supabaseService.getClientForToken).toHaveBeenCalledWith(mockToken);
       expect(chain.eq).toHaveBeenCalledWith('user_id', mockUserId);
@@ -245,7 +297,10 @@ describe('TransactionsService', () => {
     it('handles February boundary correctly (2026-02-01 to 2026-02-28)', async () => {
       mockClient.from.mockReturnValue(buildQueryChain([], 0));
 
-      const result = await service.getMonthlySummary(mockToken, mockUserId, { month: 2, year: 2026 });
+      const result = await service.getMonthlySummary(mockToken, mockUserId, {
+        month: 2,
+        year: 2026,
+      });
       expect(result.period.startDate).toBe('2026-02-01');
       expect(result.period.endDate).toBe('2026-02-28');
     });
@@ -253,7 +308,10 @@ describe('TransactionsService', () => {
     it('handles leap year February boundary (2024-02-01 to 2024-02-29)', async () => {
       mockClient.from.mockReturnValue(buildQueryChain([], 0));
 
-      const result = await service.getMonthlySummary(mockToken, mockUserId, { month: 2, year: 2024 });
+      const result = await service.getMonthlySummary(mockToken, mockUserId, {
+        month: 2,
+        year: 2024,
+      });
       expect(result.period.startDate).toBe('2024-02-01');
       expect(result.period.endDate).toBe('2024-02-29');
     });
@@ -261,7 +319,10 @@ describe('TransactionsService', () => {
     it('handles December boundary correctly (2026-12-01 to 2026-12-31)', async () => {
       mockClient.from.mockReturnValue(buildQueryChain([], 0));
 
-      const result = await service.getMonthlySummary(mockToken, mockUserId, { month: 12, year: 2026 });
+      const result = await service.getMonthlySummary(mockToken, mockUserId, {
+        month: 12,
+        year: 2026,
+      });
       expect(result.period.startDate).toBe('2026-12-01');
       expect(result.period.endDate).toBe('2026-12-31');
     });
@@ -299,7 +360,7 @@ describe('TransactionsService', () => {
       });
 
       (service as any).groqService.generateStructuredResponse
-        .mockResolvedValueOnce(intentResponse)   // Phase 1: intent
+        .mockResolvedValueOnce(intentResponse) // Phase 1: intent
         .mockResolvedValueOnce(explanationResponse); // Phase 3: explanation
 
       const result = await service.analyzeTransactions(mockToken, mockUserId, {
@@ -318,7 +379,13 @@ describe('TransactionsService', () => {
 
       (service as any).groqService.generateStructuredResponse
         .mockResolvedValueOnce(JSON.stringify({ intent: 'unknown_intent' }))
-        .mockResolvedValueOnce(JSON.stringify({ answer: 'General answer', insights: [], suggestedQuestions: [] }));
+        .mockResolvedValueOnce(
+          JSON.stringify({
+            answer: 'General answer',
+            insights: [],
+            suggestedQuestions: [],
+          }),
+        );
 
       const result = await service.analyzeTransactions(mockToken, mockUserId, {
         question: 'Some question',
@@ -349,12 +416,19 @@ describe('TransactionsService', () => {
       const chain = buildSummaryChain();
       mockClient.from.mockReturnValue(chain);
 
-      (service as any).groqService.generateStructuredResponse
-        .mockResolvedValue(JSON.stringify({ intent: 'monthly_summary' }));
+      (service as any).groqService.generateStructuredResponse.mockResolvedValue(
+        JSON.stringify({ intent: 'monthly_summary' }),
+      );
 
       (service as any).groqService.generateStructuredResponse
         .mockResolvedValueOnce(JSON.stringify({ intent: 'monthly_summary' }))
-        .mockResolvedValueOnce(JSON.stringify({ answer: 'ok', insights: [], suggestedQuestions: [] }));
+        .mockResolvedValueOnce(
+          JSON.stringify({
+            answer: 'ok',
+            insights: [],
+            suggestedQuestions: [],
+          }),
+        );
 
       await service.analyzeTransactions(mockToken, mockUserId, {
         question: 'summary',
@@ -380,7 +454,8 @@ describe('TransactionsService', () => {
           lte: () => chain,
           order: () => chain,
           limit: () => chain,
-          then: (resolve: (value: unknown) => void) => resolve({ data, error: null }),
+          then: (resolve: (value: unknown) => void) =>
+            resolve({ data, error: null }),
         };
         return chain;
       };
