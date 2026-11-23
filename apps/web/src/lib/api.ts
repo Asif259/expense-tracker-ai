@@ -492,10 +492,9 @@ export interface CreateInvestmentDto {
   name: string;
   asset_type: 'gold' | 'silver' | 'fdr_dps' | 'sanchaypatra' | 'stocks' | 'mutual_fund' | 'real_estate' | 'other';
   invested_amount: string;
-  current_value?: string;
-  purchased_date: string;
+  purchase_date: string;
   status?: 'active' | 'sold';
-  details?: Record<string, unknown>;
+  notes?: string;
 }
 
 export interface UpdateInvestmentDto {
