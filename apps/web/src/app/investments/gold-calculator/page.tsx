@@ -27,6 +27,7 @@ export default function GoldCalculatorPage() {
   const [calculating, setCalculating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currency, setCurrency] = useState('BDT');
+  const [loading, setLoading] = useState(true);
 
   const CURRENCY_OPTIONS = ['BDT', 'USD', 'VND'] as const;
 
@@ -101,7 +102,7 @@ export default function GoldCalculatorPage() {
           <div className="space-y-6">
             {/* Metal & Karat Selection */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field label="Metal Type">
+              <Field id="metal_type" label="Metal Type">
                 <SegmentedControl
                   label="Select metal"
                   value={metalType}
@@ -112,7 +113,7 @@ export default function GoldCalculatorPage() {
                   }))}
                 />
               </Field>
-              <Field label="Karat">
+              <Field id="karat" label="Karat">
                 <SegmentedControl
                   label="Select karat"
                   value={karat}
@@ -142,7 +143,7 @@ export default function GoldCalculatorPage() {
 
             {/* Input Fields */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <Field label="Weight (grams)" required>
+              <Field id="weight" label="Weight (grams)" required>
                 <Input
                   type="number"
                   value={weight}
@@ -152,7 +153,7 @@ export default function GoldCalculatorPage() {
                   min="0"
                 />
               </Field>
-              <Field label="Making Charge (optional)">
+              <Field id="making_charge" label="Making Charge (optional)">
                 <Input
                   type="number"
                   value={makingCharge}
@@ -162,7 +163,7 @@ export default function GoldCalculatorPage() {
                   min="0"
                 />
               </Field>
-              <Field label="VAT %">
+              <Field id="vat_percent" label="VAT %">
                 <Input
                   type="number"
                   value={vatPercent}
@@ -175,7 +176,7 @@ export default function GoldCalculatorPage() {
             </div>
 
             {/* Currency Selector */}
-            <Field label="Currency">
+            <Field id="currency" label="Currency">
               <SegmentedControl
                 label="Select currency"
                 value={currency}

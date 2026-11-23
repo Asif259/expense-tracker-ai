@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import AppShell from '@/components/app-shell';
@@ -20,7 +20,6 @@ import {
   Card,
   Field,
   Input,
-  Label,
   Select,
 } from '@/components/ui';
 import { ArrowLeft, Check, Coins } from 'lucide-react';
@@ -59,12 +58,28 @@ export default function InvestmentNewPage() {
     asset_type: 'gold',
     invested_amount: '',
     current_value: '',
-    purchased_date: formatDate(new Date().toISOString()),
+    purchased_date: '',
     status: 'active',
     details: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    setForm((prev) => ({ ...prev, purchased_date: formatDate(new Date().toISOString()) }));
+  }, []);
+
+  if (!mounted) {
+    return (
+      <AppShell>
+        <div className="space-y-6">
+          <div className="flex items-center gap-4">Loading...</div>
+        </div>
+      </AppShell>
+    );
+  }
 
   const handleChange = useCallback((field: keyof FormData, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -87,7 +102,7 @@ export default function InvestmentNewPage() {
           current_value: form.current_value || form.invested_amount,
           purchased_date: form.purchased_date,
           status: form.status,
-          details: form.details.trim() || undefined,
+          details: form.details.trim() ? { notes: form.details.trim() } : undefined,
         };
 
         await createInvestment(token, payload);
@@ -117,7 +132,7 @@ export default function InvestmentNewPage() {
 
         <Card padding="lg">
           <form onSubmit={handleSubmit} className="space-y-6">
-            <Field label="Investment Name" required>
+            <Field id="name" label="Investment Name" required>
               <Input
                 value={form.name}
                 onChange={(e) => handleChange('name', e.target.value)}
@@ -125,16 +140,19 @@ export default function InvestmentNewPage() {
               />
             </Field>
 
-            <Field label="Asset Type" required>
+            <Field id="asset_type" label="Asset Type" required>
               <Select
                 value={form.asset_type}
-                onChange={(v) => handleChange('asset_type', v)}
-                options={ASSET_TYPES}
-              />
+                onChange={(e) => handleChange('asset_type', e.target.value)}
+              >
+                {ASSET_TYPES.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </Select>
             </Field>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field label="Invested Amount" required>
+              <Field id="invested_amount" label="Invested Amount" required>
                 <Input
                   type="text"
                   value={form.invested_amount}
@@ -143,7 +161,7 @@ export default function InvestmentNewPage() {
                   inputMode="decimal"
                 />
               </Field>
-              <Field label="Current Value">
+              <Field id="current_value" label="Current Value">
                 <Input
                   type="text"
                   value={form.current_value}
@@ -154,7 +172,7 @@ export default function InvestmentNewPage() {
               </Field>
             </div>
 
-            <Field label="Purchase Date" required>
+            <Field id="purchased_date" label="Purchase Date" required>
               <Input
                 type="date"
                 value={form.purchased_date}
@@ -162,15 +180,18 @@ export default function InvestmentNewPage() {
               />
             </Field>
 
-            <Field label="Status">
+            <Field id="status" label="Status">
               <Select
                 value={form.status}
-                onChange={(v) => handleChange('status', v)}
-                options={STATUS_OPTIONS}
-              />
+                onChange={(e) => handleChange('status', e.target.value)}
+              >
+                {STATUS_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </Select>
             </Field>
 
-            <Field label="Details (optional)">
+            <Field id="details" label="Details (optional)">
               <Input
                 value={form.details}
                 onChange={(e) => handleChange('details', e.target.value)}

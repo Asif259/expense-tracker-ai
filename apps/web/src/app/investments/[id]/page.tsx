@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, Suspense } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import AppShell from '@/components/app-shell';
@@ -57,11 +57,19 @@ function normalizeForForm(investment: Investment): FormData {
     current_value: investment.current_value,
     purchased_date: investment.purchased_date,
     status: investment.status,
-    details: investment.details ?? '',
+    details: typeof investment.details === 'object' && investment.details !== null ? JSON.stringify(investment.details) : '',
   };
 }
 
 export default function InvestmentEditPage() {
+  return (
+    <Suspense fallback={<AppShell><div className="space-y-6"><div className="flex items-center gap-4">Loading...</div></div></AppShell>}>
+      <InvestmentEditContent />
+    </Suspense>
+  );
+}
+
+function InvestmentEditContent() {
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
@@ -73,7 +81,7 @@ export default function InvestmentEditPage() {
     current_value: '',
     purchased_date: '',
     status: 'active',
-    details: '',
+    details: '{}',
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -118,12 +126,9 @@ export default function InvestmentEditPage() {
 
         const payload: UpdateInvestmentDto = {
           name: form.name.trim(),
-          asset_type: form.asset_type,
-          invested_amount: form.invested_amount,
           current_value: form.current_value,
-          purchased_date: form.purchased_date,
           status: form.status,
-          details: form.details.trim() || undefined,
+          details: form.details.trim() ? JSON.parse(form.details) : undefined,
         };
 
         await updateInvestment(token, id, payload);
@@ -194,7 +199,7 @@ export default function InvestmentEditPage() {
 
         <Card padding="lg">
           <form onSubmit={handleSubmit} className="space-y-6">
-            <Field label="Investment Name" required>
+            <Field id="name" label="Investment Name" required>
               <Input
                 value={form.name}
                 onChange={(e) => handleChange('name', e.target.value)}
@@ -202,16 +207,19 @@ export default function InvestmentEditPage() {
               />
             </Field>
 
-            <Field label="Asset Type" required>
+            <Field id="asset_type" label="Asset Type" required>
               <Select
                 value={form.asset_type}
-                onChange={(v) => handleChange('asset_type', v)}
-                options={ASSET_TYPES}
-              />
+                onChange={(e) => handleChange('asset_type', e.target.value)}
+              >
+                {ASSET_TYPES.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </Select>
             </Field>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field label="Invested Amount" required>
+              <Field id="invested_amount" label="Invested Amount" required>
                 <Input
                   type="text"
                   value={form.invested_amount}
@@ -220,7 +228,7 @@ export default function InvestmentEditPage() {
                   inputMode="decimal"
                 />
               </Field>
-              <Field label="Current Value">
+              <Field id="current_value" label="Current Value">
                 <Input
                   type="text"
                   value={form.current_value}
@@ -231,7 +239,7 @@ export default function InvestmentEditPage() {
               </Field>
             </div>
 
-            <Field label="Purchase Date" required>
+            <Field id="purchased_date" label="Purchase Date" required>
               <Input
                 type="date"
                 value={form.purchased_date}
@@ -239,15 +247,18 @@ export default function InvestmentEditPage() {
               />
             </Field>
 
-            <Field label="Status">
+            <Field id="status" label="Status">
               <Select
                 value={form.status}
-                onChange={(v) => handleChange('status', v)}
-                options={STATUS_OPTIONS}
-              />
+                onChange={(e) => handleChange('status', e.target.value)}
+              >
+                {STATUS_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </Select>
             </Field>
 
-            <Field label="Details (optional)">
+            <Field id="details" label="Details (optional)">
               <Input
                 value={form.details}
                 onChange={(e) => handleChange('details', e.target.value)}

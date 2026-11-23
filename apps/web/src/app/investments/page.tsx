@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import AppShell from '@/components/app-shell';
@@ -228,6 +228,7 @@ export default function InvestmentsPage() {
   ];
   const [filterType, setFilterType] = useState('all');
 
+  const router = useRouter();
   const rowActions = useCallback(
     (row: Investment): RowAction<Investment>[] => [
       {
