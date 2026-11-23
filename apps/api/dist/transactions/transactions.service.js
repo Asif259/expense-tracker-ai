@@ -12,6 +12,8 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service.js';
 import { mapDatabaseError } from '../common/errors/database-error.mapper.js';
 import { GroqService } from '../ai/groq.service.js';
+import { BudgetsService } from '../budgets/budgets.service.js';
+import { InvestmentsService } from '../investments/investments.service.js';
 function addDecimals(a, b) {
     const toInt = (s) => {
         const [intPart, decPart = ''] = s.split('.');
@@ -706,7 +708,9 @@ Detected intent: ${intent}`;
 TransactionsService = TransactionsService_1 = __decorate([
     Injectable(),
     __metadata("design:paramtypes", [SupabaseService,
-        GroqService, Object, Object])
+        GroqService,
+        BudgetsService,
+        InvestmentsService])
 ], TransactionsService);
 export { TransactionsService };
 //# sourceMappingURL=transactions.service.js.map

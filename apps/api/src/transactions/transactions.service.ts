@@ -2,6 +2,8 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service.js';
 import { mapDatabaseError } from '../common/errors/database-error.mapper.js';
 import { GroqService } from '../ai/groq.service.js';
+import { BudgetsService } from '../budgets/budgets.service.js';
+import { InvestmentsService } from '../investments/investments.service.js';
 import type {
   CreateTransactionDto,
   UpdateTransactionDto,
@@ -121,8 +123,8 @@ export class TransactionsService {
   constructor(
     private readonly supabaseService: SupabaseService,
     private readonly groqService: GroqService,
-    private readonly budgetsService: import('../budgets/budgets.service.js').BudgetsService,
-    private readonly investmentsService: import('../investments/investments.service.js').InvestmentsService,
+    private readonly budgetsService: BudgetsService,
+    private readonly investmentsService: InvestmentsService,
   ) {}
 
   /**

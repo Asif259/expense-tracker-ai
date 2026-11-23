@@ -1,5 +1,7 @@
 import { SupabaseService } from '../supabase/supabase.service.js';
 import { GroqService } from '../ai/groq.service.js';
+import { BudgetsService } from '../budgets/budgets.service.js';
+import { InvestmentsService } from '../investments/investments.service.js';
 import type { CreateTransactionDto, UpdateTransactionDto, TransactionQueryDto, TransactionSummaryQueryDto, TransactionAnalysisDto } from './dto/transaction.schema.js';
 export interface CurrencySummary {
     income: string;
@@ -33,7 +35,7 @@ export declare class TransactionsService {
     private readonly budgetsService;
     private readonly investmentsService;
     private readonly logger;
-    constructor(supabaseService: SupabaseService, groqService: GroqService, budgetsService: import('../budgets/budgets.service.js').BudgetsService, investmentsService: import('../investments/investments.service.js').InvestmentsService);
+    constructor(supabaseService: SupabaseService, groqService: GroqService, budgetsService: BudgetsService, investmentsService: InvestmentsService);
     create(token: string, userId: string, dto: CreateTransactionDto): Promise<any>;
     findAll(token: string, userId: string, query: TransactionQueryDto): Promise<{
         data: any[];

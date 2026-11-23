@@ -89,29 +89,29 @@ export declare const updateTransactionSchema: z.ZodEffects<z.ZodObject<{
     currency?: "BDT" | "USD" | "EUR" | "GBP" | "CAD" | "AUD" | "JPY" | "SGD" | "INR" | "CNY" | "AED" | "CHF" | "HKD" | "MYR" | "THB" | undefined;
     amount?: string | undefined;
     category_id?: string | undefined;
-    description?: string | null | undefined;
     transaction_date?: string | undefined;
+    description?: string | null | undefined;
 }, {
     type?: "income" | "expense" | undefined;
     currency?: "BDT" | "USD" | "EUR" | "GBP" | "CAD" | "AUD" | "JPY" | "SGD" | "INR" | "CNY" | "AED" | "CHF" | "HKD" | "MYR" | "THB" | undefined;
     amount?: string | number | undefined;
     category_id?: string | undefined;
-    description?: string | null | undefined;
     transaction_date?: string | undefined;
+    description?: string | null | undefined;
 }>, {
     type?: "income" | "expense" | undefined;
     currency?: "BDT" | "USD" | "EUR" | "GBP" | "CAD" | "AUD" | "JPY" | "SGD" | "INR" | "CNY" | "AED" | "CHF" | "HKD" | "MYR" | "THB" | undefined;
     amount?: string | undefined;
     category_id?: string | undefined;
-    description?: string | null | undefined;
     transaction_date?: string | undefined;
+    description?: string | null | undefined;
 }, {
     type?: "income" | "expense" | undefined;
     currency?: "BDT" | "USD" | "EUR" | "GBP" | "CAD" | "AUD" | "JPY" | "SGD" | "INR" | "CNY" | "AED" | "CHF" | "HKD" | "MYR" | "THB" | undefined;
     amount?: string | number | undefined;
     category_id?: string | undefined;
-    description?: string | null | undefined;
     transaction_date?: string | undefined;
+    description?: string | null | undefined;
 }>;
 export type UpdateTransactionDto = z.infer<typeof updateTransactionSchema>;
 export declare const transactionQuerySchema: z.ZodObject<{
