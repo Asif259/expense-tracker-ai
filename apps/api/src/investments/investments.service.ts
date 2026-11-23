@@ -4,9 +4,14 @@
 // Uses: SupabaseService (user-scoped), GoldRateService, shared-types schemas
 // User instruction: "Implement a complete Investments section... multi-asset portfolio tracking"
 
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service.js';
 import { GoldRateService } from './gold-rate.service.js';
+import { mapDatabaseError } from '../common/errors/database-error.mapper.js';
 import type {
   Investment,
   CreateInvestmentDto,
@@ -18,6 +23,8 @@ import { amountSchema } from '@ledgerly/shared-types';
 
 @Injectable()
 export class InvestmentsService {
+  private readonly logger = new Logger(InvestmentsService.name);
+
   constructor(
     private readonly supabase: SupabaseService,
     private readonly goldRate: GoldRateService,
@@ -120,12 +127,20 @@ export class InvestmentsService {
       user_id: userId,
     };
 
-    const { data } = await client
+    const { data, error } = await client
       .from('investments')
       .insert(payload)
       .select()
       .single();
-    if (!data) throw new Error('Failed to create investment');
+    if (error) {
+      this.logger.error(
+        `Failed to create investment [${error.code}]: ${error.message}` +
+          (error.details ? ` | details: ${error.details}` : '') +
+          (error.hint ? ` | hint: ${error.hint}` : ''),
+      );
+      throw mapDatabaseError(error);
+    }
+    if (!data) throw new InternalServerErrorException('Failed to create investment');
 
     // Optional: record as transaction
     if (transactionCategoryId) {
