@@ -51,35 +51,27 @@ type FormData = {
 };
 
 export default function InvestmentNewPage() {
+  return (
+    <Suspense fallback={<AppShell><div className="space-y-6"><div className="flex items-center gap-4">Loading...</div></div></AppShell>}>
+      <InvestmentNewContent />
+    </Suspense>
+  );
+}
+
+function InvestmentNewContent() {
   const router = useRouter();
   const { getToken } = useAuth();
-  const [form, setForm] = useState<FormData>({
+  const [form, setForm] = useState<FormData>(() => ({
     name: '',
     asset_type: 'gold',
     invested_amount: '',
     current_value: '',
-    purchased_date: '',
+    purchased_date: formatDate(new Date().toISOString()),
     status: 'active',
     details: '',
-  });
+  }));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-    setForm((prev) => ({ ...prev, purchased_date: formatDate(new Date().toISOString()) }));
-  }, []);
-
-  if (!mounted) {
-    return (
-      <AppShell>
-        <div className="space-y-6">
-          <div className="flex items-center gap-4">Loading...</div>
-        </div>
-      </AppShell>
-    );
-  }
 
   const handleChange = useCallback((field: keyof FormData, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));

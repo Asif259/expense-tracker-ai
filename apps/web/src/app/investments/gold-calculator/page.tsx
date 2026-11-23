@@ -1,10 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import Link from 'next/link';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import AppShell from '@/components/app-shell';
 import { useAuth } from '@/context/auth-context';
-import { fetchGoldRates, calculateGoldValue, GoldRate, GoldCalculationInput, GoldCalculationResult } from '@/lib/api';
+import { fetchGoldRates, GoldRate } from '@/lib/api';
 import { formatMoney } from '@/lib/format';
 import { Button, ButtonLink, Card, Field, Input, SegmentedControl } from '@/components/ui';
 import { ArrowLeft, Calculator, Sparkles } from 'lucide-react';
@@ -23,7 +22,12 @@ export default function GoldCalculatorPage() {
   const [makingCharge, setMakingCharge] = useState('');
   const [vatPercent, setVatPercent] = useState('15');
   const [rates, setRates] = useState<GoldRate[]>([]);
-  const [result, setResult] = useState<GoldCalculationResult | null>(null);
+  const [result, setResult] = useState<{
+    market_value: string;
+    making_charge: string;
+    vat_amount: string;
+    total: string;
+  } | null>(null);
   const [calculating, setCalculating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currency, setCurrency] = useState('BDT');
@@ -44,33 +48,41 @@ export default function GoldCalculatorPage() {
     return rates.find((r) => r.metal_type === metalType && r.karat === karat);
   }, [rates, metalType, karat]);
 
-  const calculate = useCallback(async () => {
+  const calculate = useCallback(() => {
     if (!weight || parseFloat(weight) <= 0) {
       setError('Please enter a valid weight');
       return;
     }
-
-    const token = await getToken();
-    if (!token) return;
+    if (!rateForSelection) {
+      setError('Rates not loaded yet');
+      return;
+    }
 
     setCalculating(true);
     setError(null);
     try {
-      const input: GoldCalculationInput = {
-        metal_type: metalType,
-        karat,
-        weight_grams: weight,
-        making_charge_amount: makingCharge || undefined,
-        vat_percent: vatPercent || undefined,
-      };
-      const result = await calculateGoldValue(token, input);
-      setResult(result);
+      const weightGrams = parseFloat(weight);
+      const rate = parseFloat(rateForSelection.market_price_per_gram);
+      const makingChargeAmount = makingCharge ? parseFloat(makingCharge) : 0;
+      const vatPercentNum = vatPercent ? parseFloat(vatPercent) : 15;
+
+      const baseValue = weightGrams * rate;
+      const makingChargeTotal = makingChargeAmount;
+      const vatAmount = (baseValue + makingChargeTotal) * (vatPercentNum / 100);
+      const total = baseValue + makingChargeTotal + vatAmount;
+
+      setResult({
+        market_value: baseValue.toFixed(2),
+        making_charge: makingChargeTotal.toFixed(2),
+        vat_amount: vatAmount.toFixed(2),
+        total: total.toFixed(2),
+      });
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Calculation failed');
     } finally {
       setCalculating(false);
     }
-  }, [getToken, metalType, karat, weight, makingCharge, vatPercent]);
+  }, [rateForSelection, weight, makingCharge, vatPercent]);
 
   const displayRate = useMemo(() => {
     if (!rateForSelection) return null;

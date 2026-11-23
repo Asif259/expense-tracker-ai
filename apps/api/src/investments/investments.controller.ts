@@ -17,9 +17,11 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { InvestmentsService } from './investments.service.js';
+import { GoldRateService } from './gold-rate.service.js';
 import { SupabaseAuthGuard } from '../common/guards/supabase-auth.guard.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { AuthToken } from '../common/decorators/auth-token.decorator.js';
+import { Public } from '../common/decorators/public.decorator.js';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe.js';
 import {
   createInvestmentSchema,
@@ -41,7 +43,10 @@ import type { User } from '@supabase/supabase-js';
 @Controller('investments')
 @UseGuards(SupabaseAuthGuard)
 export class InvestmentsController {
-  constructor(private readonly investmentsService: InvestmentsService) {}
+  constructor(
+    private readonly investmentsService: InvestmentsService,
+    private readonly goldRateService: GoldRateService,
+  ) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -82,10 +87,9 @@ export class InvestmentsController {
   }
 
   @Get('gold/rates')
+  @Public()
   getGoldRates(@Query('refresh') refresh?: boolean): Promise<MetalRateCache[]> {
-    // Will be implemented by GoldRateService
-    // Placeholder to satisfy TypeScript until service is injected
-    return Promise.resolve([]);
+    return this.goldRateService.getRates(refresh);
   }
 
   @Get(':id')
