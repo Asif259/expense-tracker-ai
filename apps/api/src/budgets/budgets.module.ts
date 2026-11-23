@@ -7,5 +7,6 @@ import { SupabaseModule } from '../supabase/supabase.module.js';
   imports: [SupabaseModule],
   controllers: [BudgetsController],
   providers: [BudgetsService],
+  exports: [BudgetsService],
 })
 export class BudgetsModule {}

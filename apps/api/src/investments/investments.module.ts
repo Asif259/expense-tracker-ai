@@ -9,5 +9,6 @@ import { SupabaseModule } from '../supabase/supabase.module.js';
   imports: [SupabaseModule, ConfigModule],
   controllers: [InvestmentsController],
   providers: [InvestmentsService, GoldRateService],
+  exports: [InvestmentsService],
 })
 export class InvestmentsModule {}
