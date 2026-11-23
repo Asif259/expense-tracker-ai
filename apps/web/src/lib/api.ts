@@ -597,11 +597,14 @@ export async function fetchAllocation(token: string): Promise<AllocationPoint[]>
   const totalInvested = parseFloat(summary.totalInvested);
   const totalCurrent = parseFloat(summary.currentValue);
   if (totalInvested === 0) return [];
-  return Object.entries(summary.allocationByType).map(([type, invested]) => ({
-    type,
-    invested: invested.toFixed(2),
-    current: (totalCurrent * (invested / totalInvested)).toFixed(2),
-  }));
+  return Object.entries(summary.allocationByType ?? {}).map(([type, invested]) => {
+    const investedAmount = parseFloat(String(invested));
+    return {
+      type,
+      invested: investedAmount.toFixed(2),
+      current: (totalCurrent * (investedAmount / totalInvested)).toFixed(2),
+    };
+  });
 }
 
 
