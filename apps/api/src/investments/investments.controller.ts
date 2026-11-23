@@ -88,8 +88,12 @@ export class InvestmentsController {
 
   @Get('gold/rates')
   @Public()
-  getGoldRates(@Query('refresh') refresh?: boolean): Promise<MetalRateCache[]> {
-    return this.goldRateService.getRates(refresh);
+  getGoldRates(
+    @Query('source') source?: 'bajus' | 'global',
+    @Query('currency') currency?: string,
+    @Query('refresh') refresh?: boolean,
+  ): Promise<MetalRateCache[]> {
+    return this.goldRateService.getRates(source, currency, refresh);
   }
 
   @Get(':id')

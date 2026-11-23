@@ -27,6 +27,9 @@ let SupabaseAdminService = SupabaseAdminService_1 = class SupabaseAdminService {
             },
         });
     }
+    getPrivilegedClient() {
+        return this.privilegedClient;
+    }
     async createAiDraft(params) {
         const { data, error } = await this.privilegedClient.rpc('create_ai_draft', {
             p_user_id: params.userId,

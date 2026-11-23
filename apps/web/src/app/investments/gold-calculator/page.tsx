@@ -31,18 +31,23 @@ export default function GoldCalculatorPage() {
   const [calculating, setCalculating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currency, setCurrency] = useState('BDT');
+  const [source, setSource] = useState<'bajus' | 'global'>('bajus');
   const [loading, setLoading] = useState(true);
 
   const CURRENCY_OPTIONS = ['BDT', 'USD', 'VND'] as const;
+  const SOURCE_OPTIONS = [
+    { value: 'bajus' as const, label: 'BAJUS (Bangladesh)' },
+    { value: 'global' as const, label: 'Global Spot' },
+  ];
 
   useEffect(() => {
     let cancelled = false;
-    fetchGoldRates()
+    fetchGoldRates({ source, currency })
       .then((rates) => { if (!cancelled) setRates(rates); })
       .catch((e) => { if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load gold rates'); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, []);
+  }, [source, currency]);
 
   const rateForSelection = useMemo(() => {
     return rates.find((r) => r.metal_type === metalType && r.karat === karat);
@@ -187,6 +192,16 @@ export default function GoldCalculatorPage() {
               </Field>
             </div>
 
+            {/* Source Selector */}
+            <Field id="source" label="Rate Source">
+              <SegmentedControl
+                label="Select rate source"
+                value={source}
+                onChange={(v) => setSource(v as 'bajus' | 'global')}
+                options={SOURCE_OPTIONS}
+              />
+            </Field>
+
             {/* Currency Selector */}
             <Field id="currency" label="Currency">
               <SegmentedControl
@@ -260,6 +275,9 @@ export default function GoldCalculatorPage() {
                 <thead>
                   <tr className="border-b border-[var(--color-border)]">
                     <th className="px-4 py-2 text-left font-medium text-[var(--color-text-muted)]">
+                      Source
+                    </th>
+                    <th className="px-4 py-2 text-left font-medium text-[var(--color-text-muted)]">
                       Metal
                     </th>
                     <th className="px-4 py-2 text-left font-medium text-[var(--color-text-muted)]">
@@ -275,7 +293,10 @@ export default function GoldCalculatorPage() {
                 </thead>
                 <tbody>
                   {rates.map((rate) => (
-                    <tr key={`${rate.metal_type}-${rate.karat}`} className="border-b border-[var(--color-border)]">
+                    <tr key={`${rate.source}-${rate.metal_type}-${rate.karat}`} className="border-b border-[var(--color-border)]">
+                      <td className="px-4 py-2 text-[var(--color-text)]">
+                        {rate.source === 'goldr.org' ? 'BAJUS' : 'GoldAPI'}
+                      </td>
                       <td className="px-4 py-2 text-[var(--color-text)]">
                         {rate.metal_type.charAt(0).toUpperCase() + rate.metal_type.slice(1)}
                       </td>
@@ -294,7 +315,7 @@ export default function GoldCalculatorPage() {
               </table>
             </div>
             <p className="mt-4 text-caption text-[var(--color-text-muted)]">
-              Rates are updated periodically. Last updated: Today
+              Rates are updated periodically. Source: {source === 'bajus' ? 'BAJUS (goldr.org - Bangladesh)' : 'GoldAPI.io (Global Spot)'}
             </p>
           </Card>
         )}

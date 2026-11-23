@@ -614,10 +614,15 @@ export async function fetchInvestmentSummary(token: string): Promise<InvestmentS
 // ── Gold Calculator API ──
 
 export interface GoldRate {
+  id?: string;
+  source: 'goldr.org' | 'goldapi.io';
   metal_type: 'gold' | 'silver';
-  karat: '22k' | '24k';
+  karat: '22k' | '24k' | '21k' | '18k' | 'traditional';
   market_price_per_gram: string;
   resale_price_per_gram: string;
+  currency: string;
+  source_updated_label?: string;
+  fetched_at?: string;
 }
 
 export interface GoldCalculationInput {
@@ -635,8 +640,20 @@ export interface GoldCalculationResult {
   total: string;
 }
 
-export async function fetchGoldRates(): Promise<GoldRate[]> {
-  const response = await request<GoldRate[]>('/investments/gold/rates', null);
+export interface GoldRatesQuery {
+  source?: 'bajus' | 'global';
+  currency?: string;
+  refresh?: boolean;
+}
+
+export async function fetchGoldRates(query?: GoldRatesQuery): Promise<GoldRate[]> {
+  const params = new URLSearchParams();
+  if (query?.source) params.set('source', query.source);
+  if (query?.currency) params.set('currency', query.currency);
+  if (query?.refresh !== undefined) params.set('refresh', String(query.refresh));
+
+  const qs = params.toString() ? `?${params.toString()}` : '';
+  const response = await request<GoldRate[]>('/investments/gold/rates' + qs, null);
   return response;
 }
 

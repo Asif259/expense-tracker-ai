@@ -8,6 +8,9 @@ export declare const envSchema: z.ZodObject<{
     NODE_ENV: z.ZodDefault<z.ZodEnum<["development", "production", "test"]>>;
     GROQ_API_KEY: z.ZodDefault<z.ZodOptional<z.ZodString>>;
     GROQ_MODEL: z.ZodDefault<z.ZodString>;
+    GOLDAPI_IO_KEY: z.ZodOptional<z.ZodString>;
+    GOLD_RATE_BAJUS_TTL_MINUTES: z.ZodDefault<z.ZodNumber>;
+    GOLD_RATE_GLOBAL_TTL_MINUTES: z.ZodDefault<z.ZodNumber>;
 }, "strip", z.ZodTypeAny, {
     PORT: string | number;
     SUPABASE_URL: string;
@@ -17,6 +20,9 @@ export declare const envSchema: z.ZodObject<{
     NODE_ENV: "development" | "production" | "test";
     GROQ_API_KEY: string;
     GROQ_MODEL: string;
+    GOLD_RATE_BAJUS_TTL_MINUTES: number;
+    GOLD_RATE_GLOBAL_TTL_MINUTES: number;
+    GOLDAPI_IO_KEY?: string | undefined;
 }, {
     PORT?: string | number | undefined;
     SUPABASE_URL?: string | undefined;
@@ -26,6 +32,9 @@ export declare const envSchema: z.ZodObject<{
     NODE_ENV?: "development" | "production" | "test" | undefined;
     GROQ_API_KEY?: string | undefined;
     GROQ_MODEL?: string | undefined;
+    GOLDAPI_IO_KEY?: string | undefined;
+    GOLD_RATE_BAJUS_TTL_MINUTES?: number | undefined;
+    GOLD_RATE_GLOBAL_TTL_MINUTES?: number | undefined;
 }>;
 export type EnvConfig = z.infer<typeof envSchema>;
 export declare function validateEnv(config: Record<string, unknown>): EnvConfig;

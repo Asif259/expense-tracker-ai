@@ -1,4 +1,5 @@
 import { ConfigService } from '@nestjs/config';
+import { SupabaseClient } from '@supabase/supabase-js';
 export interface CreateAiDraftParams {
     userId: string;
     type: 'income' | 'expense';
@@ -13,6 +14,7 @@ export declare class SupabaseAdminService {
     private readonly logger;
     private readonly privilegedClient;
     constructor(configService: ConfigService);
+    getPrivilegedClient(): SupabaseClient;
     createAiDraft(params: CreateAiDraftParams): Promise<{
         draftId: string;
     }>;

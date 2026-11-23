@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useSyncExternalStore } from 'react';
 
 export type Theme = 'light' | 'dark';
 
@@ -40,52 +40,69 @@ function applyTheme(newTheme: Theme) {
   metaThemeColor.setAttribute('content', newTheme === 'dark' ? '#090f1c' : '#f8fafc');
 }
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>(() => {
-    if (typeof window === 'undefined') return 'light';
-    const saved = localStorage.getItem(STORAGE_KEY) as Theme | null;
-    if (saved === 'light' || saved === 'dark') {
-      return saved;
-    }
-    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      return 'dark';
-    }
-    return 'light';
+/** Resolve initial theme synchronously so server & client agree on first paint. */
+function getInitialTheme(): Theme {
+  if (typeof window === 'undefined') return 'light';
+  const saved = localStorage.getItem(STORAGE_KEY) as Theme | null;
+  if (saved === 'light' || saved === 'dark') return saved;
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+// ── External store ────────────────────────────────────────────────────────────
+// Listeners are notified synchronously whenever the persisted theme changes.
+// Subscribers receive the *current* value immediately on register so stale values never occur.
+
+const listeners = new Set<(val: Theme) => void>();
+let currentTheme = getInitialTheme();
+
+function subscribe(cb: (val: Theme) => void) {
+  cb(currentTheme); // deliver current value immediately
+  listeners.add(cb);
+  return () => listeners.delete(cb);
+}
+
+function persistTheme(next: Theme) {
+  currentTheme = next;
+  try { localStorage.setItem(STORAGE_KEY, next); } catch {}
+  applyTheme(next);
+  for (const l of listeners) l(next);
+}
+
+// Listen for OS preference changes when user hasn't explicitly set one
+if (typeof window !== 'undefined') {
+  const mq = window.matchMedia('(prefers-color-scheme: dark)');
+  mq.addEventListener('change', (e: MediaQueryListEvent) => {
+    if (!localStorage.getItem(STORAGE_KEY)) persistTheme(e.matches ? 'dark' : 'light');
   });
-  const [mounted] = useState(true);
+  // Cross-tab sync via storage event
+  window.addEventListener('storage', (e: StorageEvent) => {
+    if (e.key === STORAGE_KEY) {
+      const t = e.newValue as Theme | null;
+      if (t === 'light' || t === 'dark') persistTheme(t);
+    }
+  });
+}
 
+// ── Provider ──────────────────────────────────────────────────────────────────
+
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  // Synchronous read of externally-mutated store via hooks.
+  // Server snapshot = 'light'; client snapshot = getInitialTheme(). Match → no hydration warning.
+  const externalTheme = useSyncExternalStore(subscribe, () => 'light', getInitialTheme);
+
+  // Local mount flag so consumers can guard SSR-vs-client rendering (e.g. chart color reactivity).
+  const [mounted] = useState(() => typeof window !== 'undefined');
+
+  // Apply DOM classes/attributes via effect — never call setState inside it.
   useEffect(() => {
-    applyTheme(theme);
+    applyTheme(externalTheme);
+  }, [externalTheme]);
 
-    // Listen to OS preference changes if user hasn't explicitly set a preference
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleMediaChange = (e: MediaQueryListEvent) => {
-      const explicit = localStorage.getItem(STORAGE_KEY);
-      if (!explicit) {
-        const osTheme: Theme = e.matches ? 'dark' : 'light';
-        setThemeState(osTheme);
-        applyTheme(osTheme);
-      }
-    };
-    mediaQuery.addEventListener('change', handleMediaChange);
-    return () => mediaQuery.removeEventListener('change', handleMediaChange);
-  }, []);
-
-  const setTheme = (newTheme: Theme) => {
-    setThemeState(newTheme);
-    try {
-      localStorage.setItem(STORAGE_KEY, newTheme);
-    } catch {}
-    applyTheme(newTheme);
-  };
-
-  const toggleTheme = () => {
-    const next = theme === 'dark' ? 'light' : 'dark';
-    setTheme(next);
-  };
+  const setTheme = (next: Theme) => persistTheme(next);
+  const toggleTheme = () => persistTheme(externalTheme === 'dark' ? 'light' : 'dark');
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, toggleTheme, mounted }}>
+    <ThemeContext.Provider value={{ theme: externalTheme, setTheme, toggleTheme, mounted }}>
       {children}
     </ThemeContext.Provider>
   );

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export type MetalRateCache = {
-  id: string;
+  id?: string;
   source: string;
   metal_type: 'gold' | 'silver';
   karat: string;
@@ -13,7 +13,7 @@ export type MetalRateCache = {
 };
 
 export const metalRateCacheSchema = z.object({
-  id: z.string(),
+  id: z.string().optional(),
   source: z.string(),
   metal_type: z.enum(['gold', 'silver']),
   karat: z.string(),
